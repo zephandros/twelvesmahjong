@@ -97,10 +97,13 @@ determinismo ni replays. Añadir una habilidad = escribir un `Ability`, no refac
 
 ## Layout
 
-Espacio de diseño fijo **1280×720**, escalado con `min(vw/1280, vh/720)`. Las coordenadas
-se copian del mockup literalmente. Móvil: `orientation: landscape`. Ver
-`../Mahjong/extra_code/Saki Mahjong.dc.html` (geometría exacta) y
-`../Mahjong/screenshots/` (render + capturas reales).
+Espacio de diseño fijo **1920×1080** (16:9), escalado con `min(vw/1920, vh/1080)` y
+letterbox centrado (`layout.ts`). Coordenadas copiadas del mockup Figma del usuario
+(`raw/code/index.tsx`): **mesa 4:3 de 1440×1080 centrada** (x 240..1680), 4 paneles de
+personaje 240×540 en las esquinas, centro 180×180 en (960,540), molinete de descartes.
+Tres tamaños de ficha: mano propia 68×90, descartes/melds 45×60, manos rivales 45×30.
+El mapeo asiento↔borde↔esquina vive SOLO en `seat.ts` (trampa 1). Móvil: `landscape`.
+`src/debug/board.ts` (`?debug=board`) quedó con coordenadas viejas (1280×720) — pendiente.
 
 ## Assets de referencia (en `../Mahjong` y `../Resources`)
 
@@ -182,11 +185,12 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   para el look Antique Parlour. **A6 hecho**: `--display` = Cormorant y **Teko retirada**
   (sin `@font-face` ni descarga). El TTF completo de Noto (insumo del subset, 13 MB)
   vive en `raw/font/`, nunca en `public/`.
-- **Antique Parlour (A6, parcial)**: fondo de salón oscuro + mesa con marco de madera;
-  **temas de fieltro** (green/red/blue/wood) y **5 dorsos de ficha** seleccionables desde
-  la barra superior, aplicados vía `[data-table]`/`[data-back]` en `.tm-stage` y
-  persistidos en Settings. Pendiente de pulido: geometría pixel-exacta del tablero
-  flotante 4:3 del mockup y rediseño de la pantalla de victoria (1B).
+- **Antique Parlour (A6)**: fondo de salón oscuro + mesa 4:3 (`.tm-board`) con marco de
+  madera; **temas de fieltro** (green/red/blue/wood) y **5 dorsos de ficha** seleccionables
+  desde el **menú in-game** (botón ☰ en el panel del jugador — ya no es barra), aplicados
+  vía `[data-table]`/`[data-back]` en `.tm-stage` y persistidos en Settings. Layout portado
+  al mockup Figma 1920×1080 (ver Layout). Pendiente: rediseño de la pantalla de victoria (1B)
+  y actualizar `?debug=board`.
 
 ## Alcance v1
 

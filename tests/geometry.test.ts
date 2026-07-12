@@ -48,7 +48,7 @@ describe('geometry: colocación de fichas', () => {
     expect(pond.visible).toBe(true)
     expect(pond.face).toBe('front')
     // primer descarte propio: rejilla del pond inferior (fila 0, cerca del centro)
-    expect(pond.cy).toBeCloseTo(398 + 21, 5)
+    expect(pond.cy).toBeCloseTo(660, 5)
   })
 
   it('el indicador de dora revelado va boca arriba; los demás huecos boca abajo', () => {

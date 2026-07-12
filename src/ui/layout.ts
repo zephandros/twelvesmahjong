@@ -1,9 +1,13 @@
-// Escenario de diseño fijo 1280×720, escalado al viewport con letterboxing.
-// Todas las coordenadas de la UI se expresan en este espacio y se copian del
-// mockup literalmente. Ver ../Mahjong/extra_code/Saki Mahjong.dc.html.
+// Escenario de diseño fijo 1920×1080 (16:9), escalado al viewport con
+// letterboxing. Coordenadas copiadas del mockup Figma (raw/code/index.tsx):
+// mesa 4:3 de 1440×1080 centrada (x 240..1680) con 4 paneles 240×540 en las
+// esquinas. Todas las coordenadas de la UI viven en este espacio.
 
-export const STAGE_W = 1280
-export const STAGE_H = 720
+export const STAGE_W = 1920
+export const STAGE_H = 1080
+
+/** Mesa (fieltro): rectángulo 4:3 centrado horizontalmente. */
+export const BOARD = { x: 240, y: 0, w: 1440, h: 1080 } as const
 
 /**
  * Crea el nodo escenario dentro de `root` y lo mantiene escalado y centrado.
@@ -20,12 +24,27 @@ export function createStage(root: HTMLElement): HTMLElement {
   stage.style.width = `${STAGE_W}px`
   stage.style.height = `${STAGE_H}px`
 
+  // mesa 4:3 (fieltro con marco de madera), detrás de fichas y HUD
+  const board = document.createElement('div')
+  board.className = 'tm-board'
+  board.style.cssText =
+    `position:absolute;left:${BOARD.x}px;top:${BOARD.y}px;width:${BOARD.w}px;height:${BOARD.h}px`
+  stage.appendChild(board)
+
   frame.appendChild(stage)
   root.appendChild(frame)
 
+  // Escalado + letterbox determinista: origen arriba-izquierda y offset centrado
+  // (evita el descuadre de centrar un elemento sobredimensionado en un grid).
+  stage.style.position = 'absolute'
+  stage.style.left = '0'
+  stage.style.top = '0'
+  stage.style.transformOrigin = 'top left'
   const apply = () => {
     const scale = Math.min(frame.clientWidth / STAGE_W, frame.clientHeight / STAGE_H)
-    stage.style.transform = `scale(${scale})`
+    const ox = (frame.clientWidth - STAGE_W * scale) / 2
+    const oy = (frame.clientHeight - STAGE_H * scale) / 2
+    stage.style.transform = `translate(${ox}px, ${oy}px) scale(${scale})`
   }
   apply()
   new ResizeObserver(apply).observe(frame)

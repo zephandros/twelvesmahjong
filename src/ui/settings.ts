@@ -51,6 +51,11 @@ export function loadSettings(): Settings {
   }
 }
 
+/** Fija un volumen en el objeto de ajustes, clampeado a 0..1. */
+export function setVolumeSetting(s: Settings, ch: VolumeChannel, v: number): void {
+  s.volumes[ch] = Math.min(1, Math.max(0, v))
+}
+
 /** Persiste los ajustes. Silencioso si localStorage no está disponible. */
 export function saveSettings(s: Settings): void {
   try {

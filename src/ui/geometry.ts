@@ -1,15 +1,17 @@
-// Posición de las 136 fichas en el escenario 1280×720 a partir del HandState.
+// Posición de las 136 fichas en el escenario 1920×1080 a partir del HandState.
 // Función pura (testeable sin DOM): la capa de nodos persistentes solo aplica
 // lo que salga de aquí, y las transiciones CSS animan los movimientos.
 //
-// Coordenadas del mockup (ver plan). Orientación de asientos: seat.ts es el
-// único punto de verdad; aquí solo se traduce RelSeat → borde de pantalla.
+// Coordenadas del mockup Figma (raw/code/index.tsx): mesa 4:3 (x 240..1680),
+// centro 180×180 en (960,540), molinete de descartes alrededor, manos rivales
+// pegadas a los bordes de la mesa. Orientación de asientos: seat.ts es el único
+// punto de verdad; aquí solo se traduce RelSeat → borde (edgeOf).
 
 import type { HandState } from '../core/state'
 import type { TileId } from '../core/tile'
 import { TILEID_COUNT } from '../core/tile'
-import type { Seat, RelSeat } from '../core/seat'
-import { SEATS, relSeat } from '../core/seat'
+import type { Seat, RelSeat, Edge } from '../core/seat'
+import { SEATS, relSeat, edgeOf } from '../core/seat'
 
 export type Face = 'front' | 'back' | 'side'
 
@@ -30,21 +32,24 @@ export interface Placement {
 }
 
 export interface GeometryOpts {
-  /** Asiento del humano (abajo). */
   human: Seat
-  /** Mostrar todas las manos boca arriba (fin de mano). */
   revealAll: boolean
-  /** Fichas clicables ahora mismo (las decide el controlador). */
   clickable: ReadonlySet<TileId>
-  /** Fichas destacadas (robada, seleccionables para riichi…). */
   highlight: ReadonlySet<TileId>
 }
 
-const CX = 640
-const CY = 360
+const CX = 960
+const CY = 540
+
+// Tres tamaños de ficha (mockup): mano propia grande, descartes/melds medianos,
+// manos rivales pequeñas (de canto). Ratio de cara ≈ 0.72.
+const HAND = { w: 68, h: 90 } // mano del jugador (boca arriba, grande)
+const DISC = { w: 45, h: 60 } // descartes, melds y manos rivales reveladas
+const OPP = { w: 45, h: 30 } // ficha rival oculta (pequeña)
+const DORA = { w: 26, h: 34 } // indicadores en el centro
 
 const hidden = (): Placement => ({
-  cx: CX, cy: CY, w: 30, h: 42, rot: 0,
+  cx: CX, cy: CY, w: DISC.w, h: DISC.h, rot: 0,
   face: 'back', z: 1, visible: false, clickable: false, highlight: false,
 })
 
@@ -58,8 +63,7 @@ export function computePlacements(
   const put = (id: TileId, p: Partial<Placement>): void => {
     const base = out.get(id)!
     out.set(id, {
-      ...base,
-      ...p,
+      ...base, ...p,
       visible: true,
       clickable: o.clickable.has(id),
       highlight: o.highlight.has(id),
@@ -71,194 +75,141 @@ export function computePlacements(
   return out
 }
 
-// --- manos --------------------------------------------------------------------
+type Put = (id: TileId, p: Partial<Placement>) => void
 
-function placeSeat(
-  s: HandState,
-  o: GeometryOpts,
-  seat: Seat,
-  rel: RelSeat,
-  put: (id: TileId, p: Partial<Placement>) => void,
-): void {
+function placeSeat(s: HandState, o: GeometryOpts, seat: Seat, rel: RelSeat, put: Put): void {
   const st = s.seats[seat]!
   const drawn = s.turn === seat ? s.drawn : null
+  const edge = edgeOf(rel)
 
-  // --- mano ---
-  if (rel === 'self') {
-    // fichas 46×64, paso 50; la robada separada 16px
-    const n = st.hand.length
-    const total = n * 50 - 4 + (drawn !== null ? 16 + 46 : 0)
-    const x0 = CX - total / 2
-    st.hand.forEach((id, i) => {
-      put(id, { cx: x0 + i * 50 + 23, cy: 720 - 14 - 32, w: 46, h: 64, face: 'front', z: 35 })
-    })
-    if (drawn !== null) {
-      put(drawn, {
-        cx: x0 + n * 50 + 12 + 23, cy: 720 - 14 - 32, w: 46, h: 64,
-        face: 'front', z: 35,
-      })
-    }
-  } else if (rel === 'toimen') {
-    const n = st.hand.length
-    const total = n * 33 - 3 + (drawn !== null ? 12 + 30 : 0)
-    const x0 = CX - total / 2
-    // desde su perspectiva el orden va invertido; la robada queda a nuestra izquierda
-    const face: Face = o.revealAll ? 'front' : 'back'
-    if (drawn !== null) put(drawn, { cx: x0 + 15, cy: 43, w: 30, h: 42, rot: 180, face, z: 20 })
-    const base = drawn !== null ? x0 + 30 + 12 : x0
-    st.hand.forEach((id, i) => {
-      const k = n - 1 - i
-      put(id, { cx: base + k * 33 + 15, cy: 43, w: 30, h: 42, rot: 180, face, z: 20 })
-    })
-  } else {
-    // laterales: canto 46×25 en columna; revelado → frente girado
-    const isShimo = rel === 'shimo'
-    const x = isShimo ? 1280 - 150 - 23 : 150 + 23
-    const n = st.hand.length
-    const step = o.revealAll ? 33 : 28
-    const total = n * step - 3 + (drawn !== null ? 10 + (o.revealAll ? 30 : 25) : 0)
-    const y0 = CY - total / 2
-    const tileOf = (i: number): { cy: number } => ({ cy: y0 + i * step + (o.revealAll ? 15 : 12.5) })
-    // shimo se ordena de abajo arriba (su izquierda), kami de arriba abajo
-    st.hand.forEach((id, i) => {
-      const k = isShimo ? n - 1 - i : i
-      if (o.revealAll) {
-        put(id, { cx: x, ...tileOf(k), w: 30, h: 42, rot: isShimo ? 270 : 90, face: 'front', z: 20 })
+  if (rel === 'self') placeSelfHand(st.hand, drawn, put)
+  else placeOppHand(st.hand, drawn, edge, o.revealAll, put)
+
+  placePond(st, edge, put)
+  placeMelds(st, edge, put)
+}
+
+// --- manos --------------------------------------------------------------------
+
+function placeSelfHand(hand: readonly TileId[], drawn: TileId | null, put: Put): void {
+  const n = hand.length
+  const step = HAND.w
+  const gap = 18 // separación de la robada
+  const total = n * step + (drawn !== null ? gap + HAND.w : 0)
+  const x0 = CX - total / 2
+  const cy = 1080 - 45 // fila inferior de la mesa (y 990..1080)
+  hand.forEach((id, i) => {
+    put(id, { cx: x0 + i * step + HAND.w / 2, cy, w: HAND.w, h: HAND.h, face: 'front', z: 35 })
+  })
+  if (drawn !== null) {
+    put(drawn, { cx: x0 + n * step + gap + HAND.w / 2, cy, w: HAND.w, h: HAND.h, face: 'front', z: 35 })
+  }
+}
+
+// Manos rivales pegadas al borde de la mesa. Ocultas: dorsos pequeños. Reveladas
+// (fin de mano): frentes medianos girados hacia el dueño para que se lean.
+function placeOppHand(
+  hand: readonly TileId[], drawn: TileId | null, edge: Edge, reveal: boolean, put: Put,
+): void {
+  const n = hand.length
+  const step = 45
+  const total = n * step + (drawn !== null ? 12 + step : 0)
+
+  const tile = (i: number, id: TileId): void => {
+    if (edge === 'top') {
+      const x0 = CX - total / 2
+      const cx = x0 + i * step + step / 2
+      if (reveal) put(id, { cx, cy: 34, w: DISC.w, h: DISC.h, rot: 180, face: 'front', z: 20 })
+      else put(id, { cx, cy: 16, w: OPP.w, h: OPP.h, face: 'back', z: 20 })
+    } else {
+      // laterales: columna vertical pegada al borde izquierdo/derecho
+      const y0 = CY - total / 2
+      const cy = y0 + i * step + step / 2
+      const cx = edge === 'left' ? 255 : 1665
+      if (reveal) {
+        put(id, { cx: edge === 'left' ? 272 : 1648, cy, w: DISC.w, h: DISC.h, rot: edge === 'left' ? 90 : 270, face: 'front', z: 20 })
       } else {
-        put(id, { cx: x, ...tileOf(k), w: 46, h: 25, rot: 0, face: 'side', z: 20 })
-      }
-    })
-    if (drawn !== null) {
-      const cy = y0 + n * step + 10 + (o.revealAll ? 15 : 12.5)
-      if (o.revealAll) {
-        put(drawn, { cx: x, cy, w: 30, h: 42, rot: isShimo ? 270 : 90, face: 'front', z: 20 })
-      } else {
-        put(drawn, { cx: x, cy, w: 46, h: 25, rot: 0, face: 'side', z: 20 })
+        put(id, { cx, cy, w: OPP.h, h: OPP.w, face: 'back', z: 20 })
       }
     }
   }
 
-  placePond(s, seat, rel, put)
-  placeMelds(s, seat, rel, put)
+  hand.forEach((id, i) => tile(i, id))
+  if (drawn !== null) tile(n, drawn)
 }
 
-// --- descartes ------------------------------------------------------------------
+// --- descartes (molinete alrededor del centro) --------------------------------
 
-// rejilla 6 columnas, ficha 30×42, paso 33/45; fila 0 pegada al centro y las
-// siguientes crecen hacia el dueño. La ficha de riichi va girada 90° extra.
-function placePond(
-  s: HandState,
-  seat: Seat,
-  rel: RelSeat,
-  put: (id: TileId, p: Partial<Placement>) => void,
-): void {
-  const st = s.seats[seat]!
-  const halfRow = (6 * 33 - 3) / 2 // 97.5
+// 6 columnas por lado, ficha 45×60. La ficha de riichi se gira 90° y corre las
+// siguientes de su fila para no solaparse (el jugador lo pidió explícitamente).
+function pondPos(edge: Edge, col: number, row: number): { cx: number; cy: number; rot: number } {
+  switch (edge) {
+    case 'bottom': return { cx: 870 + col * 45 + 22.5, cy: 630 + row * 60 + 30, rot: 0 }
+    case 'top': return { cx: 780 + col * 45 + 22.5, cy: 420 - row * 60, rot: 0 }
+    case 'left': return { cx: 840 - row * 60, cy: 472.5 + col * 45, rot: 270 }
+    case 'right': return { cx: 1080 + row * 60, cy: 382.5 + col * 45, rot: 270 }
+  }
+}
 
+function placePond(st: HandState['seats'][number], edge: Edge, put: Put): void {
+  const rIdx = st.riichiIndex
   st.pond.forEach((id, i) => {
-    const c = i % 6
-    const r = Math.floor(i / 6)
-    const riichi = st.riichiIndex === i
-    let cx: number
-    let cy: number
-    let rot: number
-    switch (rel) {
-      case 'self':
-        cx = CX - halfRow + c * 33 + 15
-        cy = 398 + r * 45 + 21
-        rot = 0
-        break
-      case 'toimen':
-        cx = CX + halfRow - c * 33 - 15
-        cy = 301 - r * 45
-        rot = 180
-        break
-      case 'kami':
-        cx = 397 - r * 45
-        cy = CY - halfRow + c * 33 + 15
-        rot = 90
-        break
-      case 'shimo':
-        cx = 883 + r * 45
-        cy = CY + halfRow - c * 33 - 15
-        rot = 270
-        break
+    const col = i % 6
+    const row = Math.floor(i / 6)
+    const p = pondPos(edge, col, row)
+    let { cx, cy } = p
+    let rot = p.rot
+    // corrimiento: si la ficha de riichi está antes en la MISMA fila, +15px
+    if (rIdx !== null && rIdx >= 0 && Math.floor(rIdx / 6) === row && rIdx % 6 < col) {
+      if (edge === 'bottom' || edge === 'top') cx += 15
+      else cy += 15
     }
-    put(id, { cx, cy, w: 30, h: 42, rot: rot + (riichi ? 90 : 0), face: 'front', z: 15 })
+    if (rIdx === i) rot += 90 // ficha con la que se declaró riichi
+    put(id, { cx, cy, w: DISC.w, h: DISC.h, rot, face: 'front', z: 15 })
   })
 }
 
-// --- melds ----------------------------------------------------------------------
+// --- melds --------------------------------------------------------------------
 
-// Sin rotar, por legibilidad con bounding boxes (decisión v1; el arte final
-// podrá orientarlos). Ankan: primera y última boca abajo, como en mesa real.
-function placeMelds(
-  s: HandState,
-  seat: Seat,
-  rel: RelSeat,
-  put: (id: TileId, p: Partial<Placement>) => void,
-): void {
-  const st = s.seats[seat]!
+// Grupos cantados junto al borde de cada jugador, medianos (45×60). Ankan:
+// primera y última boca abajo, como en mesa real.
+function placeMelds(st: HandState['seats'][number], edge: Edge, put: Put): void {
   if (st.melds.length === 0) return
+  const w = DISC.w
+  const step = w + 2
+  const gap = 12
 
-  const small = { w: 24, h: 33, stepX: 26, gap: 8, stepY: 39 }
-
-  if (rel === 'self') {
-    // fila única a la derecha de la mano, creciendo hacia la izquierda
-    const w = 32
-    const stepX = 34
-    const widths = st.melds.map((m) => m.tiles.length * stepX - 2)
-    const total = widths.reduce((a, b) => a + b, 0) + (st.melds.length - 1) * 10
-    let x = 1280 - 170 - total
-    st.melds.forEach((m, mi) => {
-      m.tiles.forEach((id, ti) => {
-        const back = m.kind === 'ankan' && (ti === 0 || ti === m.tiles.length - 1)
-        put(id, {
-          cx: x + ti * stepX + w / 2, cy: 720 - 16 - 22, w, h: 44,
-          face: back ? 'back' : 'front', z: 18,
-        })
-      })
-      x += widths[mi]! + 10
-    })
-    return
-  }
-
-  // rivales: pila de filas junto a su retrato
-  const anchors: Record<Exclude<RelSeat, 'self'>, { x: number; y: number; alignRight: boolean; growDown: boolean }> = {
-    shimo: { x: 1280 - 14, y: 500, alignRight: true, growDown: false },
-    toimen: { x: 860, y: 43, alignRight: false, growDown: true },
-    kami: { x: 14, y: 220, alignRight: false, growDown: true },
-  }
-  const a = anchors[rel as Exclude<RelSeat, 'self'>]
+  const rows = st.melds.map((m) => m.tiles.length * step - 2)
+  let cursor = 0
   st.melds.forEach((m, mi) => {
-    const rowW = m.tiles.length * small.stepX - 2
-    const y = a.growDown ? a.y + mi * small.stepY : a.y - mi * small.stepY
-    const x0 = a.alignRight ? a.x - rowW : a.x
     m.tiles.forEach((id, ti) => {
       const back = m.kind === 'ankan' && (ti === 0 || ti === m.tiles.length - 1)
-      put(id, {
-        cx: x0 + ti * small.stepX + small.w / 2, cy: y + small.h / 2,
-        w: small.w, h: small.h, face: back ? 'back' : 'front', z: 18,
-      })
+      const off = cursor + ti * step
+      let cx: number
+      let cy: number
+      let rot = 0
+      switch (edge) {
+        case 'bottom': cx = 1660 - off - w / 2; cy = 1080 - 30; break
+        case 'top': cx = 260 + off + w / 2; cy = 30; rot = 180; break
+        case 'left': cx = 30; cy = 260 + off + w / 2; rot = 90; break
+        case 'right': cx = 1890; cy = 1050 - off - w / 2; rot = 270; break
+      }
+      put(id, { cx, cy, w, h: DISC.h, rot, face: back ? 'back' : 'front', z: 18 })
     })
+    cursor += rows[mi]! + gap
   })
 }
 
-// --- dora -----------------------------------------------------------------------
+// --- dora (dentro del recuadro central) ---------------------------------------
 
-// 5 huecos de indicador; los revelados boca arriba. El frente del muerto se
-// consume con los kans, de ahí la base corrida (ver wall.ts).
-function placeDora(
-  s: HandState,
-  put: (id: TileId, p: Partial<Placement>) => void,
-): void {
+function placeDora(s: HandState, put: Put): void {
   const base = 4 - s.wall.rinshanDrawn
   for (let i = 0; i < 5; i++) {
     const id = s.wall.dead[base + i]
     if (id === undefined) continue
     put(id, {
-      cx: 735 + 12 + i * 26, cy: 288 + 16 + 16, w: 24, h: 33,
-      face: i < s.wall.doraRevealed ? 'front' : 'back', z: 16,
+      cx: CX + (i - 2) * 30, cy: 478, w: DORA.w, h: DORA.h,
+      face: i < s.wall.doraRevealed ? 'front' : 'back', z: 31,
     })
   }
 }
