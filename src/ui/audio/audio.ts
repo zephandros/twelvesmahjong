@@ -11,7 +11,7 @@ import { DEFAULTS, type Settings, type VolumeChannel } from '../settings'
 import type { CharacterId } from '../characters'
 import {
   musicUrl, sfxClickUrl, clickNotesFor, voiceUrl, TITLE_VOICE_URL,
-  CLICK_NOTES, VOICED, type ClickNote, type CallKind,
+  UI_CLICK_URL, ALERT_URL, CLICK_NOTES, VOICED, type ClickNote, type CallKind,
 } from './catalog'
 
 const MUSIC_FADE_MS = 1500
@@ -67,10 +67,12 @@ export function initAudio(s: Settings): void {
   players = [makePlayer(), makePlayer()]
   applyVolumes()
 
-  // precarga los clicks (pequeños, ya precacheados por el SW)
+  // precarga los sfx pequeños (clicks + campanas), ya precacheados por el SW
   for (const note of new Set(Object.values(CLICK_NOTES).flat())) {
     void loadBuffer(sfxClickUrl(note))
   }
+  void loadBuffer(UI_CLICK_URL)
+  void loadBuffer(ALERT_URL)
   // si ya hubo un gesto, arranca lo que estuviera en cola
   if (unlocked) resumeAndFlush()
 }
@@ -206,6 +208,18 @@ export function playSfx(name: 'tile-click'): void {
   const note = pool[Math.floor(Math.random() * pool.length)]!
   lastClickNote = note
   void oneShot(sfxClickUrl(note), sfxGain)
+}
+
+/** Campana de clic de UI (menú/selección). */
+export function playUiClick(): void {
+  if (!ctx) return
+  void oneShot(UI_CLICK_URL, sfxGain)
+}
+
+/** Campana de alerta de llamada en partida (chi/pon/kan/riichi/ron). */
+export function playAlert(): void {
+  if (!ctx) return
+  void oneShot(ALERT_URL, sfxGain)
 }
 
 // --- voces -------------------------------------------------------------------

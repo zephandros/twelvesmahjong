@@ -3,6 +3,7 @@
 // RANDOM rellena lo que falte; START arranca con el roster completo.
 
 import { CHARACTERS, thumbUrl, type Character, type Roster } from './characters'
+import { playUiClick } from './audio/audio'
 
 const SLOT_LABELS = ['プレイヤー · YOU', '対戦者 1 · RIVAL', '対戦者 2 · RIVAL', '対戦者 3 · RIVAL']
 
@@ -37,7 +38,10 @@ export function renderSelect(
   const randomBtn = wrap.querySelector<HTMLButtonElement>('[data-act="random"]')!
   if (onBack) {
     wrap.querySelector<HTMLButtonElement>('[data-act="back"]')!
-      .addEventListener('click', onBack)
+      .addEventListener('click', () => {
+        playUiClick()
+        onBack()
+      })
   }
 
   const picked: (Character | null)[] = [null, null, null, null]
@@ -52,6 +56,7 @@ export function renderSelect(
       `<span class="tm-slot__frame"><span class="tm-slot__q">?</span></span>` +
       `<span class="tm-slot__name">—</span>`
     el.addEventListener('click', () => {
+      playUiClick()
       current = i
       refresh()
     })
@@ -69,6 +74,7 @@ export function renderSelect(
       `<span>${c.name}</span>`
     el.addEventListener('click', () => {
       if (picked.some((p) => p?.id === c.id)) return
+      playUiClick()
       picked[current] = c
       const next = picked.findIndex((p) => p === null)
       current = next === -1 ? current : next
@@ -79,6 +85,7 @@ export function renderSelect(
   }
 
   randomBtn.addEventListener('click', () => {
+    playUiClick()
     const free = CHARACTERS.filter((c) => !picked.some((p) => p?.id === c.id))
     for (let i = 0; i < 4; i++) {
       if (picked[i] === null) {
@@ -91,6 +98,7 @@ export function renderSelect(
 
   startBtn.addEventListener('click', () => {
     if (picked.every((p) => p !== null)) {
+      playUiClick()
       onStart(picked as unknown as Roster)
     }
   })

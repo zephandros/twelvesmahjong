@@ -45,6 +45,11 @@ export const clickNotesFor = (theme: string): readonly ClickNote[] =>
 
 export const sfxClickUrl = (note: ClickNote): string => `sfx/tile-click-${note}.m4a`
 
+/** Campana de clic de UI (menú/selección). */
+export const UI_CLICK_URL = 'sfx/bell-01.m4a'
+/** Campana de alerta de llamada en partida (chi/pon/kan/riichi/ron). */
+export const ALERT_URL = 'sfx/bell-02.m4a'
+
 // --- voces -------------------------------------------------------------------
 
 export type CallKind = 'chi' | 'pon' | 'kan' | 'riichi' | 'ron' | 'tsumo'
@@ -56,6 +61,7 @@ export type CallKind = 'chi' | 'pon' | 'kan' | 'riichi' | 'ron' | 'tsumo'
  */
 export const VOICED: ReadonlySet<CharacterId> = new Set<CharacterId>([
   'alice', 'celestina', 'defarge', 'dracula', 'jekyll',
+  'pinocchio', 'huck', 'dorian', 'bartleby',
 ])
 
 export const voiceUrl = (slug: CharacterId, call: CallKind): string =>

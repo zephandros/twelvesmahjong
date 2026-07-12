@@ -21,13 +21,15 @@ import { computePlacements } from './geometry'
 import { showWinScreen } from './win-screen'
 import type { Roster, CharacterId } from './characters'
 import { loadSettings } from './settings'
-import { initAudio, playMusic, playSfx, playVoice } from './audio/audio'
+import { initAudio, playMusic, playSfx, playVoice, playAlert } from './audio/audio'
 import { GAME_TRACKS, type CallKind } from './audio/catalog'
 
 const HUMAN: Seat = 0
 
-// Sonido por tipo de acción: voz de llamada y/o click de ficha. Los tres kan
-// comparten la voz 'kan'; discard/riichi/chi/pon/kan mueven fichas → click.
+// Sonido por tipo de acción. Los tres kan comparten la voz 'kan'.
+//  - discard: solo click de ficha.
+//  - chi/pon/kan/riichi/ron: campana de alerta (bell_02) + voz del personaje.
+//  - tsumo: voz (la pantalla de victoria hace el resto).
 const VOICE_FOR: Partial<Record<Action['type'], CallKind>> = {
   riichi: 'riichi',
   tsumo: 'tsumo',
@@ -38,8 +40,9 @@ const VOICE_FOR: Partial<Record<Action['type'], CallKind>> = {
   ankan: 'kan',
   shouminkan: 'kan',
 }
-const CLICKS: ReadonlySet<Action['type']> = new Set<Action['type']>([
-  'discard', 'riichi', 'chi', 'pon', 'daiminkan', 'ankan', 'shouminkan',
+const CLICKS: ReadonlySet<Action['type']> = new Set<Action['type']>(['discard'])
+const ALERTS: ReadonlySet<Action['type']> = new Set<Action['type']>([
+  'chi', 'pon', 'daiminkan', 'ankan', 'shouminkan', 'riichi', 'ron',
 ])
 
 const DELAY = {
@@ -172,6 +175,7 @@ export function startGame(
   }
 
   function emitSound(action: Action, actor: Seat): void {
+    if (ALERTS.has(action.type)) playAlert()
     const voice = VOICE_FOR[action.type]
     if (voice) playVoice(roster[actor]!.id as CharacterId, voice)
     if (CLICKS.has(action.type)) playSfx('tile-click')

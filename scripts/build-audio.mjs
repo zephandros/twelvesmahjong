@@ -122,6 +122,11 @@ const ACTORS = {
   defarge: 'defarge',
   takumi: 'dracula', // voz masculina → Drácula
   henry: 'jekyll',   // voz masculina → Jekyll
+  toa: 'pinocchio',  // Toa Seo
+  reiji: 'huck',     // Reiji Kudo
+  hadou: 'dorian',   // Hadou
+  koichi: 'bartleby', // Koichi Yashiro
+  // sameno: (VA de Alice) — Sameno_Alice es prototipo, aún sin usar; se salta
 }
 // Clips especiales que NO son voces de llamada (por nombre exacto de archivo,
 // sin extensión) → basename de salida en public/voices/.

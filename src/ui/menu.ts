@@ -3,7 +3,7 @@
 // 1.5 s de que suene, el clip de portada (la VA de Alice dice "Mahjong Twelves").
 
 import { loadSettings, saveSettings, type VolumeChannel } from './settings'
-import { initAudio, playMusic, playTitle, setVolume } from './audio/audio'
+import { initAudio, playMusic, playTitle, setVolume, playUiClick } from './audio/audio'
 import { MENU_TRACK } from './audio/catalog'
 
 const VOLUMES: ReadonlyArray<[VolumeChannel, string]> = [
@@ -58,5 +58,8 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
   }
 
   menu.querySelector<HTMLButtonElement>('[data-act="start"]')!
-    .addEventListener('click', opts.onStart)
+    .addEventListener('click', () => {
+      playUiClick()
+      opts.onStart()
+    })
 }
