@@ -1,7 +1,20 @@
 import './styles.css'
+import { unlockAudio, audioRunning } from './ui/audio/audio'
 
 const app = document.getElementById('app')
 if (!app) throw new Error('#app no encontrado')
+
+// Autoplay: el AudioContext no puede sonar hasta un gesto del usuario. Se
+// escucha hasta que el contexto arranca de verdad (existe solo tras initAudio).
+function onGesture(): void {
+  unlockAudio()
+  if (audioRunning()) {
+    window.removeEventListener('pointerdown', onGesture)
+    window.removeEventListener('keydown', onGesture)
+  }
+}
+window.addEventListener('pointerdown', onGesture)
+window.addEventListener('keydown', onGesture)
 
 const debug = new URLSearchParams(location.search).get('debug')
 

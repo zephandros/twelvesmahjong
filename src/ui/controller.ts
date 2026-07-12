@@ -19,9 +19,28 @@ import { TileLayer } from './tile-layer'
 import { Hud, type ButtonDef } from './hud'
 import { computePlacements } from './geometry'
 import { showWinScreen } from './win-screen'
-import type { Roster } from './characters'
+import type { Roster, CharacterId } from './characters'
+import { loadSettings } from './settings'
+import { initAudio, playMusic, playSfx, playVoice } from './audio/audio'
+import { GAME_TRACKS, type CallKind } from './audio/catalog'
 
 const HUMAN: Seat = 0
+
+// Sonido por tipo de acción: voz de llamada y/o click de ficha. Los tres kan
+// comparten la voz 'kan'; discard/riichi/chi/pon/kan mueven fichas → click.
+const VOICE_FOR: Partial<Record<Action['type'], CallKind>> = {
+  riichi: 'riichi',
+  tsumo: 'tsumo',
+  ron: 'ron',
+  pon: 'pon',
+  chi: 'chi',
+  daiminkan: 'kan',
+  ankan: 'kan',
+  shouminkan: 'kan',
+}
+const CLICKS: ReadonlySet<Action['type']> = new Set<Action['type']>([
+  'discard', 'riichi', 'chi', 'pon', 'daiminkan', 'ankan', 'shouminkan',
+])
 
 const DELAY = {
   draw: 120,
@@ -38,6 +57,10 @@ export function startGame(
   const stage = createStage(root)
   const layer = new TileLayer(stage, createTileView(46), onTileClick)
   const hud = new Hud(stage, HUMAN, roster, onButton)
+
+  initAudio(loadSettings())
+  // pista de partida al azar (Math.random, NUNCA el RNG semillado del core)
+  playMusic(GAME_TRACKS[Math.floor(Math.random() * GAME_TRACKS.length)]!)
 
   let game: GameState = newGame(Date.now() >>> 0)
   const botRng: Rng = makeRng((Date.now() ^ 0xc0ffee) >>> 0)
@@ -133,6 +156,9 @@ export function startGame(
   // --- motor -------------------------------------------------------------------
 
   function apply(action: Action): void {
+    // asiento que actúa: en reacciones lo lleva la acción; en el resto es el
+    // turno actual (antes de reducir, que puede cambiarlo)
+    const actor: Seat = 'seat' in action ? action.seat : game.hand.turn
     try {
       game = { ...game, hand: reduce(game.hand, action) }
     } catch (err) {
@@ -140,8 +166,15 @@ export function startGame(
       console.error('acción rechazada', action, err)
       return
     }
+    emitSound(action, actor)
     render()
     scheduleStep()
+  }
+
+  function emitSound(action: Action, actor: Seat): void {
+    const voice = VOICE_FOR[action.type]
+    if (voice) playVoice(roster[actor]!.id as CharacterId, voice)
+    if (CLICKS.has(action.type)) playSfx('tile-click')
   }
 
   function scheduleStep(): void {

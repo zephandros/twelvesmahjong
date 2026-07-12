@@ -39,6 +39,10 @@ export const CLICK_NOTES: Record<string, readonly ClickNote[]> = {
   default: ['f2', 'g2', 'a2', 'b2'],
 }
 
+/** Notas de click para un tema de mesa (fallback al set por defecto). */
+export const clickNotesFor = (theme: string): readonly ClickNote[] =>
+  CLICK_NOTES[theme] ?? CLICK_NOTES['default']!
+
 export const sfxClickUrl = (note: ClickNote): string => `sfx/tile-click-${note}.m4a`
 
 // --- voces -------------------------------------------------------------------
