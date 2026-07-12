@@ -7,3 +7,5 @@ dev-dist/
 
 # Assets crudos (pesados, con respaldo externo) — ver CLAUDE.md
 raw/
+
+__pycache__/
