@@ -1,5 +1,4 @@
 // Descarga y auto-aloja las fuentes de la PWA en public/fonts/:
-//  - Teko (variable 400-700): display actual; se retira en A6 (Antique Parlour).
 //  - Cormorant Garamond (500/600/700 + itálicas) y EB Garamond (400/500/600 +
 //    400 itálica): display/serif del look Antique Parlour. Slice latino.
 //  - Noto Serif JP: se descarga el TTF variable y scripts/subset-jp.py lo
@@ -50,17 +49,6 @@ async function download(url, file, dir = out) {
   const buf = Buffer.from(await r.arrayBuffer())
   writeFileSync(join(dir, file), buf)
   console.log(`${file.padEnd(28)} ${(buf.length / 1024).toFixed(1)} KB`)
-}
-
-// Teko variable (un solo woff2 cubre 400-700)
-{
-  const css = await fetchText(
-    'https://fonts.googleapis.com/css2?family=Teko:wght@400..700&display=swap',
-  )
-  const urls = latinUrls(css)
-  const [weight, url] = [...urls.entries()][0]
-  console.log(`Teko variable (${weight})`)
-  await download(url, 'teko-var-latin.woff2')
 }
 
 // Cormorant Garamond (display del look Antique Parlour; el mockup usa

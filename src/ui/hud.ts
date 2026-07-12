@@ -7,6 +7,15 @@ import type { Seat } from '../core/seat'
 import { SEATS, relSeat, cornerOf, seatWind, windColor, windKanji } from '../core/seat'
 import { place } from './layout'
 import { thumbUrl, type Character } from './characters'
+import { saveSettings, type Settings, type TableTheme, type TileBack } from './settings'
+import { playUiClick } from './audio/audio'
+
+const TABLE_THEMES: ReadonlyArray<[TableTheme, string]> = [
+  ['green', 'Green Velvet'], ['red', 'Red Velvet'], ['blue', 'Blue Velvet'], ['wood', 'Aged Wood'],
+]
+const TILE_BACKS: ReadonlyArray<[TileBack, string]> = [
+  ['amber', 'Amber'], ['green', 'Green'], ['red', 'Red'], ['blue', 'Blue'], ['charcoal', 'Charcoal'],
+]
 
 export interface ButtonDef {
   label: string
@@ -52,11 +61,18 @@ export class Hud {
     stage: HTMLElement,
     human: Seat,
     chars: readonly Character[],
+    settings: Settings,
     onButton: (kind: string) => void,
+    onExit: () => void,
   ) {
     this.human = human
     this.chars = chars
     this.onButton = onButton
+
+    // tema de mesa y dorso de ficha vienen de los ajustes (barra superior)
+    stage.dataset.table = settings.tableTheme
+    stage.dataset.back = settings.tileBack
+    stage.appendChild(this.buildTopBar(stage, settings, onExit))
 
     // --- retratos en las 4 esquinas ---
     const cornerCss: Record<string, Record<string, number>> = {
@@ -142,6 +158,66 @@ export class Hud {
     this.overlay = document.createElement('div')
     this.overlay.className = 'tm-overlay is-hidden'
     stage.appendChild(this.overlay)
+  }
+
+  // Barra superior: 咲 · selector de mesa · selector de dorso · salir. Los
+  // selectores ciclan opciones, aplican al escenario en vivo y persisten.
+  private buildTopBar(stage: HTMLElement, settings: Settings, onExit: () => void): HTMLElement {
+    const bar = document.createElement('div')
+    bar.className = 'tm-topbar'
+
+    const mark = el('span', 'font-family:var(--display-serif);font-style:italic;font-weight:700;font-size:20px;color:var(--gold)')
+    mark.textContent = '咲'
+    mark.style.fontFamily = 'var(--jp)'
+    bar.appendChild(mark)
+
+    const cycler = (
+      caption: string,
+      options: ReadonlyArray<[string, string]>,
+      current: string,
+      onPick: (value: string) => void,
+    ): HTMLElement => {
+      const wrap = document.createElement('button')
+      wrap.className = 'tm-topbar__cycle'
+      let idx = Math.max(0, options.findIndex(([v]) => v === current))
+      const cap = el('span', '')
+      cap.className = 'tm-topbar__cap'
+      cap.textContent = caption
+      const val = el('span', '')
+      val.className = 'tm-topbar__val'
+      val.textContent = options[idx]![1]
+      wrap.append(cap, val)
+      wrap.addEventListener('click', () => {
+        idx = (idx + 1) % options.length
+        val.textContent = options[idx]![1]
+        playUiClick()
+        onPick(options[idx]![0])
+      })
+      return wrap
+    }
+
+    bar.appendChild(cycler('Table', TABLE_THEMES, settings.tableTheme, (v) => {
+      settings.tableTheme = v as TableTheme
+      stage.dataset.table = v
+      saveSettings(settings)
+    }))
+    bar.appendChild(cycler('Tiles', TILE_BACKS, settings.tileBack, (v) => {
+      settings.tileBack = v as TileBack
+      stage.dataset.back = v
+      saveSettings(settings)
+    }))
+
+    const exit = document.createElement('button')
+    exit.className = 'tm-topbar__exit'
+    exit.textContent = 'Exit ×'
+    exit.addEventListener('click', () => {
+      playUiClick()
+      onExit()
+    })
+    bar.appendChild(exit)
+
+    place(bar, { left: 640, top: 14, transform: 'translateX(-50%)', z: 50 })
+    return bar
   }
 
   update(s: HandState, info: HudInfo): void {

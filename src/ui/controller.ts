@@ -57,11 +57,12 @@ export function startGame(
   roster: Roster,
   onCharacters: () => void,
 ): void {
+  const settings = loadSettings()
   const stage = createStage(root)
   const layer = new TileLayer(stage, createTileView(46), onTileClick)
-  const hud = new Hud(stage, HUMAN, roster, onButton)
+  const hud = new Hud(stage, HUMAN, roster, settings, onButton, onCharacters)
 
-  initAudio(loadSettings())
+  initAudio(settings) // mismo objeto que el Hud: cambiar el tema afecta al click
   // pista de partida al azar (Math.random, NUNCA el RNG semillado del core)
   playMusic(GAME_TRACKS[Math.floor(Math.random() * GAME_TRACKS.length)]!)
 

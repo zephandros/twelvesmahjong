@@ -12,13 +12,6 @@
   src: url('/fonts/murecho-var-subset.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Teko';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('/fonts/teko-var-latin.woff2') format('woff2');
-}
-@font-face {
   font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 500;
@@ -96,26 +89,51 @@
   src: url('/fonts/noto-serif-jp-subset.woff2') format('woff2');
 }
 
-/* Tokens del plan (RIICHI · 咲). */
+/* Tokens (Mahjong Twelves · Antique Parlour). */
 :root {
   --gold: #e7c56a;
   --gold-lt: #f0dfa4;
   --cream: #f4ecd6;
   --parchment: #e9dfc4;
   --muted: #c8bfa4;
-  --muted2: #7d8a80;
+  --muted2: #8a7f66;
   --muted3: #9aa79a;
-  --ink: #0d1410;
-  --bg: #0c0f0d;
+  --ink: #1a130a;
+  --bg: #0a0805;
 
-  --felt: radial-gradient(120% 120% at 50% 42%, #2c6b47 0%, #1f5638 38%, #123c26 74%, #0c2a1a 100%);
+  /* Fieltro de mesa: por defecto Green Velvet; lo redefine [data-table]. */
+  --felt: var(--felt-green);
+  --felt-green: radial-gradient(58% 44% at 50% 28%, rgba(255,226,150,.15), transparent 70%),
+    radial-gradient(128% 128% at 50% 46%, #327050 0%, #1d4e35 44%, #0f3122 76%, #071b12 100%);
+  --felt-red: radial-gradient(58% 44% at 50% 28%, rgba(255,220,150,.17), transparent 70%),
+    radial-gradient(128% 128% at 50% 46%, #832c30 0%, #5c1e21 44%, #371113 76%, #1d080a 100%);
+  --felt-blue: radial-gradient(58% 44% at 50% 28%, rgba(255,226,160,.14), transparent 70%),
+    radial-gradient(128% 128% at 50% 46%, #2f5687 0%, #23406b 44%, #16294a 76%, #0a1626 100%);
+  --felt-wood: radial-gradient(62% 46% at 50% 30%, rgba(255,222,150,.16), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(46,27,10,.42) 0 2px, transparent 2px 7px, rgba(255,224,165,.05) 7px 8px, transparent 8px 15px),
+    linear-gradient(180deg, #7d5632 0%, #5c3d20 45%, #3c2814 78%, #22140a 100%);
 
+  /* Dorso de ficha: por defecto Amber; lo redefine [data-back]. */
   --ui: 'Murecho', 'Segoe UI', system-ui, sans-serif;
-  --display: 'Teko', 'Oswald', 'Segoe UI', sans-serif;
+  --display: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
   --jp: 'Murecho', 'Noto Serif JP', 'Yu Mincho', serif;
   --serif: 'EB Garamond', Georgia, serif;
   --display-serif: 'Cormorant Garamond', Georgia, serif;
 }
+
+/* Temas de mesa (barra superior → Settings.tableTheme). */
+.tm-stage[data-table='green'] { --felt: var(--felt-green); }
+.tm-stage[data-table='red'] { --felt: var(--felt-red); }
+.tm-stage[data-table='blue'] { --felt: var(--felt-blue); }
+.tm-stage[data-table='wood'] { --felt: var(--felt-wood); }
+
+/* Dorsos de ficha (barra superior → Settings.tileBack): redefinen las props que
+   ya usa el cuerpo de ficha (ver A1). */
+.tm-stage[data-back='amber'] { --tile-back-1: #e7c579; --tile-back-2: #c99a3e; --tile-back-edge: #a87e2e; }
+.tm-stage[data-back='green'] { --tile-back-1: #3f8560; --tile-back-2: #215f42; --tile-back-edge: #184b33; }
+.tm-stage[data-back='red'] { --tile-back-1: #a4453f; --tile-back-2: #7a2a26; --tile-back-edge: #5e211d; }
+.tm-stage[data-back='blue'] { --tile-back-1: #476a9c; --tile-back-2: #2c477a; --tile-back-edge: #223a63; }
+.tm-stage[data-back='charcoal'] { --tile-back-1: #4a4a4e; --tile-back-2: #2b2b2f; --tile-back-edge: #202024; }
 
 * { box-sizing: border-box; }
 
@@ -139,15 +157,22 @@ html, body {
   display: grid;
   place-items: center;
   overflow: hidden;
+  /* salón oscuro tras la mesa (Antique Parlour) */
+  background: radial-gradient(120% 110% at 50% 42%, #1d160e 0%, #0c0906 60%, #050302 100%);
 }
 
 .tm-stage {
   position: relative;
   transform-origin: center center;
-  border-radius: 16px;
+  border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   background: var(--felt);
+  /* raíl de madera + realce dorado alrededor del fieltro */
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.72),
+    0 0 0 12px #2a1a0c,
+    0 0 0 13px rgba(231, 197, 106, 0.28),
+    inset 0 2px 3px rgba(231, 197, 106, 0.22);
 }
 
 /* viñeta + trama sutil del fieltro */
@@ -315,6 +340,58 @@ html, body {
   align-items: center;
   gap: 2px;
 }
+
+/* --- barra superior (tema / dorso / salir) ----------------------------------- */
+.tm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(180deg, rgba(20, 14, 7, 0.92), rgba(9, 6, 3, 0.9));
+  border: 1px solid rgba(231, 197, 106, 0.34);
+  border-radius: 13px;
+  padding: 8px 15px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(231, 197, 106, 0.14);
+}
+.tm-topbar__cycle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.tm-topbar__cycle:hover .tm-topbar__val { color: var(--gold-lt); }
+.tm-topbar__cap {
+  font-family: var(--serif);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+.tm-topbar__val {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 15px;
+  color: #e0d5b6;
+  transition: color 0.15s ease;
+}
+.tm-topbar__exit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(143, 46, 44, 0.34), rgba(89, 26, 25, 0.34));
+  border: 1px solid rgba(221, 124, 114, 0.42);
+  color: #f2cec6;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.tm-topbar__exit:hover { filter: brightness(1.15); }
 
 /* --- botones ------------------------------------------------------------------ */
 .tm-btn {

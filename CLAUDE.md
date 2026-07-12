@@ -179,9 +179,14 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   verificada: a Murecho le faltan **發搶槓**, así que el subset de Noto Serif JP se
   queda **permanentemente** de fallback en `--jp` (los pinta Noto en serif; asumido).
   **Cormorant Garamond + EB Garamond** auto-alojadas (`--display-serif` / `--serif`)
-  para el look Antique Parlour; `--display` migra a Cormorant en A6 y Teko se retira
-  entonces. El TTF completo de Noto (insumo del subset, 13 MB) vive en `raw/font/`,
-  nunca en `public/`.
+  para el look Antique Parlour. **A6 hecho**: `--display` = Cormorant y **Teko retirada**
+  (sin `@font-face` ni descarga). El TTF completo de Noto (insumo del subset, 13 MB)
+  vive en `raw/font/`, nunca en `public/`.
+- **Antique Parlour (A6, parcial)**: fondo de salón oscuro + mesa con marco de madera;
+  **temas de fieltro** (green/red/blue/wood) y **5 dorsos de ficha** seleccionables desde
+  la barra superior, aplicados vía `[data-table]`/`[data-back]` en `.tm-stage` y
+  persistidos en Settings. Pendiente de pulido: geometría pixel-exacta del tablero
+  flotante 4:3 del mockup y rediseño de la pantalla de victoria (1B).
 
 ## Alcance v1
 

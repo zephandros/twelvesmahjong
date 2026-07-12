@@ -18,10 +18,11 @@ describe('assets de fuentes (public/fonts)', () => {
     const families = new Set(
       [...CSS.matchAll(/font-family:\s*'([^']+)';/g)].map((m) => m[1]!),
     )
-    for (const f of ['Murecho', 'Cormorant Garamond', 'EB Garamond', 'Noto Serif JP', 'Teko']) {
+    for (const f of ['Murecho', 'Cormorant Garamond', 'EB Garamond', 'Noto Serif JP']) {
       expect(families, `falta @font-face de ${f}`).toContain(f)
     }
     expect(families, 'Rajdhani fue retirada en A2').not.toContain('Rajdhani')
+    expect(families, 'Teko fue retirada en A6').not.toContain('Teko')
   })
 
   it('cada woff2 declarado en @font-face existe', () => {
