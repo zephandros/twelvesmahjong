@@ -1,5 +1,16 @@
-/* Fuentes auto-alojadas (ver scripts/fetch-fonts.mjs y subset-jp.py).
-   Noto Serif JP va subseteada a los glifos del juego (~12 KB). */
+/* Fuentes auto-alojadas (pipeline: npm run assets:fonts).
+   - Murecho: variable (wght 100-900), latino + kana + kanji del juego; es
+     --ui y la primera opción de --jp. A Murecho le faltan 發搶槓: los pinta
+     el subset de Noto Serif JP (~12 KB), que queda de fallback en --jp.
+   - Cormorant / EB Garamond: look Antique Parlour (--display-serif / --serif).
+   - Teko sigue siendo --display hasta A6 (métricas condensadas del layout). */
+@font-face {
+  font-family: 'Murecho';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/murecho-var-subset.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Teko';
   font-style: normal;
@@ -8,32 +19,74 @@
   src: url('/fonts/teko-var-latin.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Rajdhani';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/rajdhani-400-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Rajdhani';
+  font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/rajdhani-500-latin.woff2') format('woff2');
+  src: url('/fonts/cormorant-500-latin.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Rajdhani';
+  font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/rajdhani-600-latin.woff2') format('woff2');
+  src: url('/fonts/cormorant-600-latin.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Rajdhani';
+  font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/rajdhani-700-latin.woff2') format('woff2');
+  src: url('/fonts/cormorant-700-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/cormorant-500-italic-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/cormorant-600-italic-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/cormorant-700-italic-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'EB Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ebgaramond-400-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'EB Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ebgaramond-500-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'EB Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/ebgaramond-600-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'EB Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ebgaramond-400-italic-latin.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Noto Serif JP';
@@ -57,9 +110,11 @@
 
   --felt: radial-gradient(120% 120% at 50% 42%, #2c6b47 0%, #1f5638 38%, #123c26 74%, #0c2a1a 100%);
 
-  --ui: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  --ui: 'Murecho', 'Segoe UI', system-ui, sans-serif;
   --display: 'Teko', 'Oswald', 'Segoe UI', sans-serif;
-  --jp: 'Noto Serif JP', 'Yu Mincho', serif;
+  --jp: 'Murecho', 'Noto Serif JP', 'Yu Mincho', serif;
+  --serif: 'EB Garamond', Georgia, serif;
+  --display-serif: 'Cormorant Garamond', Georgia, serif;
 }
 
 * { box-sizing: border-box; }

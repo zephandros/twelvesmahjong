@@ -146,8 +146,12 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   con un parser tolerante + **tabla de actores** (Takumi→dracula, Henry→jekyll). Al
   añadir voces de un personaje nuevo: se dejan en `raw/voices/`, se añade el actor a la
   tabla del script y el slug a `VOICED` en `src/ui/audio/catalog.ts`.
-- **Fuentes** — `npm run assets:fonts` (`scripts/fetch-fonts.mjs` + `scripts/subset-murecho.py`;
-  requiere Python + fontTools) → woff2 subseteados en `public/fonts/`.
+- **Fuentes** — `npm run assets:fonts` (`scripts/fetch-fonts.mjs` + `scripts/subset-murecho.py`
+  + `scripts/subset-jp.py`; requiere Python + fontTools + brotli) → woff2 en
+  `public/fonts/`. La lista de glifos JP vive en `scripts/jp_glyphs.py` (compartida
+  por ambos subsets): **al añadir kanji nuevos a la UI, ampliarla y relanzar**.
+  El subset de Murecho verifica el cmap y falla si pierde glifos (los que Murecho
+  no trae —發搶槓— los cubre el fallback Noto).
 - **Retratos** — `scripts/bake-portraits.ps1` (PowerShell + System.Drawing, ya existente)
   → `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px).
 
@@ -161,10 +165,13 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
 - **Click de ficha**: aleatorio entre un set de **4 notas según el tema de mesa** (para
   no cansar con el mismo sonido): mesa `wood` → {c2, d2, e2, f2}; el resto → {f2, g2,
   a2, b2}. Sin repetir la última nota sonada.
-- **Fuentes**: **Murecho** reemplaza Rajdhani (`--ui`) y Noto Serif JP (`--jp`; Noto
-  queda de fallback hasta verificar cobertura de glifos). **Cormorant Garamond + EB
-  Garamond** se auto-alojan para el display del look Antique Parlour (`--display`
-  migra a Cormorant en A6; Teko se retira entonces).
+- **Fuentes**: **Murecho** reemplaza Rajdhani (`--ui`) y encabeza `--jp`. Cobertura
+  verificada: a Murecho le faltan **發搶槓**, así que el subset de Noto Serif JP se
+  queda **permanentemente** de fallback en `--jp` (los pinta Noto en serif; asumido).
+  **Cormorant Garamond + EB Garamond** auto-alojadas (`--display-serif` / `--serif`)
+  para el look Antique Parlour; `--display` migra a Cormorant en A6 y Teko se retira
+  entonces. El TTF completo de Noto (insumo del subset, 13 MB) vive en `raw/font/`,
+  nunca en `public/`.
 
 ## Alcance v1
 

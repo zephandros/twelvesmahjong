@@ -1,31 +1,19 @@
 # -*- coding: utf-8 -*-
 # Recorta Noto Serif JP a los glifos que usa el juego y lo emite como woff2.
-# Entrada: public/fonts/_noto-serif-jp-full.ttf (la baja fetch-fonts.mjs).
+# Entrada: raw/font/_noto-serif-jp-full.ttf (la baja fetch-fonts.mjs; insumo
+# intermedio fuera de public/ para que no acabe en dist/).
 # Salida:  public/fonts/noto-serif-jp-subset.woff2 (~10 KB).
-# Uso: python scripts/subset-jp.py
+# Uso: python scripts/subset-jp.py  (parte de `npm run assets:fonts`)
 
 import os
 from fontTools.subset import main as subset
 
+from jp_glyphs import GLYPHS  # lista única compartida con subset-murecho.py
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, '..', 'public', 'fonts')
 
-# Todos los glifos JP que pinta la UI. Si añades kanji nuevos, amplía y relanza.
-GLYPHS = (
-    '咲'            # título
-    '東南西北'       # vientos
-    '白發中'         # dragones
-    '一二三四五六七八九'  # numerales de kyoku
-    '局'            # 東一局
-    '流途中'         # 流局 / 途中流局
-    '搶槓'           # chankan
-    'ツモロン'        # katakana de tsumo/ron
-    'プレイヤー対戦者'  # selección de personaje
-    'フリー'          # フリー対局
-    '対'            # (por si 対局 aparece suelto)
-)
-
-src = os.path.join(FONTS, '_noto-serif-jp-full.ttf')
+src = os.path.join(HERE, '..', 'raw', 'font', '_noto-serif-jp-full.ttf')
 dst = os.path.join(FONTS, 'noto-serif-jp-subset.woff2')
 
 subset([
