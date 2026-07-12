@@ -8,9 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'RIICHI · 咲',
-        short_name: 'Riichi',
-        description: 'Single-player offline riichi mahjong',
+        name: 'Mahjong Twelves',
+        short_name: 'Mahjong',
+        description: 'Mahjong Twelves — single-player offline riichi mahjong',
         theme_color: '#0c0f0d',
         background_color: '#0c0f0d',
         display: 'standalone',

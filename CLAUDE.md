@@ -1,4 +1,4 @@
-# RIICHI · 咲 (TwelvesMahjong)
+# Mahjong Twelves · 麻雀トウェルブス (TwelvesMahjong)
 
 Riichi mahjong single-player, offline, instalable. Referencia estética y de flujo:
 **Saki Portable (PSP)** — riichi estándar con personajes, retratos alrededor de la mesa
@@ -160,9 +160,16 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
 
 ## Decisiones de assets (2026-07-12)
 
-- **Menú principal**: se crea pantalla nueva (título, partida libre, ajustes de audio).
-  Su canción exclusiva es **Invitation to the Glass Hall**; los otros 8 temas suenan en
-  partida (elección con `Math.random`, jamás con el RNG semillado del core).
+- **Título**: el juego se llama **Mahjong Twelves** (麻雀トウェルブス).
+- **Menú principal**: pantalla de portada (título, partida libre, sliders de volumen).
+  Su canción exclusiva es **Invitation to the Glass Hall**; a los **1.5 s** de que
+  entra suena el clip de portada (`voices/title.m4a`: la VA de Alice —Sameno— dice
+  "Mahjong Twelves"). Los otros 8 temas suenan en partida (elección con `Math.random`,
+  jamás con el RNG semillado del core).
+- **Voces sin asignar**: `raw/voices/` incluye actores aún sin personaje (Reiji_Kudo,
+  Koichi_Yashiro, Toa_Seo, Hadou, y el clip `Sameno_Alice`). El pipeline los **salta
+  con aviso**; para activarlos hay que mapearlos en `ACTORS` (build-audio.mjs) y
+  `VOICED` (catalog.ts).
 - **Voces**: **Takumi → Drácula**, **Henry → Jekyll**. Solo la voz principal se usa; las
   variantes `_Alt` se procesan y publican pero quedan sin usar. Personajes sin voz = mudos.
 - **Click de ficha**: aleatorio entre un set de **4 notas según el tema de mesa** (para

@@ -60,3 +60,6 @@ export const VOICED: ReadonlySet<CharacterId> = new Set<CharacterId>([
 
 export const voiceUrl = (slug: CharacterId, call: CallKind): string =>
   `voices/${slug}_${call}.m4a`
+
+/** Clip de portada: la VA de Alice diciendo "Mahjong Twelves". Suena en el menú. */
+export const TITLE_VOICE_URL = 'voices/title.m4a'

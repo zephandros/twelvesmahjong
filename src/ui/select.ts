@@ -9,6 +9,7 @@ const SLOT_LABELS = ['プレイヤー · YOU', '対戦者 1 · RIVAL', '対戦�
 export function renderSelect(
   root: HTMLElement,
   onStart: (roster: Roster) => void,
+  onBack?: () => void,
 ): void {
   root.innerHTML = ''
   const wrap = document.createElement('div')
@@ -16,12 +17,13 @@ export function renderSelect(
 
   wrap.innerHTML = `
     <div class="tm-select__head">
-      <span class="tm-select__title">RIICHI · 咲</span>
+      <span class="tm-select__title">Mahjong Twelves</span>
       <span class="tm-select__sub">フリー対局 · FREE GAME · TONPUUSEN</span>
     </div>
     <div class="tm-select__slots"></div>
     <div class="tm-select__grid"></div>
     <div class="tm-select__actions">
+      ${onBack ? '<button class="tm-btn tm-btn--muted" data-act="back">← MENÚ</button>' : ''}
       <button class="tm-btn tm-btn--muted" data-act="random">RANDOM</button>
       <button class="tm-btn tm-btn--primary" data-act="start" disabled>START</button>
     </div>
@@ -33,6 +35,10 @@ export function renderSelect(
   const gridEl = wrap.querySelector<HTMLElement>('.tm-select__grid')!
   const startBtn = wrap.querySelector<HTMLButtonElement>('[data-act="start"]')!
   const randomBtn = wrap.querySelector<HTMLButtonElement>('[data-act="random"]')!
+  if (onBack) {
+    wrap.querySelector<HTMLButtonElement>('[data-act="back"]')!
+      .addEventListener('click', onBack)
+  }
 
   const picked: (Character | null)[] = [null, null, null, null]
   let current = 0

@@ -23,16 +23,27 @@ if (debug === 'board') {
 } else if (debug === 'tiles') {
   void import('./debug/tiles').then(({ renderDebugTiles }) => renderDebugTiles(app))
 } else {
-  void Promise.all([import('./ui/select'), import('./ui/controller')]).then(
-    ([{ renderSelect }, { startGame }]) => {
-      const toSelect = (): void => {
-        app.innerHTML = ''
-        renderSelect(app, (roster) => {
+  void Promise.all([
+    import('./ui/menu'),
+    import('./ui/select'),
+    import('./ui/controller'),
+  ]).then(([{ renderMenu }, { renderSelect }, { startGame }]) => {
+    // Flujo: menú → selección de personaje → partida.
+    const toMenu = (): void => {
+      app.innerHTML = ''
+      renderMenu(app, { onStart: toSelect })
+    }
+    const toSelect = (): void => {
+      app.innerHTML = ''
+      renderSelect(
+        app,
+        (roster) => {
           app.innerHTML = ''
-          startGame(app, roster, toSelect)
-        })
-      }
-      toSelect()
-    },
-  )
+          startGame(app, roster, toSelect) // salir de partida → re-elegir personajes
+        },
+        toMenu, // volver al menú desde la selección
+      )
+    }
+    toMenu()
+  })
 }

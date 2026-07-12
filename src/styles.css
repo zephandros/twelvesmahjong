@@ -506,6 +506,106 @@ html, body {
 .tm-select__actions .tm-btn:disabled { opacity: 0.35; cursor: default; }
 .tm-select__hint { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted2); }
 
+/* --- menú principal (portada) ------------------------------------------------ */
+.tm-menu {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(80% 60% at 50% 30%, rgba(231, 197, 106, 0.08), transparent 70%),
+    radial-gradient(120% 120% at 50% 40%, #1d160e 0%, #0c0906 62%, #050302 100%);
+}
+.tm-menu__hero { text-align: center; }
+.tm-menu__jp {
+  font-family: var(--jp);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.42em;
+  padding-left: 0.42em;
+  color: #c8ab63;
+}
+.tm-menu__title {
+  margin: 6px 0 8px;
+  font-family: var(--display-serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 76px;
+  line-height: 0.9;
+  background: linear-gradient(180deg, #fbf0c8 0%, #e7c56a 46%, #b98a29 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 6px 26px rgba(0, 0, 0, 0.5);
+}
+.tm-menu__tag {
+  font-family: var(--serif);
+  font-size: 13px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #8a7f66;
+}
+.tm-menu__play {
+  font-family: var(--display-serif);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+  padding: 10px 34px;
+}
+.tm-menu__settings {
+  width: 340px;
+  max-width: 90%;
+  border-radius: 12px;
+  border: 1px solid rgba(231, 197, 106, 0.28);
+  background: rgba(10, 7, 3, 0.55);
+  padding: 16px 20px 18px;
+}
+.tm-menu__settings-title {
+  font-family: var(--serif);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #b7a880;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.tm-menu__sliders { display: flex; flex-direction: column; gap: 10px; }
+.tm-menu__slider {
+  display: grid;
+  grid-template-columns: 64px 1fr 30px;
+  align-items: center;
+  gap: 12px;
+}
+.tm-menu__slider-label {
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--cream);
+}
+.tm-menu__slider input[type='range'] {
+  width: 100%;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.tm-menu__slider-val {
+  font-family: var(--display-serif);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--gold);
+  text-align: right;
+}
+.tm-menu__credits {
+  font-family: var(--serif);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #6f6650;
+  text-align: center;
+  max-width: 460px;
+}
+
 /* --- pantalla de victoria (1B) ----------------------------------------------- */
 .tm-win {
   position: absolute;

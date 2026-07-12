@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import {
   MENU_TRACK, GAME_TRACKS, musicUrl,
   CLICK_NOTES, sfxClickUrl, type ClickNote,
-  VOICED, voiceUrl, type CallKind,
+  VOICED, voiceUrl, type CallKind, TITLE_VOICE_URL,
 } from '../src/ui/audio/catalog'
 import type { CharacterId } from '../src/ui/characters'
 
@@ -30,6 +30,10 @@ describe('assets de audio (public/{music,sfx,voices})', () => {
     for (const note of notes) {
       expect(has(sfxClickUrl(note)), `falta ${sfxClickUrl(note)}`).toBe(true)
     }
+  })
+
+  it('existe el clip de portada (title)', () => {
+    expect(has(TITLE_VOICE_URL), `falta ${TITLE_VOICE_URL}`).toBe(true)
   })
 
   it('cada personaje con voz tiene las 6 llamadas', () => {

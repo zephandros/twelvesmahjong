@@ -96,10 +96,20 @@ function buildMusic(out) {
 function buildSfx(out) {
   console.log('sfx:')
   mkdirSync(out, { recursive: true })
+  const extra = []
   for (const file of readdirSync(join(RAW, 'sound_effects')).filter((f) => f.endsWith('.wav'))) {
     const note = /tile_click_([a-g]\d)/i.exec(file)?.[1]
-    if (!note) throw new Error(`sfx con nombre inesperado: ${file}`)
-    encode(join(RAW, 'sound_effects', file), join(out, `tile-click-${note}.m4a`), SFX)
+    if (note) {
+      encode(join(RAW, 'sound_effects', file), join(out, `tile-click-${note}.m4a`), SFX)
+    } else {
+      // sfx nuevo aún sin uso en el juego: se procesa a nombre canónico y se avisa
+      const name = kebab(file.replace(/\.wav$/i, ''))
+      encode(join(RAW, 'sound_effects', file), join(out, `${name}.m4a`), SFX)
+      extra.push(`${name}.m4a`)
+    }
+  }
+  if (extra.length) {
+    console.log(`  ⚠ sfx sin usar aún (procesados, por cablear): ${extra.join(', ')}`)
   }
 }
 
@@ -113,15 +123,20 @@ const ACTORS = {
   takumi: 'dracula', // voz masculina → Drácula
   henry: 'jekyll',   // voz masculina → Jekyll
 }
+// Clips especiales que NO son voces de llamada (por nombre exacto de archivo,
+// sin extensión) → basename de salida en public/voices/.
+const SPECIAL = {
+  Sameno_Mahjong_Twelves: 'title', // VA de Alice diciendo "Mahjong Twelves" (portada)
+}
 const CALLS = { chi: 'chi', chii: 'chi', pon: 'pon', kan: 'kan', riichi: 'riichi', ron: 'ron', tsumo: 'tsumo' }
 const CALL_KINDS = ['chi', 'pon', 'kan', 'riichi', 'ron', 'tsumo']
 
-/** "Celestina_Voice_Alt_Kan.mp3" → { slug:'celestina', call:'kan', alt:true } */
+/** "Celestina_Voice_Alt_Kan.mp3" → { slug:'celestina', call:'kan', alt:true } o null si el actor no está mapeado. */
 function parseVoice(file) {
   const tokens = file.replace(/\.mp3$/i, '').split('_')
   const actor = tokens[0].toLowerCase()
   const slug = ACTORS[actor]
-  if (!slug) throw new Error(`actor desconocido "${tokens[0]}" en ${file} — amplía ACTORS`)
+  if (!slug) return null // actor sin personaje asignado: se salta con aviso
   const alt = tokens.some((t) => /^alt$/i.test(t))
   const call = CALLS[tokens[tokens.length - 1].toLowerCase()]
   if (!call) throw new Error(`llamada desconocida en ${file}`)
@@ -132,8 +147,19 @@ function buildVoices(out) {
   console.log('voces:')
   mkdirSync(out, { recursive: true })
   const cover = new Map() // slug -> Set(call) de la voz principal
+  const skipped = []
   for (const file of readdirSync(join(RAW, 'voices')).filter((f) => f.endsWith('.mp3'))) {
-    const { slug, call, alt } = parseVoice(file)
+    const stem = file.replace(/\.mp3$/i, '')
+    if (SPECIAL[stem]) {
+      encode(join(RAW, 'voices', file), join(out, `${SPECIAL[stem]}.m4a`), VOICE)
+      continue
+    }
+    const parsed = parseVoice(file)
+    if (!parsed) {
+      skipped.push(file)
+      continue
+    }
+    const { slug, call, alt } = parsed
     const dst = `${slug}${alt ? '_alt' : ''}_${call}.m4a`
     encode(join(RAW, 'voices', file), join(out, dst), VOICE)
     if (!alt) {
@@ -141,7 +167,7 @@ function buildVoices(out) {
       cover.get(slug).add(call)
     }
   }
-  // verificación: cada actor esperado con las 6 llamadas en su voz principal
+  // verificación: cada actor MAPEADO con las 6 llamadas en su voz principal
   const problems = []
   for (const slug of new Set(Object.values(ACTORS))) {
     const got = cover.get(slug)
@@ -153,6 +179,11 @@ function buildVoices(out) {
     process.exit(1)
   }
   console.log(`  cobertura OK: ${[...new Set(Object.values(ACTORS))].join(', ')} × 6 llamadas`)
+  if (skipped.length) {
+    const actors = [...new Set(skipped.map((f) => f.split('_')[0]))].sort()
+    console.log(`  ⚠ ${skipped.length} voces de actores sin mapear (saltadas): ${actors.join(', ')}`)
+    console.log('    → asígnalos en ACTORS (script) y VOICED (catalog.ts) cuando decidas su personaje')
+  }
 }
 
 // --- run ---------------------------------------------------------------------

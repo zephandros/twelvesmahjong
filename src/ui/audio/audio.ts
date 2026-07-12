@@ -10,7 +10,7 @@
 import { DEFAULTS, type Settings, type VolumeChannel } from '../settings'
 import type { CharacterId } from '../characters'
 import {
-  musicUrl, sfxClickUrl, clickNotesFor, voiceUrl,
+  musicUrl, sfxClickUrl, clickNotesFor, voiceUrl, TITLE_VOICE_URL,
   CLICK_NOTES, VOICED, type ClickNote, type CallKind,
 } from './catalog'
 
@@ -29,9 +29,11 @@ let voicesGain: GainNode
 let settings: Settings = structuredClone(DEFAULTS)
 let unlocked = false // ha habido un gesto del usuario
 let pendingMusic: string | null = null
+let pendingStinger: { fn: () => void; afterMs: number } | null = null
 let currentTrack: string | null = null
 let currentVoice: AudioBufferSourceNode | null = null
 let lastClickNote: ClickNote | null = null
+let stingerTimer: ReturnType<typeof setTimeout> | null = null
 
 const buffers = new Map<string, Promise<AudioBuffer>>()
 
@@ -111,18 +113,34 @@ function resumeAndFlush(): void {
   void ctx.resume()
   if (pendingMusic) {
     const t = pendingMusic
+    const st = pendingStinger
     pendingMusic = null
-    playMusic(t)
+    pendingStinger = null
+    playMusic(t, st ? { stinger: st.fn, stingerAfterMs: st.afterMs } : undefined)
   }
 }
 
 // --- música ------------------------------------------------------------------
 
-export function playMusic(track: string, opts?: { crossfadeMs?: number }): void {
+/**
+ * Reproduce una pista con crossfade. `stinger` (con `stingerAfterMs`) es un
+ * one-shot ligado a ESTA pista: se dispara cuando la música empieza de verdad
+ * y se cancela si la pista cambia o se para antes (lo usa el menú para el clip
+ * de portada a los 1.5 s). Si el track ya está en cola pre-gesto, el stinger
+ * viaja con él y se agenda al desbloquear.
+ */
+export function playMusic(
+  track: string,
+  opts?: { crossfadeMs?: number; stinger?: () => void; stingerAfterMs?: number },
+): void {
   if (!ctx || !players) return
   if (track === currentTrack) return
+  clearStinger()
   if (!unlocked) {
     pendingMusic = track
+    pendingStinger = opts?.stinger
+      ? { fn: opts.stinger, afterMs: opts.stingerAfterMs ?? 0 }
+      : null
     return
   }
   const fadeMs = opts?.crossfadeMs ?? MUSIC_FADE_MS
@@ -138,7 +156,12 @@ export function playMusic(track: string, opts?: { crossfadeMs?: number }): void 
   rampGain(incoming.fade.gain, 0, 0)
   void incoming.el
     .play()
-    .then(() => rampGain(incoming.fade.gain, 1, fadeMs))
+    .then(() => {
+      rampGain(incoming.fade.gain, 1, fadeMs)
+      if (opts?.stinger) {
+        stingerTimer = setTimeout(opts.stinger, opts.stingerAfterMs ?? 0)
+      }
+    })
     .catch(() => {
       /* autoplay rechazado: quedará a la espera del próximo gesto */
     })
@@ -147,7 +170,16 @@ export function playMusic(track: string, opts?: { crossfadeMs?: number }): void 
 export function stopMusic(fadeMs = 800): void {
   currentTrack = null
   pendingMusic = null
+  pendingStinger = null
+  clearStinger()
   if (players) for (const p of players) fadeOut(p, fadeMs)
+}
+
+function clearStinger(): void {
+  if (stingerTimer !== null) {
+    clearTimeout(stingerTimer)
+    stingerTimer = null
+  }
 }
 
 function fadeOut(p: MusicPlayer, ms: number): void {
@@ -180,9 +212,20 @@ export function playSfx(name: 'tile-click'): void {
 
 /** Voz de llamada del personaje. No-op si el personaje es mudo (no VOICED). */
 export function playVoice(slug: CharacterId, call: CallKind): void {
-  if (!ctx || !VOICED.has(slug)) return
+  if (!VOICED.has(slug)) return
+  playVoiceUrl(voiceUrl(slug, call))
+}
+
+/** Clip de portada ("Mahjong Twelves") sobre la música del menú. */
+export function playTitle(): void {
+  playVoiceUrl(TITLE_VOICE_URL)
+}
+
+/** Reproduce una voz por el canal de voces: una a la vez, con ducking. */
+function playVoiceUrl(url: string): void {
+  if (!ctx) return
   void (async () => {
-    const src = await oneShot(voiceUrl(slug, call), voicesGain)
+    const src = await oneShot(url, voicesGain)
     if (!src) return
     // una voz a la vez: corta la anterior
     if (currentVoice && currentVoice !== src) {

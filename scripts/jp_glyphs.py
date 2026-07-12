@@ -4,7 +4,8 @@
 # y relanza `npm run assets:fonts`.
 
 GLYPHS = (
-    '咲'            # título
+    '麻雀トウェルブス'  # título: Mahjong Twelves (麻雀トウェルブス)
+    '咲'            # marca 咲 (icono / acentos)
     '東南西北'       # vientos
     '白發中'         # dragones (發 NO existe en Murecho: lo cubre Noto)
     '一二三四五六七八九'  # numerales de kyoku

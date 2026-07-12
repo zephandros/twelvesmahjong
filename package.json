@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "RIICHI · 咲 — single-player offline riichi mahjong (Saki Portable homage)",
+  "description": "Mahjong Twelves (麻雀トウェルブス) — single-player offline riichi mahjong",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
