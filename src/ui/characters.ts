@@ -9,6 +9,11 @@ export interface Character {
   readonly epithet: string
 }
 
+/** Slug canónico de personaje (id de CHARACTERS). */
+export type CharacterId =
+  | 'alice' | 'bartleby' | 'cyrano' | 'dante' | 'dorian' | 'jekyll'
+  | 'dracula' | 'hamlet' | 'huck' | 'celestina' | 'defarge' | 'pinocchio'
+
 export const CHARACTERS: readonly Character[] = [
   { id: 'alice', name: 'Alice', epithet: 'Wonderland' },
   { id: 'bartleby', name: 'Bartleby', epithet: 'El escribiente' },

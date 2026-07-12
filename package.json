@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "assets:tiles": "node scripts/build-tiles.mjs",
-    "assets:fonts": "node scripts/fetch-fonts.mjs && python scripts/subset-murecho.py && python scripts/subset-jp.py"
+    "assets:fonts": "node scripts/fetch-fonts.mjs && python scripts/subset-murecho.py && python scripts/subset-jp.py",
+    "assets:audio": "node scripts/build-audio.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

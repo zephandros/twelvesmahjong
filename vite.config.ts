@@ -27,9 +27,29 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precache TODO lo que la app sirve: la partida debe funcionar 100%
-        // offline tras la primera carga (jpg = retratos, woff2 = fuentes).
-        globPatterns: ['**/*.{js,css,html,woff2,svg,png,webp,jpg}'],
+        // Precache lo ligero que la app necesita 100% offline tras la primera
+        // carga: código, fuentes, fichas SVG, retratos, y el audio pequeño
+        // (sfx ~50 KB y voces ~50 KB c/u). La MÚSICA (18 temas, ~40 MB) NO se
+        // precachea: se cachea bajo demanda (runtimeCaching, abajo).
+        globPatterns: [
+          '**/*.{js,css,html,woff2,svg,png,webp,jpg}',
+          'sfx/**/*.m4a',
+          'voices/**/*.m4a',
+        ],
+        runtimeCaching: [
+          {
+            // Música: CacheFirst con rangeRequests (HTMLAudioElement pide rangos).
+            // Offline funciona salvo la música aún no escuchada (asumido).
+            urlPattern: /\/music\/[^/]+\.m4a$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'tm-music',
+              rangeRequests: true,
+              expiration: { maxEntries: 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

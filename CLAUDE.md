@@ -140,12 +140,15 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   `?debug=tiles` antes de fijarla. Al añadir SVGs nuevos: van a `raw/tiles/`, se amplía
   la tabla del script y se re-verifica.
 - **Audio** — `npm run assets:audio` (`scripts/build-audio.mjs`; requiere **ffmpeg** en
-  PATH: `winget install Gyan.FFmpeg`). Todo a AAC-LC `.m4a` con loudnorm →
-  `public/music/{slug-kebab}.m4a`, `public/sfx/tile-click-{nota}.m4a`,
+  PATH: `winget install Gyan.FFmpeg`, luego reabrir la shell para refrescar el PATH).
+  Todo a AAC-LC `.m4a` con loudnorm (`-vn` descarta la carátula embebida de los mp3);
+  idempotente (escribe a temporal y renombra al éxito; `--force` regenera) →
+  `public/music/{slug-kebab}.m4a` (+ `-alt`), `public/sfx/tile-click-{nota}.m4a`,
   `public/voices/{slug}_{call}.m4a` (+ `{slug}_alt_{call}.m4a`). Las voces se renombran
-  con un parser tolerante + **tabla de actores** (Takumi→dracula, Henry→jekyll). Al
-  añadir voces de un personaje nuevo: se dejan en `raw/voices/`, se añade el actor a la
-  tabla del script y el slug a `VOICED` en `src/ui/audio/catalog.ts`.
+  con un parser tolerante + **tabla de actores** (Takumi→dracula, Henry→jekyll); el
+  script **falla si algún personaje con voz no tiene las 6 llamadas**. Al añadir voces
+  de un personaje nuevo: se dejan en `raw/voices/`, se añade el actor a `ACTORS` del
+  script y el slug a `VOICED` en `src/ui/audio/catalog.ts`.
 - **Fuentes** — `npm run assets:fonts` (`scripts/fetch-fonts.mjs` + `scripts/subset-murecho.py`
   + `scripts/subset-jp.py`; requiere Python + fontTools + brotli) → woff2 en
   `public/fonts/`. La lista de glifos JP vive en `scripts/jp_glyphs.py` (compartida
