@@ -10,9 +10,12 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "assets:tiles": "node scripts/build-tiles.mjs"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
+    "svgo": "^4.0.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-plugin-pwa": "^0.21.1",

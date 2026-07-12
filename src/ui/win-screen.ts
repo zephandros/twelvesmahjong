@@ -4,7 +4,7 @@
 // agotamientos y abortos usan la tarjeta sobria del HUD.
 
 import type { HandState } from '../core/state'
-import { BoxRenderer } from './tile-view'
+import { createTileView } from './tile-view'
 import { portraitUrl, type Character } from './characters'
 
 const KYOKU_KANJI = ['一', '二', '三', '四']
@@ -54,7 +54,7 @@ export function showWinScreen(
 
   // mano ganadora: oculta ordenada + melds + la ficha ganadora separada
   const handEl = el.querySelector<HTMLElement>('.tm-win__hand')!
-  const r = new BoxRenderer(38)
+  const r = createTileView(38)
   const st = s.seats[winner]!
   const concealed = [...st.hand].sort((a, b) => a - b)
   for (const id of concealed) handEl.appendChild(r.create('front', id))

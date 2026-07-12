@@ -1,45 +1,37 @@
 // Capa de 136 nodos persistentes, uno por TileId. Nunca se recrea el DOM:
 // cada update aplica transform/tamaño/cara y las transiciones CSS animan el
 // movimiento (muro → mano → descarte → meld) sin framework.
+//
+// Los nodos los fabrica un TileView (SpriteRenderer en producción, BoxRenderer
+// con ?renderer=box): un solo camino de render para mesa y win-screen. El
+// cambio de cara es contrato de clases tm-tile--{face}, común a los renderers.
 
 import type { TileId } from '../core/tile'
-import { TILEID_COUNT, labelId, tile34Of, suitOf, isAka } from '../core/tile'
+import { TILEID_COUNT, labelId } from '../core/tile'
 import type { Placement } from './geometry'
-
-function inkFor(id: TileId): string {
-  if (isAka(id)) return '#d94f4f'
-  switch (suitOf(tile34Of(id))) {
-    case 'm': return '#8a2b1e'
-    case 'p': return '#1f3a63'
-    case 's': return '#1f5a2e'
-    case 'z': return '#2a2a2a'
-  }
-}
+import type { TileView } from './tile-view'
 
 interface Node {
   el: HTMLElement
-  label: HTMLElement
   face: string
 }
 
 export class TileLayer {
   private readonly nodes = new Map<TileId, Node>()
 
-  constructor(stage: HTMLElement, onTileClick: (id: TileId) => void) {
+  constructor(
+    stage: HTMLElement,
+    private readonly view: TileView,
+    onTileClick: (id: TileId) => void,
+  ) {
     const layer = document.createElement('div')
     layer.className = 'tm-tile-layer'
 
     for (let id = 0; id < TILEID_COUNT; id++) {
-      const el = document.createElement('div')
-      el.className = 'tm-tile tm-tile--back'
+      const el = this.view.create('back', id)
       el.dataset.id = String(id)
-      const label = document.createElement('span')
-      label.className = 'tm-tile__label'
-      label.textContent = labelId(id)
-      label.style.color = inkFor(id)
-      el.appendChild(label)
       layer.appendChild(el)
-      this.nodes.set(id, { el, label, face: 'back' })
+      this.nodes.set(id, { el, face: 'back' })
     }
 
     layer.addEventListener('click', (ev) => {
@@ -61,7 +53,7 @@ export class TileLayer {
   update(placements: ReadonlyMap<TileId, Placement>): void {
     for (const [id, p] of placements) {
       const n = this.nodes.get(id)!
-      const { el, label } = n
+      const { el } = n
 
       el.style.width = `${p.w}px`
       el.style.height = `${p.h}px`
@@ -89,13 +81,7 @@ export class TileLayer {
         el.removeAttribute('tabindex')
       }
 
-      // etiqueta: solo boca arriba; tamaño según ancho de ficha
-      const showLabel = p.face === 'front' && p.visible
-      label.style.display = showLabel ? '' : 'none'
-      if (showLabel) {
-        const long = label.textContent!.length > 2
-        label.style.fontSize = `${Math.round(p.w * (long ? 0.3 : 0.48))}px`
-      }
+      this.view.layout?.(el, p.w)
     }
   }
 }

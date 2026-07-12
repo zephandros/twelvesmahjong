@@ -7,6 +7,8 @@ const debug = new URLSearchParams(location.search).get('debug')
 
 if (debug === 'board') {
   void import('./debug/board').then(({ renderDebugBoard }) => renderDebugBoard(app))
+} else if (debug === 'tiles') {
+  void import('./debug/tiles').then(({ renderDebugTiles }) => renderDebugTiles(app))
 } else {
   void Promise.all([import('./ui/select'), import('./ui/controller')]).then(
     ([{ renderSelect }, { startGame }]) => {

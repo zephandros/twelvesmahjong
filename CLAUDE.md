@@ -82,7 +82,9 @@ Ver el plan para el detalle. Resumen:
    `#00082d` (probable haku) → dragones invertidos; vientos 01..04 posiblemente con
    S/W intercambiados. Remapear en el pipeline (`scripts/build-tiles.mjs`, tabla
    explícita) con **verificación visual obligatoria** en `?debug=tiles`; nunca
-   indexar por nombre de archivo. El mapeo verificado se documentará aquí al cerrarse.
+   indexar por nombre de archivo. **Mapeo aplicado** (evidencia: `sodipodi:docname`
+   en kanji de cada SVG + verificación de tinta por canvas):
+   `honor_01→E · 02→W · 03→S · 04→N · 05→chun · 06→hatsu · 07→haku`.
 3. **La mano de ejemplo del mockup es ilegal** (pinfu con pareja de vientos de asiento).
    → Los yaku se derivan **siempre** del motor, nunca se escriben a mano en la vista.
 

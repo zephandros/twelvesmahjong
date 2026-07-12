@@ -14,6 +14,7 @@ import {
 import { makeRng, type Rng } from '../core/rng'
 import { botTurnAction, botReaction } from '../ai/bot'
 import { createStage } from './layout'
+import { createTileView } from './tile-view'
 import { TileLayer } from './tile-layer'
 import { Hud, type ButtonDef } from './hud'
 import { computePlacements } from './geometry'
@@ -35,7 +36,7 @@ export function startGame(
   onCharacters: () => void,
 ): void {
   const stage = createStage(root)
-  const layer = new TileLayer(stage, onTileClick)
+  const layer = new TileLayer(stage, createTileView(46), onTileClick)
   const hud = new Hud(stage, HUMAN, roster, onButton)
 
   let game: GameState = newGame(Date.now() >>> 0)
