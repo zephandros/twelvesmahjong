@@ -4,8 +4,9 @@
 // agotamientos y abortos usan la tarjeta sobria del HUD.
 
 import type { HandState } from '../core/state'
-import { createTileView } from './tile-view'
+import { createTileView, type TileView } from './tile-view'
 import { portraitUrl, type Character } from './characters'
+import { meldLayout, type MeldSlot } from './meld-layout'
 
 const KYOKU_KANJI = ['一', '二', '三', '四']
 
@@ -62,10 +63,7 @@ export function showWinScreen(
     const gap = document.createElement('span')
     gap.className = 'tm-win__gap'
     handEl.appendChild(gap)
-    m.tiles.forEach((id, i) => {
-      const back = m.kind === 'ankan' && (i === 0 || i === m.tiles.length - 1)
-      handEl.appendChild(r.create(back ? 'back' : 'front', id))
-    })
+    appendWinMeld(handEl, r, meldLayout(m, winner))
   }
   const winGap = document.createElement('span')
   winGap.className = 'tm-win__gap tm-win__gap--wide'
@@ -84,4 +82,25 @@ export function showWinScreen(
   )
 
   stage.appendChild(el)
+}
+
+function appendWinMeld(root: HTMLElement, view: TileView, slots: readonly MeldSlot[]): void {
+  let stackAnchor: HTMLElement | null = null
+  for (const slot of slots) {
+    const tile = view.create(slot.faceDown ? 'back' : 'front', slot.id)
+    if (slot.stack) {
+      if (stackAnchor) {
+        tile.classList.add('tm-win__tile--stack')
+        stackAnchor.appendChild(tile)
+      }
+      continue
+    }
+
+    const cell = document.createElement('span')
+    cell.className = 'tm-win__meld-slot'
+    if (slot.sideways) cell.classList.add('tm-win__meld-slot--sideways')
+    cell.appendChild(tile)
+    root.appendChild(cell)
+    stackAnchor = slot.sideways ? cell : null
+  }
 }

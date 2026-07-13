@@ -760,5 +760,28 @@ html, body {
 .tm-win__hand { display: flex; align-items: flex-end; margin-top: auto; gap: 3px; }
 .tm-win__gap { width: 8px; }
 .tm-win__gap--wide { width: 18px; }
+.tm-win__meld-slot {
+  position: relative;
+  width: 38px;
+  height: 53px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}
+.tm-win__meld-slot--sideways {
+  width: 53px;
+  height: 38px;
+}
+.tm-win__meld-slot--sideways > .tm-tile:not(.tm-win__tile--stack) {
+  transform: rotate(90deg);
+}
+.tm-win__tile--stack {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  transform: translate(-50%, calc(-50% - 38px)) rotate(90deg);
+}
 .tm-win__wintile { filter: drop-shadow(0 3px 12px rgba(231, 197, 106, 0.75)); }
 .tm-win__continue { margin-top: 12px; }

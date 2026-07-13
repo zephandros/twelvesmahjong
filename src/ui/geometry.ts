@@ -12,6 +12,7 @@ import type { TileId } from '../core/tile'
 import { TILEID_COUNT } from '../core/tile'
 import type { Seat, RelSeat, Edge } from '../core/seat'
 import { SEATS, relSeat, edgeOf } from '../core/seat'
+import { meldLayout, type MeldSlot } from './meld-layout'
 
 export type Face = 'front' | 'back' | 'side'
 
@@ -86,7 +87,7 @@ function placeSeat(s: HandState, o: GeometryOpts, seat: Seat, rel: RelSeat, put:
   else placeOppHand(st.hand, drawn, edge, o.revealAll, put)
 
   placePond(st, edge, put)
-  placeMelds(st, edge, put)
+  placeMelds(st, edge, seat, put)
 }
 
 // --- manos --------------------------------------------------------------------
@@ -177,33 +178,86 @@ function placePond(st: HandState['seats'][number], edge: Edge, put: Put): void {
 
 // --- melds --------------------------------------------------------------------
 
-// Grupos cantados junto al borde de cada jugador, medianos (45×60). Ankan:
-// primera y última boca abajo, como en mesa real.
-function placeMelds(st: HandState['seats'][number], edge: Edge, put: Put): void {
+// Grupos cantados junto al borde de cada jugador, medianos (45×60). La ficha
+// llamada se gira y el shouminkan apila la añadida sobre esa ficha.
+function placeMelds(st: HandState['seats'][number], edge: Edge, owner: Seat, put: Put): void {
   if (st.melds.length === 0) return
   const w = DISC.w
-  const step = w + 2
+  const h = DISC.h
+  const slotGap = 2
   const gap = 12
 
-  const rows = st.melds.map((m) => m.tiles.length * step - 2)
+  const layouts = st.melds.map((m) => meldLayout(m, owner))
+  const rows = layouts.map((slots) => meldExtent(slots, slotGap))
   let cursor = 0
-  st.melds.forEach((m, mi) => {
-    m.tiles.forEach((id, ti) => {
-      const back = m.kind === 'ankan' && (ti === 0 || ti === m.tiles.length - 1)
-      const off = cursor + ti * step
-      let cx: number
-      let cy: number
-      let rot = 0
-      switch (edge) {
-        case 'bottom': cx = 1660 - off - w / 2; cy = 1080 - 30; break
-        case 'top': cx = 260 + off + w / 2; cy = 30; rot = 180; break
-        case 'left': cx = 30; cy = 260 + off + w / 2; rot = 90; break
-        case 'right': cx = 1890; cy = 1050 - off - w / 2; rot = 270; break
+  layouts.forEach((slots, mi) => {
+    let local = 0
+    let stackAnchor: { cx: number; cy: number; rot: number } | null = null
+    for (const s of slots) {
+      if (s.stack) {
+        if (!stackAnchor) continue
+        const d = stackOffset(edge, w)
+        put(s.id, {
+          cx: stackAnchor.cx + d.dx, cy: stackAnchor.cy + d.dy,
+          w, h, rot: stackAnchor.rot, face: 'front', z: 19,
+        })
+        continue
       }
-      put(id, { cx, cy, w, h: DISC.h, rot, face: back ? 'back' : 'front', z: 18 })
-    })
+      const extent = slotExtent(s, w, h)
+      const p = meldSlotPos(edge, cursor, local, rows[mi]!, extent, s.sideways, w, h)
+      put(s.id, { ...p, w, h, face: s.faceDown ? 'back' : 'front', z: 18 })
+      stackAnchor = s.sideways ? p : null
+      local += extent + slotGap
+    }
     cursor += rows[mi]! + gap
   })
+}
+
+function slotExtent(s: MeldSlot, w: number, h: number): number {
+  return s.sideways ? h : w
+}
+
+function meldExtent(slots: readonly MeldSlot[], slotGap: number): number {
+  const base = slots.filter((s) => !s.stack)
+  return base.reduce((sum, s, i) => sum + slotExtent(s, DISC.w, DISC.h) + (i === 0 ? 0 : slotGap), 0)
+}
+
+function baseRot(edge: Edge): number {
+  switch (edge) {
+    case 'bottom': return 0
+    case 'top': return 180
+    case 'left': return 90
+    case 'right': return 270
+  }
+}
+
+function meldSlotPos(
+  edge: Edge,
+  cursor: number,
+  local: number,
+  row: number,
+  extent: number,
+  sideways: boolean,
+  w: number,
+  h: number,
+): { cx: number; cy: number; rot: number } {
+  const trans = sideways ? w : h
+  const rot = baseRot(edge) + (sideways ? 90 : 0)
+  switch (edge) {
+    case 'bottom': return { cx: 1660 - cursor - row + local + extent / 2, cy: 1080 - trans / 2, rot }
+    case 'top': return { cx: 260 + cursor + row - local - extent / 2, cy: trans / 2, rot }
+    case 'left': return { cx: trans / 2, cy: 260 + cursor + local + extent / 2, rot }
+    case 'right': return { cx: 1920 - trans / 2, cy: 1050 - cursor - local - extent / 2, rot }
+  }
+}
+
+function stackOffset(edge: Edge, dist: number): { dx: number; dy: number } {
+  switch (edge) {
+    case 'bottom': return { dx: 0, dy: -dist }
+    case 'top': return { dx: 0, dy: dist }
+    case 'left': return { dx: dist, dy: 0 }
+    case 'right': return { dx: -dist, dy: 0 }
+  }
 }
 
 // --- dora (dentro del recuadro central) ---------------------------------------

@@ -3,6 +3,7 @@
 
 import type { Tile34, TileId } from './tile'
 import { tile34Of } from './tile'
+import type { Seat } from './seat'
 
 export type MeldKind =
   | 'chi' // corrida robada al kamicha
@@ -15,9 +16,11 @@ export interface Meld {
   /** 3 fichas (chi/pon) o 4 (kan/ankan). */
   readonly tiles: readonly TileId[]
   /** Asiento al que se robó la ficha (no aplica a ankan). Para la UI. */
-  readonly from?: number
+  readonly from?: Seat
   /** La ficha concreta que se llamó (se gira en la UI). */
   readonly called?: TileId
+  /** La ficha añadida al ampliar un pon a shouminkan (se apila sobre `called`). */
+  readonly added?: TileId
 }
 
 /** Un ankan no rompe la mano cerrada; todo lo demás sí. */

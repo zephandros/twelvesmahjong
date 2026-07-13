@@ -349,7 +349,7 @@ function completeShouminkan(s: HandState): HandState {
   const { seat, meldIndex, tile } = s.pendingKan!
   const st = s.seats[seat]!
   const old = st.melds[meldIndex]!
-  st.melds[meldIndex] = { ...old, kind: 'kan', tiles: [...old.tiles, tile] }
+  st.melds[meldIndex] = { ...old, kind: 'kan', tiles: [...old.tiles, tile], added: tile }
   s.pendingKan = null
   return afterKan(s, seat)
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { initHand } from '../src/core/state'
 import { reduce } from '../src/core/reducer'
 import { computePlacements } from '../src/ui/geometry'
-import { TILEID_COUNT } from '../src/core/tile'
+import { parseTile, TILEID_COUNT, type TileId } from '../src/core/tile'
 import { STAGE_W, STAGE_H } from '../src/ui/layout'
 
 const opts = {
@@ -10,6 +10,19 @@ const opts = {
   revealAll: false,
   clickable: new Set<number>(),
   highlight: new Set<number>(),
+}
+
+const id = (label: string, copy = 0): TileId => ((parseTile(label) << 2) | copy)
+
+function stateForMelds() {
+  const s = initHand(42, 0)
+  for (const st of s.seats) {
+    st.hand = []
+    st.melds = []
+    st.pond = []
+  }
+  s.drawn = null
+  return s
 }
 
 describe('geometry: colocación de fichas', () => {
@@ -70,5 +83,38 @@ describe('geometry: colocación de fichas', () => {
         expect(p.get(id)!.face).toBe('front')
       }
     }
+  })
+
+  it('gira la ficha llamada del pon y la coloca en el extremo del origen', () => {
+    const called = id('5p', 1)
+    const a = id('5p', 2)
+    const b = id('5p', 3)
+    const s = stateForMelds()
+    s.seats[0]!.melds = [{ kind: 'pon', tiles: [called, a, b], from: 1, called }]
+
+    const p = computePlacements(s, opts)
+    const calledP = p.get(called)!
+    expect(calledP.rot).toBe(90)
+    expect(calledP.cy).toBeCloseTo(1080 - 45 / 2, 5)
+    expect(calledP.cx).toBeGreaterThan(p.get(a)!.cx)
+    expect(calledP.cx).toBeGreaterThan(p.get(b)!.cx)
+    expect(p.get(a)!.rot).toBe(0)
+  })
+
+  it('apila la ficha añadida del shouminkan sobre la llamada', () => {
+    const called = id('7s')
+    const a = id('7s', 1)
+    const b = id('7s', 2)
+    const added = id('7s', 3)
+    const s = stateForMelds()
+    s.seats[0]!.melds = [{ kind: 'kan', tiles: [called, a, b, added], from: 1, called, added }]
+
+    const p = computePlacements(s, opts)
+    const calledP = p.get(called)!
+    const addedP = p.get(added)!
+    expect(addedP.rot).toBe(calledP.rot)
+    expect(addedP.cx).toBeCloseTo(calledP.cx, 5)
+    expect(addedP.cy).toBeCloseTo(calledP.cy - 45, 5)
+    expect(addedP.z).toBeGreaterThan(calledP.z)
   })
 })
