@@ -670,17 +670,24 @@ html, body {
 }
 
 /* --- pantalla de victoria (1B) ----------------------------------------------- */
+/* Caja de diseño 1280×720 centrada y escalada 1.5× para llenar el escenario
+   1920×1080 conservando exactamente las proporciones del mockup 1B. */
 .tm-win {
   position: absolute;
-  inset: 0;
+  width: 1280px;
+  height: 720px;
+  left: 50%;
+  top: 50%;
+  transform-origin: center center;
+  transform: translate(-50%, -50%) scale(1.5);
   z-index: 70;
   overflow: hidden;
   background: radial-gradient(90% 120% at 68% 44%, #20543a 0%, #123723 46%, #08160e 100%);
   animation: tm-win-in 0.35s ease-out;
 }
 @keyframes tm-win-in {
-  from { opacity: 0; transform: scale(1.03); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translate(-50%, -50%) scale(1.545); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
 }
 .tm-win__rays {
   position: absolute;
