@@ -148,8 +148,8 @@ function placeOppHand(
 function pondPos(edge: Edge, col: number, row: number): { cx: number; cy: number; rot: number } {
   switch (edge) {
     case 'bottom': return { cx: 870 + col * 45 + 22.5, cy: 630 + row * 60 + 30, rot: 0 }
-    case 'top': return { cx: 1050 - col * 45 - 22.5, cy: 420 - row * 60, rot: 0 }
-    case 'left': return { cx: 840 - row * 60, cy: 472.5 + col * 45, rot: 270 }
+    case 'top': return { cx: 1050 - col * 45 - 22.5, cy: 420 - row * 60, rot: 180 }
+    case 'left': return { cx: 840 - row * 60, cy: 472.5 + col * 45, rot: 90 }
     case 'right': return { cx: 1080 + row * 60, cy: 607.5 - col * 45, rot: 270 }
   }
 }
