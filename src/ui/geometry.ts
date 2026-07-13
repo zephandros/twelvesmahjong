@@ -140,14 +140,17 @@ function placeOppHand(
 
 // --- descartes (molinete alrededor del centro) --------------------------------
 
-// 6 columnas por lado, ficha 45×60. La ficha de riichi se gira 90° y corre las
-// siguientes de su fila para no solaparse (el jugador lo pidió explícitamente).
+// 6 columnas por lado, ficha 45×60. Cada pila se llena desde la esquina pegada
+// al cuadro central en el orden izquierda→derecha DEL DUEÑO (que mira al centro):
+// self mira arriba, shimo a la izquierda, toimen abajo, kami a la derecha, así
+// que top y right van espejados respecto a self. La ficha de riichi se gira 90°
+// y corre las siguientes de su fila para no solaparse (lo pidió el jugador).
 function pondPos(edge: Edge, col: number, row: number): { cx: number; cy: number; rot: number } {
   switch (edge) {
     case 'bottom': return { cx: 870 + col * 45 + 22.5, cy: 630 + row * 60 + 30, rot: 0 }
-    case 'top': return { cx: 780 + col * 45 + 22.5, cy: 420 - row * 60, rot: 0 }
+    case 'top': return { cx: 1050 - col * 45 - 22.5, cy: 420 - row * 60, rot: 0 }
     case 'left': return { cx: 840 - row * 60, cy: 472.5 + col * 45, rot: 270 }
-    case 'right': return { cx: 1080 + row * 60, cy: 382.5 + col * 45, rot: 270 }
+    case 'right': return { cx: 1080 + row * 60, cy: 607.5 - col * 45, rot: 270 }
   }
 }
 
@@ -159,10 +162,13 @@ function placePond(st: HandState['seats'][number], edge: Edge, put: Put): void {
     const p = pondPos(edge, col, row)
     let { cx, cy } = p
     let rot = p.rot
-    // corrimiento: si la ficha de riichi está antes en la MISMA fila, +15px
+    // corrimiento: si la ficha de riichi está antes en la MISMA fila, se corren
+    // 15px EN LA DIRECCIÓN DE LLENADO (que difiere por borde)
     if (rIdx !== null && rIdx >= 0 && Math.floor(rIdx / 6) === row && rIdx % 6 < col) {
-      if (edge === 'bottom' || edge === 'top') cx += 15
-      else cy += 15
+      if (edge === 'bottom') cx += 15
+      else if (edge === 'top') cx -= 15
+      else if (edge === 'left') cy += 15
+      else cy -= 15
     }
     if (rIdx === i) rot += 90 // ficha con la que se declaró riichi
     put(id, { cx, cy, w: DISC.w, h: DISC.h, rot, face: 'front', z: 15 })
