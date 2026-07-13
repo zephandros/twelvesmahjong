@@ -12,6 +12,7 @@ import type { TileId } from '../core/tile'
 import { TILEID_COUNT } from '../core/tile'
 import type { Seat, RelSeat, Edge } from '../core/seat'
 import { SEATS, relSeat, edgeOf } from '../core/seat'
+import { BOARD } from './layout'
 import { meldLayout, type MeldSlot } from './meld-layout'
 
 export type Face = 'front' | 'back' | 'side'
@@ -246,8 +247,8 @@ function meldSlotPos(
   switch (edge) {
     case 'bottom': return { cx: 1660 - cursor - row + local + extent / 2, cy: 1080 - trans / 2, rot }
     case 'top': return { cx: 260 + cursor + row - local - extent / 2, cy: trans / 2, rot }
-    case 'left': return { cx: trans / 2, cy: 260 + cursor + local + extent / 2, rot }
-    case 'right': return { cx: 1920 - trans / 2, cy: 1050 - cursor - local - extent / 2, rot }
+    case 'left': return { cx: BOARD.x + trans / 2, cy: 260 + cursor + local + extent / 2, rot }
+    case 'right': return { cx: BOARD.x + BOARD.w - trans / 2, cy: 1050 - cursor - local - extent / 2, rot }
   }
 }
 

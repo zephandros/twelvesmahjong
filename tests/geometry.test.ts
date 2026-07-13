@@ -3,7 +3,7 @@ import { initHand } from '../src/core/state'
 import { reduce } from '../src/core/reducer'
 import { computePlacements } from '../src/ui/geometry'
 import { parseTile, TILEID_COUNT, type TileId } from '../src/core/tile'
-import { STAGE_W, STAGE_H } from '../src/ui/layout'
+import { BOARD, STAGE_W, STAGE_H } from '../src/ui/layout'
 
 const opts = {
   human: 0 as const,
@@ -99,6 +99,26 @@ describe('geometry: colocación de fichas', () => {
     expect(calledP.cx).toBeGreaterThan(p.get(a)!.cx)
     expect(calledP.cx).toBeGreaterThan(p.get(b)!.cx)
     expect(p.get(a)!.rot).toBe(0)
+  })
+
+  it.each([
+    { seat: 1 as const, from: 0 as const, edge: 'derecho' },
+    { seat: 3 as const, from: 0 as const, edge: 'izquierdo' },
+  ])('coloca el meld rival del borde $edge dentro de la mesa', ({ seat, from }) => {
+    const called = id('5p', 1)
+    const a = id('5p', 2)
+    const b = id('5p', 3)
+    const tiles = [called, a, b]
+    const s = stateForMelds()
+    s.seats[seat]!.melds = [{ kind: 'pon', tiles, from, called }]
+
+    const p = computePlacements(s, opts)
+    for (const tile of tiles) {
+      const placement = p.get(tile)!
+      expect(placement.visible).toBe(true)
+      expect(placement.cx).toBeGreaterThan(BOARD.x)
+      expect(placement.cx).toBeLessThan(BOARD.x + BOARD.w)
+    }
   })
 
   it('apila la ficha añadida del shouminkan sobre la llamada', () => {
