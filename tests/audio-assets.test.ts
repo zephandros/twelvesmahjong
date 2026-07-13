@@ -37,7 +37,7 @@ describe('assets de audio (public/{music,sfx,voices})', () => {
   })
 
   it('cada personaje con voz tiene las 6 llamadas', () => {
-    expect(VOICED.size).toBe(9)
+    expect(VOICED.size).toBe(12)
     for (const slug of VOICED as ReadonlySet<CharacterId>) {
       for (const call of CALLS) {
         expect(has(voiceUrl(slug, call)), `falta ${voiceUrl(slug, call)}`).toBe(true)

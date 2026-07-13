@@ -115,24 +115,31 @@ function buildSfx(out) {
 
 // --- voces -------------------------------------------------------------------
 
-// actor (primer token del filename) → slug canónico de personaje
+// actor (primer token del filename) → slug canónico de personaje.
+// Los raw nombran cada clip por su seiyuu, no por el personaje (tabla del usuario).
 const ACTORS = {
-  alice: 'alice',
-  celestina: 'celestina',
-  defarge: 'defarge',
-  takumi: 'dracula', // voz masculina → Drácula
-  henry: 'jekyll',   // voz masculina → Jekyll
-  toa: 'pinocchio',  // Toa Seo
-  reiji: 'huck',     // Reiji Kudo
-  hadou: 'dorian',   // Hadou
-  koichi: 'bartleby', // Koichi Yashiro
-  // sameno: (VA de Alice) — Sameno_Alice es prototipo, aún sin usar; se salta
+  sameno: 'alice',       // Sameno
+  hadou: 'dorian',       // Hadou
+  henry: 'jekyll',       // Henry (voz masculina → Jekyll)
+  takumi: 'dracula',     // Takumi (voz masculina → Drácula)
+  hideki: 'hamlet',      // Hideki
+  yukari: 'celestina',   // Yukari
+  peter: 'cyrano',       // Peter
+  shizuka: 'scheherazade', // Shizuka
+  koichi: 'bartleby',    // Koichi Yashiro
+  aya: 'defarge',        // Aya
+  reiji: 'huck',         // Reiji Kudo
+  toa: 'pinocchio',      // Toa Seo
 }
 // Clips especiales que NO son voces de llamada (por nombre exacto de archivo,
 // sin extensión) → basename de salida en public/voices/.
 const SPECIAL = {
   Sameno_Mahjong_Twelves: 'title', // VA de Alice diciendo "Mahjong Twelves" (portada)
 }
+// Clips a saltar (no son llamadas ni tienen uso aún), por nombre exacto de archivo.
+const IGNORE = new Set([
+  'Sameno_Alice', // prototipo "di tu nombre al elegir personaje", pendiente
+])
 const CALLS = { chi: 'chi', chii: 'chi', pon: 'pon', kan: 'kan', riichi: 'riichi', ron: 'ron', tsumo: 'tsumo' }
 const CALL_KINDS = ['chi', 'pon', 'kan', 'riichi', 'ron', 'tsumo']
 
@@ -157,6 +164,10 @@ function buildVoices(out) {
     const stem = file.replace(/\.mp3$/i, '')
     if (SPECIAL[stem]) {
       encode(join(RAW, 'voices', file), join(out, `${SPECIAL[stem]}.m4a`), VOICE)
+      continue
+    }
+    if (IGNORE.has(stem)) {
+      skipped.push(file)
       continue
     }
     const parsed = parseVoice(file)

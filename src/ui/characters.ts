@@ -11,14 +11,14 @@ export interface Character {
 
 /** Slug canónico de personaje (id de CHARACTERS). */
 export type CharacterId =
-  | 'alice' | 'bartleby' | 'cyrano' | 'dante' | 'dorian' | 'jekyll'
+  | 'alice' | 'bartleby' | 'cyrano' | 'scheherazade' | 'dorian' | 'jekyll'
   | 'dracula' | 'hamlet' | 'huck' | 'celestina' | 'defarge' | 'pinocchio'
 
 export const CHARACTERS: readonly Character[] = [
   { id: 'alice', name: 'Alice', epithet: 'Wonderland' },
   { id: 'bartleby', name: 'Bartleby', epithet: 'El escribiente' },
   { id: 'cyrano', name: 'Cyrano', epithet: 'Bergerac' },
-  { id: 'dante', name: 'Dante', epithet: 'La Divina Comedia' },
+  { id: 'scheherazade', name: 'Scheherazade', epithet: 'Mil y una noches' },
   { id: 'dorian', name: 'Dorian', epithet: 'El retrato' },
   { id: 'jekyll', name: 'Jekyll', epithet: 'Dos caras' },
   { id: 'dracula', name: 'Drácula', epithet: 'Nosferatu' },

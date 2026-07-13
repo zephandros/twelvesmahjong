@@ -1,4 +1,4 @@
-# Hornea los retratos de Resources/Portraits a public/portraits/:
+# Hornea los retratos de raw/portraits a public/portraits/:
 #   {id}.jpg   (720 px de ancho, pantalla de victoria)
 #   {id}-t.jpg (264 px de ancho, retratos de esquina y selección)
 # Los PNG originales (~1.4 MB c/u) son demasiado pesados para la PWA.
@@ -6,7 +6,7 @@
 
 Add-Type -AssemblyName System.Drawing
 
-$src = 'D:\Proyectos\Twelves\Resources\Portraits'
+$src = Join-Path $PSScriptRoot '..\raw\portraits'
 $dst = Join-Path $PSScriptRoot '..\public\portraits'
 New-Item -ItemType Directory -Force $dst | Out-Null
 
@@ -16,7 +16,7 @@ $roster = [ordered]@{
   alice     = '*Alice_Liddell*'
   bartleby  = '*Bartleby*'
   cyrano    = '*Cyrano*'
-  dante     = '*Dante_Alighieri*'
+  scheherazade = '*Scheherazade*'
   dorian    = '*Dorian_Gray*'
   jekyll    = '*Dr._Jekyll*'
   dracula   = '*Dracula*'

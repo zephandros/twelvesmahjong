@@ -14,8 +14,8 @@ El plan de integración de assets (`raw/`) vive en
 Los personajes pertenecen a **Twelves**, universo de creación propia del usuario.
 El mundo se llama **Kovalet**; sus 12 figuras centrales son **los 12 Movimientos**,
 representados por los 12 personajes jugables (slugs canónicos en
-`src/ui/characters.ts`: alice, bartleby, cyrano, dante, dorian, jekyll, dracula,
-hamlet, huck, celestina, defarge, pinocchio).
+`src/ui/characters.ts`: alice, bartleby, cyrano, scheherazade, dorian, jekyll,
+dracula, hamlet, huck, celestina, defarge, pinocchio).
 
 ## Git
 
@@ -131,7 +131,7 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | `raw/code/` | Nuevo diseño del tablero "Antique Parlour" (mockup dc.html, pantallas 1A/1B, temas de mesa y dorsos) | Pendiente (fase A6) |
 | `raw/font/Murencho/` | Fuente **Murecho** (variable TTF + estáticas + OFL) | Pendiente (fase A2) |
 | `raw/music/` | 9 temas × 2 (normal + `_Alt`), mp3 | Pendiente (fase A3) |
-| `raw/portraits/` | 24 PNG originales de retratos | **Solo backup** — ya horneados en `public/portraits/` |
+| `raw/portraits/` | PNG originales de retratos (fuente del bake; **Dante fuera, Scheherazade dentro**) | Horneados en `public/portraits/` |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
 | `raw/tiles/` | 37 SVGs solo-glifo (man/pin/so 1-9, honor 1-7, aka ×3), viewBox `0 0 139.764 200` | Pendiente (fase A1; ver trampa 2) |
 | `raw/voices/` | Voces por llamada (chi/pon/kan/riichi/ron/tsumo), naming inconsistente, elenco incompleto | Pendiente (fase A3) |
@@ -165,7 +165,9 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   El subset de Murecho verifica el cmap y falla si pierde glifos (los que Murecho
   no trae —發搶槓— los cubre el fallback Noto).
 - **Retratos** — `scripts/bake-portraits.ps1` (PowerShell + System.Drawing, ya existente)
-  → `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px).
+  lee de `raw/portraits/` (fuente real; `../Resources/Portraits` quedó obsoleta) →
+  `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px). La tabla `$roster`
+  mapea slug→patrón de archivo; al cambiar el roster, actualizarla.
 
 ## Decisiones de assets (2026-07-12)
 
@@ -175,13 +177,15 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   entra suena el clip de portada (`voices/title.m4a`: la VA de Alice —Sameno— dice
   "Mahjong Twelves"). Los otros 8 temas suenan en partida (elección con `Math.random`,
   jamás con el RNG semillado del core).
-- **Voces** (9 personajes con voz): **Takumi → Drácula**, **Henry → Jekyll**,
-  **Toa Seo → Pinocho**, **Reiji Kudo → Huck**, **Hadou → Dorian**,
-  **Koichi Yashiro → Bartleby** (+ Alice, Celestina, Defarge). Solo la voz principal se
-  usa; las variantes `_Alt` se procesan pero quedan sin usar. Personajes sin voz = mudos.
-  El clip `Sameno_Alice` sigue **sin usar** (prototipo de "di tu nombre al elegir
-  personaje", pendiente); el pipeline lo salta con aviso. Al asignar un actor nuevo:
-  mapearlo en `ACTORS` (build-audio.mjs) y `VOICED` (catalog.ts).
+- **Voces** (los **12** personajes tienen voz; los raw se nombran por seiyuu, no por
+  personaje): **Sameno → Alice**, **Hadou → Dorian**, **Henry → Jekyll**,
+  **Takumi → Drácula**, **Hideki → Hamlet**, **Yukari → Celestina**, **Peter → Cyrano**,
+  **Shizuka → Scheherazade**, **Koichi Yashiro → Bartleby**, **Aya → Defarge**,
+  **Reiji Kudo → Huck**, **Toa Seo → Pinocho**. Solo la voz principal se usa; las
+  variantes `_Alt` (si las hay) se procesan pero quedan sin usar. El clip `Sameno_Alice`
+  sigue **sin usar** (prototipo de "di tu nombre al elegir personaje", pendiente); el
+  pipeline lo salta vía `IGNORE` con aviso. Al asignar/cambiar un actor: mapearlo en
+  `ACTORS` (build-audio.mjs) y `VOICED` (catalog.ts).
 - **Campanas**: `bell_01` = clic de UI (menú/selección); `bell_02` = alerta de llamada
   en partida (chi/pon/kan/riichi/ron), junto a la voz del personaje.
 - **Click de ficha**: aleatorio entre un set de **4 notas según el tema de mesa** (para
