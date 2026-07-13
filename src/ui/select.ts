@@ -28,7 +28,7 @@ export function renderSelect(
       <button class="tm-btn tm-btn--muted" data-act="random">RANDOM</button>
       <button class="tm-btn tm-btn--primary" data-act="start" disabled>START</button>
     </div>
-    <div class="tm-select__hint">elige tu personaje y tus tres rivales</div>
+    <div class="tm-select__hint" data-mobile-label="Elige a tus personajes">elige tu personaje y tus tres rivales</div>
   `
   root.appendChild(wrap)
 
