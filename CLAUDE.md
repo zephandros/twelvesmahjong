@@ -27,10 +27,16 @@ Autor: `zephandro <twelvesrpg@gmail.com>` (config `--local`). **`raw/` está en
 
 - **TypeScript + Vite**, sin framework de UI. La UI es DOM + CSS transforms.
 - **PWA** (`vite-plugin-pwa`): service worker + manifest → instalable y offline.
+  Precache ~3.2 MB (código, fuentes, fichas SVG, retratos, sfx, voces); la **música**
+  (~62 MB, 18 temas) queda **fuera del precache** y va por `runtimeCaching`
+  (CacheFirst + rangeRequests, cache `tm-music`). **Auditoría offline (A7): pasa** —
+  con el servidor parado la partida es 100% jugable; lo único que falta offline es la
+  música aún no escuchada (se cachea al primer play). Presupuesto de precache <15 MB.
 - **vitest** para tests. El núcleo se testea sin DOM.
 - Distribución: host estático (GitHub Pages). El SW **no** funciona sobre `file://`.
 
-Comandos: `npm run dev` · `npm run build` · `npm test`.
+Comandos: `npm run dev` · `npm run build` · `npm test`. Assets: `npm run assets:tiles`
+· `assets:audio` (requiere ffmpeg) · `assets:fonts` (requiere Python + fontTools).
 
 ## Arquitectura
 
@@ -169,12 +175,15 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   entra suena el clip de portada (`voices/title.m4a`: la VA de Alice —Sameno— dice
   "Mahjong Twelves"). Los otros 8 temas suenan en partida (elección con `Math.random`,
   jamás con el RNG semillado del core).
-- **Voces sin asignar**: `raw/voices/` incluye actores aún sin personaje (Reiji_Kudo,
-  Koichi_Yashiro, Toa_Seo, Hadou, y el clip `Sameno_Alice`). El pipeline los **salta
-  con aviso**; para activarlos hay que mapearlos en `ACTORS` (build-audio.mjs) y
-  `VOICED` (catalog.ts).
-- **Voces**: **Takumi → Drácula**, **Henry → Jekyll**. Solo la voz principal se usa; las
-  variantes `_Alt` se procesan y publican pero quedan sin usar. Personajes sin voz = mudos.
+- **Voces** (9 personajes con voz): **Takumi → Drácula**, **Henry → Jekyll**,
+  **Toa Seo → Pinocho**, **Reiji Kudo → Huck**, **Hadou → Dorian**,
+  **Koichi Yashiro → Bartleby** (+ Alice, Celestina, Defarge). Solo la voz principal se
+  usa; las variantes `_Alt` se procesan pero quedan sin usar. Personajes sin voz = mudos.
+  El clip `Sameno_Alice` sigue **sin usar** (prototipo de "di tu nombre al elegir
+  personaje", pendiente); el pipeline lo salta con aviso. Al asignar un actor nuevo:
+  mapearlo en `ACTORS` (build-audio.mjs) y `VOICED` (catalog.ts).
+- **Campanas**: `bell_01` = clic de UI (menú/selección); `bell_02` = alerta de llamada
+  en partida (chi/pon/kan/riichi/ron), junto a la voz del personaje.
 - **Click de ficha**: aleatorio entre un set de **4 notas según el tema de mesa** (para
   no cansar con el mismo sonido): mesa `wood` → {c2, d2, e2, f2}; el resto → {f2, g2,
   a2, b2}. Sin repetir la última nota sonada.
@@ -189,8 +198,9 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   madera; **temas de fieltro** (green/red/blue/wood) y **5 dorsos de ficha** seleccionables
   desde el **menú in-game** (botón ☰ en el panel del jugador — ya no es barra), aplicados
   vía `[data-table]`/`[data-back]` en `.tm-stage` y persistidos en Settings. Layout portado
-  al mockup Figma 1920×1080 (ver Layout). Pendiente: rediseño de la pantalla de victoria (1B)
-  y actualizar `?debug=board`.
+  al mockup Figma 1920×1080 (ver Layout). Pantalla de victoria (1B): mismo diseño,
+  reescalada a 1920×1080 (`.tm-win` = caja 1280×720 centrada ×1.5). Único fleco:
+  `?debug=board` con coordenadas viejas (página de depuración, no afecta al juego).
 
 ## Alcance v1
 
