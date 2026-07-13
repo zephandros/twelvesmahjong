@@ -28,7 +28,7 @@ const HUMAN: Seat = 0
 
 // Sonido por tipo de acción. Los tres kan comparten la voz 'kan'.
 //  - discard: solo click de ficha.
-//  - chi/pon/kan/riichi/ron: campana de alerta (bell_02) + voz del personaje.
+//  - chi/pon/kan/riichi/ron: voz del personaje.
 //  - tsumo: voz (la pantalla de victoria hace el resto).
 const VOICE_FOR: Partial<Record<Action['type'], CallKind>> = {
   riichi: 'riichi',
@@ -41,9 +41,6 @@ const VOICE_FOR: Partial<Record<Action['type'], CallKind>> = {
   shouminkan: 'kan',
 }
 const CLICKS: ReadonlySet<Action['type']> = new Set<Action['type']>(['discard'])
-const ALERTS: ReadonlySet<Action['type']> = new Set<Action['type']>([
-  'chi', 'pon', 'daiminkan', 'ankan', 'shouminkan', 'riichi', 'ron',
-])
 
 const DELAY = {
   draw: 120,
@@ -69,6 +66,7 @@ export function startGame(
   let game: GameState = newGame(Date.now() >>> 0)
   const botRng: Rng = makeRng((Date.now() ^ 0xc0ffee) >>> 0)
   let riichiMode = false
+  let lastDecisionPending = false
   let timer: ReturnType<typeof setTimeout> | null = null
 
   // --- render ------------------------------------------------------------------
@@ -110,6 +108,9 @@ export function startGame(
       buttons: humanButtons(s),
       turnLabel: turnLabel(s),
     })
+    const pending = humanDecisionPending(s)
+    if (pending && !lastDecisionPending) playAlert()
+    lastDecisionPending = pending
   }
 
   function turnLabel(s: HandState): string | null {
@@ -157,6 +158,21 @@ export function startGame(
     return offer
   }
 
+  /** Hay una opción especial para que el humano elija. */
+  function humanDecisionPending(s: HandState): boolean {
+    if (s.phase === 'reaction') return pendingHumanOffer(s) !== null
+    if (s.phase === 'discard' && s.turn === HUMAN) {
+      return (
+        Boolean(tsumoScore(s)) ||
+        riichiOptions(s).length > 0 ||
+        ankanOptions(s).length > 0 ||
+        shouminkanOptions(s).length > 0 ||
+        canKyuushu(s)
+      )
+    }
+    return false
+  }
+
   // --- motor -------------------------------------------------------------------
 
   function apply(action: Action): void {
@@ -176,7 +192,6 @@ export function startGame(
   }
 
   function emitSound(action: Action, actor: Seat): void {
-    if (ALERTS.has(action.type)) playAlert()
     const voice = VOICE_FOR[action.type]
     if (voice) playVoice(roster[actor]!.id as CharacterId, voice)
     if (CLICKS.has(action.type)) playSfx('tile-click')

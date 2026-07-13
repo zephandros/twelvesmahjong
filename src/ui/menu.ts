@@ -24,16 +24,16 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
   menu.className = 'tm-menu'
   menu.innerHTML = `
     <div class="tm-menu__hero">
-      <div class="tm-menu__jp">麻雀トウェルブス</div>
-      <h1 class="tm-menu__title">Mahjong Twelves</h1>
-      <div class="tm-menu__tag">フリー対局 · FREE GAME · TONPUUSEN</div>
+      <div class="tm-menu__jp">トゥウェルブズ・マージャン</div>
+      <h1 class="tm-menu__title">TWELVES Mahjong</h1>
+      <div class="tm-menu__tag">RIICHI MAHJONG · TONPUUSEN</div>
     </div>
-    <button class="tm-btn tm-btn--primary tm-menu__play" data-act="start">PARTIDA LIBRE</button>
+    <button class="tm-btn tm-btn--primary tm-menu__play" data-act="start">JUGAR</button>
     <div class="tm-menu__settings">
       <div class="tm-menu__settings-title">Audio</div>
       <div class="tm-menu__sliders"></div>
     </div>
-    <div class="tm-menu__credits">Twelves · Kovalet — uso personal. Fuentes: Murecho, Cormorant &amp; EB Garamond (OFL).</div>
+    <div class="tm-menu__credits">Arenacun Software</div>
   `
   root.appendChild(menu)
 

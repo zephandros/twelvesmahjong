@@ -489,7 +489,7 @@ html, body {
 .tm-select__head { text-align: center; }
 .tm-select__title {
   display: block;
-  font-family: var(--display);
+  font-family: var(--jp);
   font-size: 46px;
   letter-spacing: 0.14em;
   color: var(--gold);
@@ -594,7 +594,7 @@ html, body {
 }
 .tm-menu__title {
   margin: 6px 0 8px;
-  font-family: var(--display-serif);
+  font-family: var(--jp);
   font-style: italic;
   font-weight: 700;
   font-size: 76px;

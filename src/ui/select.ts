@@ -18,8 +18,8 @@ export function renderSelect(
 
   wrap.innerHTML = `
     <div class="tm-select__head">
-      <span class="tm-select__title">Mahjong Twelves</span>
-      <span class="tm-select__sub">フリー対局 · FREE GAME · TONPUUSEN</span>
+      <span class="tm-select__title">TWELVES Mahjong</span>
+      <span class="tm-select__sub">RIICHI MAHJONG · TONPUUSEN</span>
     </div>
     <div class="tm-select__slots"></div>
     <div class="tm-select__grid"></div>
