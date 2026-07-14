@@ -59,8 +59,10 @@ export class SpriteRenderer implements TileView {
     if (id !== undefined) {
       const label = labelId(id)
       el.dataset.tile = label
-      // URL relativa al documento, igual que los retratos (base '' de Vite)
-      el.style.setProperty('--glyph', `url("tiles/${label}.svg")`)
+      // URL absoluta contra el documento: WebKit resuelve url() en custom
+      // properties contra el CSS (/assets/), no contra la página.
+      const glyph = new URL(`tiles/${label}.svg`, document.baseURI).href
+      el.style.setProperty('--glyph', `url("${glyph}")`)
     }
     return el
   }
