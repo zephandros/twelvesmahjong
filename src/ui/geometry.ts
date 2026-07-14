@@ -205,7 +205,7 @@ function placeMelds(st: HandState['seats'][number], edge: Edge, owner: Seat, put
         continue
       }
       const extent = slotExtent(s, w, h)
-      const p = meldSlotPos(edge, cursor, local, rows[mi]!, extent, s.sideways, w, h)
+      const p = meldSlotPos(edge, cursor, local, extent, s.sideways, w, h)
       put(s.id, { ...p, w, h, face: s.faceDown ? 'back' : 'front', z: 18 })
       stackAnchor = s.sideways ? p : null
       local += extent + slotGap
@@ -236,7 +236,6 @@ function meldSlotPos(
   edge: Edge,
   cursor: number,
   local: number,
-  row: number,
   extent: number,
   sideways: boolean,
   w: number,
@@ -245,8 +244,8 @@ function meldSlotPos(
   const trans = sideways ? w : h
   const rot = baseRot(edge) + (sideways ? 90 : 0)
   switch (edge) {
-    case 'bottom': return { cx: 1660 - cursor - row + local + extent / 2, cy: 1080 - trans / 2, rot }
-    case 'top': return { cx: 260 + cursor + row - local - extent / 2, cy: trans / 2, rot }
+    case 'bottom': return { cx: 260 + cursor + local + extent / 2, cy: 1080 - trans / 2, rot }
+    case 'top': return { cx: 1660 - cursor - local - extent / 2, cy: trans / 2, rot }
     case 'left': return { cx: BOARD.x + trans / 2, cy: 260 + cursor + local + extent / 2, rot }
     case 'right': return { cx: BOARD.x + BOARD.w - trans / 2, cy: 1050 - cursor - local - extent / 2, rot }
   }
