@@ -1,17 +1,19 @@
 // Escenario de diseño fijo 1920×1080 (16:9), escalado al viewport con
 // letterboxing. Coordenadas copiadas del mockup Figma (raw/code/index.tsx):
-// mesa 4:3 de 1440×1080 centrada (x 240..1680) con 4 paneles 240×540 en las
+// mesa centrada con 4 paneles 240×540 en las
 // esquinas. Todas las coordenadas de la UI viven en este espacio.
 
 export const STAGE_W = 1920
 export const STAGE_H = 1080
 
-/** Mesa (fieltro): rectángulo 4:3 centrado horizontalmente. */
-export const BOARD = { x: 240, y: 0, w: 1440, h: 1080 } as const
+/** Superficie de juego de fieltro, dentro del riel. */
+export const BOARD = { x: 264, y: 30, w: 1392, h: 1020 } as const
+/** Riel exterior de madera, centrado entre los paneles de personaje. */
+export const RAIL = { x: 240, y: 6, w: 1440, h: 1068 } as const
 
 /**
  * Crea el nodo escenario dentro de `root` y lo mantiene escalado y centrado.
- * Devuelve el elemento sobre el que posicionar hijos en coordenadas de 1280×720.
+ * Devuelve el elemento sobre el que posicionar hijos en coordenadas de 1920×1080.
  */
 export function createStage(root: HTMLElement): HTMLElement {
   root.classList.add('tm-root')
@@ -24,11 +26,14 @@ export function createStage(root: HTMLElement): HTMLElement {
   stage.style.width = `${STAGE_W}px`
   stage.style.height = `${STAGE_H}px`
 
-  // mesa 4:3 (fieltro con marco de madera), detrás de fichas y HUD
+  // Riel y fieltro decorativos, detrás de las fichas y el HUD.
   const board = document.createElement('div')
   board.className = 'tm-board'
   board.style.cssText =
-    `position:absolute;left:${BOARD.x}px;top:${BOARD.y}px;width:${BOARD.w}px;height:${BOARD.h}px`
+    `position:absolute;left:${RAIL.x}px;top:${RAIL.y}px;width:${RAIL.w}px;height:${RAIL.h}px`
+  const felt = document.createElement('div')
+  felt.className = 'tm-felt'
+  board.appendChild(felt)
   stage.appendChild(board)
 
   frame.appendChild(stage)

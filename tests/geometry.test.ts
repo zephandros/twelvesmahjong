@@ -95,7 +95,7 @@ describe('geometry: colocación de fichas', () => {
     const p = computePlacements(s, opts)
     const calledP = p.get(called)!
     expect(calledP.rot).toBe(90)
-    expect(calledP.cy).toBeCloseTo(1080 - 45 / 2, 5)
+    expect(calledP.cy).toBeCloseTo(BOARD.y + BOARD.h - 45 / 2, 5)
     expect(calledP.cx).toBeGreaterThan(p.get(a)!.cx)
     expect(calledP.cx).toBeGreaterThan(p.get(b)!.cx)
     expect(p.get(a)!.rot).toBe(0)

@@ -2,7 +2,8 @@
 // Función pura (testeable sin DOM): la capa de nodos persistentes solo aplica
 // lo que salga de aquí, y las transiciones CSS animan los movimientos.
 //
-// Coordenadas del mockup Figma (raw/code/index.tsx): mesa 4:3 (x 240..1680),
+// Coordenadas del mockup Figma (raw/code/index.tsx): fieltro (x 264..1656,
+// y 30..1050),
 // centro 180×180 en (960,540), molinete de descartes alrededor, manos rivales
 // pegadas a los bordes de la mesa. Orientación de asientos: seat.ts es el único
 // punto de verdad; aquí solo se traduce RelSeat → borde (edgeOf).
@@ -99,7 +100,7 @@ function placeSelfHand(hand: readonly TileId[], drawn: TileId | null, put: Put):
   const gap = 18 // separación de la robada
   const total = n * step + (drawn !== null ? gap + HAND.w : 0)
   const x0 = CX - total / 2
-  const cy = 1080 - 45 // fila inferior de la mesa (y 990..1080)
+  const cy = BOARD.y + BOARD.h - HAND.h / 2
   hand.forEach((id, i) => {
     put(id, { cx: x0 + i * step + HAND.w / 2, cy, w: HAND.w, h: HAND.h, face: 'front', z: 35 })
   })
@@ -121,15 +122,23 @@ function placeOppHand(
     if (edge === 'top') {
       const x0 = CX - total / 2
       const cx = x0 + i * step + step / 2
-      if (reveal) put(id, { cx, cy: 34, w: DISC.w, h: DISC.h, rot: 180, face: 'front', z: 20 })
-      else put(id, { cx, cy: 16, w: OPP.w, h: OPP.h, face: 'back', z: 20 })
+      if (reveal) put(id, { cx, cy: BOARD.y + 34, w: DISC.w, h: DISC.h, rot: 180, face: 'front', z: 20 })
+      else put(id, { cx, cy: BOARD.y + 16, w: OPP.w, h: OPP.h, face: 'back', z: 20 })
     } else {
       // laterales: columna vertical pegada al borde izquierdo/derecho
       const y0 = CY - total / 2
       const cy = y0 + i * step + step / 2
-      const cx = edge === 'left' ? 255 : 1665
+      const cx = edge === 'left' ? BOARD.x + 15 : BOARD.x + BOARD.w - 15
       if (reveal) {
-        put(id, { cx: edge === 'left' ? 272 : 1648, cy, w: DISC.w, h: DISC.h, rot: edge === 'left' ? 90 : 270, face: 'front', z: 20 })
+        put(id, {
+          cx: edge === 'left' ? BOARD.x + 32 : BOARD.x + BOARD.w - 32,
+          cy,
+          w: DISC.w,
+          h: DISC.h,
+          rot: edge === 'left' ? 90 : 270,
+          face: 'front',
+          z: 20,
+        })
       } else {
         put(id, { cx, cy, w: OPP.h, h: OPP.w, face: 'back', z: 20 })
       }
@@ -244,10 +253,26 @@ function meldSlotPos(
   const trans = sideways ? w : h
   const rot = baseRot(edge) + (sideways ? 90 : 0)
   switch (edge) {
-    case 'bottom': return { cx: 260 + cursor + local + extent / 2, cy: 1080 - trans / 2, rot }
-    case 'top': return { cx: 1660 - cursor - local - extent / 2, cy: trans / 2, rot }
-    case 'left': return { cx: BOARD.x + trans / 2, cy: 260 + cursor + local + extent / 2, rot }
-    case 'right': return { cx: BOARD.x + BOARD.w - trans / 2, cy: 1050 - cursor - local - extent / 2, rot }
+    case 'bottom': return {
+      cx: BOARD.x + 20 + cursor + local + extent / 2,
+      cy: BOARD.y + BOARD.h - trans / 2,
+      rot,
+    }
+    case 'top': return {
+      cx: BOARD.x + BOARD.w - 20 - cursor - local - extent / 2,
+      cy: BOARD.y + trans / 2,
+      rot,
+    }
+    case 'left': return {
+      cx: BOARD.x + trans / 2,
+      cy: BOARD.y + 30 + cursor + local + extent / 2,
+      rot,
+    }
+    case 'right': return {
+      cx: BOARD.x + BOARD.w - trans / 2,
+      cy: BOARD.y + BOARD.h - 30 - cursor - local - extent / 2,
+      rot,
+    }
   }
 }
 

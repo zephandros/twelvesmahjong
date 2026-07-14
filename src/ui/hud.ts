@@ -6,7 +6,7 @@
 import type { HandState } from '../core/state'
 import type { Seat } from '../core/seat'
 import { SEATS, relSeat, cornerOf, seatWind, windColor, windKanji, type Corner } from '../core/seat'
-import { place } from './layout'
+import { BOARD, STAGE_H, place } from './layout'
 import { thumbUrl, type Character } from './characters'
 import {
   saveSettings, setVolumeSetting, type Settings, type TableTheme, type TileBack, type VolumeChannel,
@@ -28,12 +28,16 @@ export interface HudInfo {
 const KYOKU_KANJI = ['一', '二', '三', '四']
 const PLACES = ['1st', '2nd', '3rd', '4th']
 
-// Esquina de pantalla → posición del panel 240×540.
+const PANEL_MARGIN = 24
+const PANEL_W = 240 - PANEL_MARGIN * 2
+const PANEL_H = 540 - PANEL_MARGIN * 2
+
+// Esquina de pantalla → posición del panel, separado del marco y del viewport.
 const PANEL_POS: Record<Corner, Record<string, number>> = {
-  tl: { left: 0, top: 0 },
-  tr: { right: 0, top: 0 },
-  bl: { left: 0, bottom: 0 },
-  br: { right: 0, bottom: 0 },
+  tl: { left: PANEL_MARGIN, top: PANEL_MARGIN },
+  tr: { right: PANEL_MARGIN, top: PANEL_MARGIN },
+  bl: { left: PANEL_MARGIN, bottom: PANEL_MARGIN },
+  br: { right: PANEL_MARGIN, bottom: PANEL_MARGIN },
 }
 
 const TABLE_THEMES: ReadonlyArray<[TableTheme, string]> = [
@@ -101,7 +105,7 @@ export class Hud {
         `<span class="tm-panel__name">${isSelf ? `${c.name} · YOU` : c.name}</span></div>` +
         `<div class="tm-panel__score"></div>` +
         `</div>`
-      place(panel, { ...PANEL_POS[corner], width: 240, height: 540, z: 40 })
+      place(panel, { ...PANEL_POS[corner], width: PANEL_W, height: PANEL_H, z: 40 })
       stage.appendChild(panel)
 
       if (isSelf) {
@@ -148,7 +152,12 @@ export class Hud {
     stage.appendChild(this.buttonsRow)
 
     this.turnEl = el('div', 'font-family:var(--display);font-style:italic;font-size:20px;letter-spacing:.34em;color:var(--gold);text-transform:uppercase')
-    place(this.turnEl, { left: 960, bottom: 118, transform: 'translateX(-50%)', z: 35 })
+    place(this.turnEl, {
+      left: 960,
+      bottom: STAGE_H - (BOARD.y + BOARD.h) + 118,
+      transform: 'translateX(-50%)',
+      z: 35,
+    })
     stage.appendChild(this.turnEl)
 
     // --- overlay de menú (tema / dorso / volúmenes) ---

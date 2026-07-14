@@ -169,29 +169,41 @@ html, body {
   background: radial-gradient(120% 110% at 50% 42%, #1d160e 0%, #0c0906 60%, #050302 100%);
 }
 
-/* mesa 4:3: fieltro + raíl de madera + realce dorado */
+/* Mesa: riel de madera exterior + fieltro interior. */
 .tm-board {
+  padding: 24px;
+  border-radius: 30px;
+  background: linear-gradient(158deg, #3f2d19, #241708 55%, #180f05);
+  box-shadow:
+    0 48px 100px rgba(0, 0, 0, 0.78),
+    0 12px 34px rgba(0, 0, 0, 0.6),
+    inset 0 2px 3px rgba(231, 197, 106, 0.28),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.tm-felt {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
   overflow: hidden;
   background: var(--felt);
   box-shadow:
-    0 34px 90px rgba(0, 0, 0, 0.72),
-    0 0 0 14px #2a1a0c,
-    0 0 0 15px rgba(231, 197, 106, 0.3),
-    inset 0 3px 4px rgba(231, 197, 106, 0.22),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.5);
+    inset 0 0 0 1.5px rgba(231, 197, 106, 0.42),
+    inset 0 0 60px rgba(0, 0, 0, 0.5);
 }
-.tm-board::before {
+.tm-felt::before {
   content: '';
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 6px);
   pointer-events: none;
 }
-.tm-board::after {
+.tm-felt::after {
   content: '';
   position: absolute;
   inset: 0;
-  box-shadow: inset 0 0 180px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 120px 10px rgba(0, 0, 0, 0.5);
   pointer-events: none;
 }
 
@@ -278,19 +290,25 @@ html, body {
 .tm-tile.is-clickable:hover { filter: brightness(1.12); outline: 2px solid var(--gold); outline-offset: 1px; }
 .tm-tile.is-highlight { box-shadow: 0 0 12px rgba(231, 197, 106, 0.75), 0 2px 3px rgba(0, 0, 0, 0.35); }
 
-/* --- paneles de personaje (esquinas, 240×540) -------------------------------- */
+/* --- paneles de personaje (tarjetas flotantes en las esquinas) ---------------- */
 .tm-panel {
   position: relative;
   overflow: hidden;
   background: #1a1410;
-  border: 2px solid #4a4438;
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(231, 197, 106, 0.35);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.tm-panel--self { border-color: rgba(231, 197, 106, 0.55); }
+.tm-panel--self { border-color: var(--gold-lt); }
 .tm-panel.is-turn {
   border-color: var(--gold-lt);
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(231, 197, 106, 0.5);
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(231, 197, 106, 0.35),
+    0 0 40px rgba(231, 197, 106, 0.5);
 }
 .tm-panel__img {
   position: absolute;
@@ -338,15 +356,15 @@ html, body {
   padding: 12px 14px 14px;
   background: linear-gradient(180deg, transparent, rgba(8, 5, 2, 0.9) 55%);
 }
-.tm-panel__row { display: flex; align-items: baseline; gap: 10px; }
+.tm-panel__row { display: flex; align-items: baseline; gap: 8px; }
 .tm-panel__place { font-family: var(--display); font-size: 24px; color: var(--gold); letter-spacing: 0.04em; }
-.tm-panel__name { font-family: var(--display); font-weight: 600; font-size: 26px; color: var(--cream); text-shadow: 0 1px 3px #000; }
+.tm-panel__name { font-family: var(--display); font-weight: 600; font-size: 24px; color: var(--cream); text-shadow: 0 1px 3px #000; }
 .tm-panel__score { font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 1; color: #f4ecd6; letter-spacing: 0.02em; }
 .tm-panel__menu {
   position: absolute;
   right: 12px;
   top: 12px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(20, 14, 7, 0.94), rgba(9, 6, 3, 0.92));
   border: 1px solid rgba(231, 197, 106, 0.5);
