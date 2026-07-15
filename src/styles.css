@@ -495,70 +495,168 @@ html, body {
 .tm-overlay__continue { margin-top: 8px; }
 
 /* --- selección de personaje ------------------------------------------------- */
+/* Diseño fijo dentro del stage 1920×1080; el letterbox lo escala todo.
+   Layout: cabecera + dos columnas (asientos 2×2 | elenco 4×3 + acciones). */
 .tm-select {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  padding: 28px 20px 32px;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'head'
+    'body';
+  row-gap: 32px;
+  padding: 48px 64px;
   box-sizing: border-box;
 }
-.tm-select__head { text-align: center; }
+.tm-select__head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.tm-select__back {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: rgba(10, 18, 12, 0.7);
+  color: var(--cream);
+  font-family: var(--display);
+  font-size: 40px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  transition: filter 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+}
+.tm-select__back:hover { filter: brightness(1.15); border-color: var(--gold-lt); }
+.tm-select__back:active { transform: translateY(1px); }
+.tm-select__headings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .tm-select__title {
   display: block;
   font-family: var(--jp);
-  font-size: 46px;
-  letter-spacing: 0.14em;
+  font-size: 64px;
+  letter-spacing: 0.06em;
   color: var(--gold);
   font-weight: 600;
+  line-height: 1.05;
 }
 .tm-select__sub {
   display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
+  font-family: var(--jp);
+  font-size: 28px;
+  letter-spacing: 0.18em;
   color: var(--muted2);
 }
-.tm-select__slots { display: flex; gap: 14px; }
+/* Cuerpo: la columna derecha define la altura; los asientos estiran a ella
+   (arriba = top de retratos, abajo = bottom de botones). */
+.tm-select__body {
+  grid-area: body;
+  display: grid;
+  grid-template-columns: 620px 860px;
+  column-gap: 48px;
+  align-items: stretch;
+  justify-content: center;
+  align-self: center;
+  /* Sube un poco el bloque respecto al centro vertical. */
+  transform: translateY(-8px);
+}
+.tm-select__seats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  min-height: 0;
+  height: 100%;
+}
 .tm-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  min-height: 0;
+  height: 100%;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  box-sizing: border-box;
 }
-.tm-slot.is-current { background: rgba(231, 197, 106, 0.1); outline: 1.5px solid var(--gold); }
+.tm-slot.is-current { background: rgba(231, 197, 106, 0.1); outline: 3px solid var(--gold); }
 .tm-slot__label {
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  flex: 0 0 auto;
+  font-size: 16px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted2);
 }
 .tm-slot.is-current .tm-slot__label { color: var(--gold); }
 .tm-slot__frame {
-  width: 84px;
-  height: 100px;
-  border-radius: 8px;
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border-radius: 12px;
   overflow: hidden;
-  border: 2px solid #7c8a7f;
+  border: 3px solid #7c8a7f;
   background: repeating-linear-gradient(135deg, #26303a 0 9px, #2d3844 9px 18px);
   display: grid;
   place-items: center;
 }
 .tm-slot.is-current .tm-slot__frame { border-color: var(--gold); }
-.tm-slot__frame img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.tm-slot__q { font-family: var(--display); font-size: 34px; color: #5f6f7e; }
-.tm-slot__name { font-size: 12px; font-weight: 700; color: var(--cream); min-height: 15px; }
+.tm-slot__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.tm-slot__wind {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-bottom-right-radius: 12px;
+  font-family: var(--jp);
+  font-weight: 700;
+  font-size: 30px;
+  color: #fdf6e6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.tm-slot__q { font-family: var(--display); font-size: 72px; color: #5f6f7e; }
+.tm-slot__name {
+  flex: 0 0 auto;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cream);
+  min-height: 26px;
+}
+.tm-select__right {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+  width: 860px;
+}
 .tm-select__grid {
   display: grid;
-  grid-template-columns: repeat(6, 96px);
-  gap: 10px;
+  grid-template-columns: repeat(4, 200px);
+  gap: 20px;
+  width: 860px;
 }
 .tm-char {
   display: flex;
@@ -568,34 +666,45 @@ html, body {
   border: none;
   cursor: pointer;
   padding: 0;
+  min-width: 0;
 }
 .tm-char img {
-  width: 96px;
-  height: 112px;
+  width: 100%;
+  height: 190px;
   object-fit: cover;
   object-position: top;
-  border-radius: 8px;
-  border: 2px solid rgba(231, 197, 106, 0.25);
+  border-radius: 12px;
+  border: 3px solid rgba(231, 197, 106, 0.25);
   transition: border-color 0.15s ease, transform 0.12s ease, filter 0.15s ease;
 }
-.tm-char:hover img { border-color: var(--gold); transform: translateY(-3px); }
-.tm-char span { font-size: 12px; font-weight: 600; color: var(--parchment); text-align: center; }
+.tm-char:hover img { border-color: var(--gold); transform: translateY(-5px); }
+.tm-char span { font-size: 22px; font-weight: 600; color: var(--parchment); text-align: center; }
 .tm-char.is-taken { pointer-events: none; }
 .tm-char.is-taken img { filter: grayscale(0.9) brightness(0.45); border-color: #3a4238; }
 .tm-char.is-taken span { color: var(--muted2); }
-.tm-select__actions { display: flex; gap: 12px; }
+.tm-select__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  width: 860px; /* mismo ancho que la rejilla → botones alineados al borde derecho */
+}
+.tm-select__actions .tm-btn {
+  font-size: 36px;
+  padding: 14px 28px;
+}
 .tm-select__actions .tm-btn:disabled { opacity: 0.35; cursor: default; }
-.tm-select__hint { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted2); }
 
 /* --- menú principal (portada) ------------------------------------------------ */
+/* Diseño fijo dentro del stage 1920×1080; el letterbox lo escala todo. */
 .tm-menu {
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 26px;
-  padding: 40px 20px;
+  gap: 48px;
+  padding: 60px 40px;
   box-sizing: border-box;
   background:
     radial-gradient(80% 60% at 50% 30%, rgba(231, 197, 106, 0.08), transparent 70%),
@@ -605,18 +714,19 @@ html, body {
 .tm-menu__jp {
   font-family: var(--jp);
   font-weight: 700;
-  font-size: 18px;
+  font-size: 34px;
   letter-spacing: 0.42em;
   padding-left: 0.42em;
   color: #c8ab63;
 }
 .tm-menu__title {
-  margin: 6px 0 8px;
+  margin: 14px 0 18px;
+  padding: 0 0.08em;
   font-family: var(--jp);
-  font-style: italic;
   font-weight: 700;
-  font-size: 76px;
-  line-height: 0.9;
+  font-size: 184px;
+  line-height: 1;
+  white-space: nowrap;
   background: linear-gradient(180deg, #fbf0c8 0%, #e7c56a 46%, #b98a29 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -625,7 +735,7 @@ html, body {
 }
 .tm-menu__tag {
   font-family: var(--serif);
-  font-size: 13px;
+  font-size: 26px;
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: #8a7f66;
@@ -633,178 +743,59 @@ html, body {
 .tm-menu__play {
   font-family: var(--display-serif);
   font-weight: 700;
-  font-size: 26px;
+  font-size: 54px;
   letter-spacing: 0.08em;
-  padding: 10px 34px;
+  padding: 20px 64px;
 }
-.tm-menu__actions { display: flex; align-items: center; gap: 12px; }
-.tm-menu__settings-btn { font-size: 18px; padding: 10px 22px; }
-.tm-audio-ov .tm-overlay__card { width: 420px; gap: 16px; }
-.tm-audio-ov .tm-overlay__title { font-size: 44px; }
+.tm-menu__actions { display: flex; align-items: center; gap: 24px; }
+.tm-menu__settings-btn { font-size: 38px; padding: 18px 44px; }
+.tm-audio-ov .tm-overlay__card {
+  width: 720px;
+  gap: 28px;
+  padding: 34px 44px;
+}
+.tm-audio-ov .tm-overlay__title { font-size: 72px; }
+.tm-audio-ov .tm-btn {
+  font-size: 40px;
+  padding: 14px 40px;
+}
 .tm-audio-ov__sliders {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 18px;
 }
 .tm-audio-ov__slider {
   display: grid;
-  grid-template-columns: 64px 1fr 30px;
+  grid-template-columns: 120px 1fr 56px;
   align-items: center;
-  gap: 12px;
+  gap: 22px;
 }
 .tm-audio-ov__slider-label {
   font-family: var(--serif);
-  font-size: 14px;
+  font-size: 26px;
   color: var(--cream);
 }
 .tm-audio-ov__slider input[type='range'] {
   width: 100%;
+  height: 22px;
   accent-color: var(--gold);
   cursor: pointer;
 }
 .tm-audio-ov__slider-val {
   font-family: var(--display-serif);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 26px;
   color: var(--gold);
   text-align: right;
 }
 .tm-menu__credits {
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: 22px;
   letter-spacing: 0.04em;
   color: #6f6650;
   text-align: center;
-  max-width: 460px;
-}
-
-/* Menús fluidos en teléfonos en horizontal. El tablero usa su propio escenario
-   1920×1080 escalado y no necesita este ajuste. */
-@media (orientation: landscape) and (max-height: 500px) {
-  .tm-menu {
-    gap: 14px;
-    padding: max(14px, env(safe-area-inset-top))
-      max(18px, env(safe-area-inset-right))
-      max(14px, env(safe-area-inset-bottom))
-      max(18px, env(safe-area-inset-left));
-  }
-  .tm-menu__jp { font-size: 14px; }
-  .tm-menu__title {
-    margin: 3px 0 5px;
-    font-size: 48px;
-  }
-  .tm-menu__tag { font-size: 10px; }
-  .tm-menu__play { font-size: 22px; padding: 8px 28px; }
-  .tm-menu__settings-btn { font-size: 16px; padding: 8px 18px; }
-  .tm-audio-ov .tm-overlay__card {
-    width: 400px;
-    padding: 16px 22px 18px;
-    gap: 10px;
-  }
-  .tm-audio-ov .tm-overlay__title { font-size: 36px; }
-  .tm-audio-ov__sliders { gap: 6px; }
-
-  .tm-select {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(170px, 0.7fr) minmax(0, 1.6fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      'head hint'
-      'slots grid'
-      'slots actions';
-    column-gap: 16px;
-    row-gap: 8px;
-    padding: max(12px, env(safe-area-inset-top))
-      max(14px, env(safe-area-inset-right))
-      max(12px, env(safe-area-inset-bottom))
-      max(14px, env(safe-area-inset-left));
-  }
-  .tm-select__head {
-    grid-area: head;
-    align-self: end;
-  }
-  .tm-select__title {
-    font-size: 28px;
-    line-height: 1;
-    letter-spacing: 0.08em;
-  }
-  .tm-select__sub {
-    margin-top: 3px;
-    font-size: 8px;
-    letter-spacing: 0.16em;
-  }
-  .tm-select__slots {
-    grid-area: slots;
-    align-self: center;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(72px, 1fr));
-    gap: 6px 8px;
-  }
-  .tm-slot {
-    min-width: 0;
-    gap: 2px;
-    padding: 3px;
-  }
-  .tm-slot__label {
-    font-size: 8px;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-  .tm-slot__frame {
-    width: clamp(56px, 10vw, 70px);
-    height: clamp(66px, 19vh, 82px);
-  }
-  .tm-slot__q { font-size: 26px; }
-  .tm-slot__name {
-    min-height: 12px;
-    font-size: 10px;
-  }
-  .tm-select__hint {
-    grid-area: hint;
-    align-self: end;
-    font-size: 0;
-    text-align: center;
-  }
-  .tm-select__hint::after {
-    content: attr(data-mobile-label);
-    font-size: 11px;
-  }
-  .tm-select__grid {
-    grid-area: grid;
-    align-self: center;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(52px, 78px));
-    justify-content: center;
-    gap: 6px;
-  }
-  .tm-char { min-width: 0; gap: 2px; }
-  .tm-char img {
-    width: 100%;
-    height: clamp(50px, 16vh, 72px);
-    border-radius: 5px;
-  }
-  .tm-char span {
-    overflow: hidden;
-    font-size: 9px;
-    line-height: 1.1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tm-select__actions {
-    grid-area: actions;
-    align-self: start;
-    justify-content: center;
-    gap: 8px;
-  }
-  .tm-select__actions .tm-btn {
-    padding: 6px 10px;
-    font-size: 16px;
-  }
+  max-width: 900px;
 }
 
 /* --- pantalla de victoria (1B) ----------------------------------------------- */

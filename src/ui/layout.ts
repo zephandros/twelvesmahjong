@@ -12,10 +12,10 @@ export const BOARD = { x: 264, y: 30, w: 1392, h: 1020 } as const
 export const RAIL = { x: 240, y: 6, w: 1440, h: 1068 } as const
 
 /**
- * Crea el nodo escenario dentro de `root` y lo mantiene escalado y centrado.
- * Devuelve el elemento sobre el que posicionar hijos en coordenadas de 1920×1080.
+ * Frame + escenario vacío 1920×1080, escalado y centrado con letterbox.
+ * Útil para menú / select (sin mesa). Devuelve el nodo `.tm-stage`.
  */
-export function createStage(root: HTMLElement): HTMLElement {
+export function createScaledStage(root: HTMLElement): HTMLElement {
   root.classList.add('tm-root')
 
   const frame = document.createElement('div')
@@ -25,16 +25,6 @@ export function createStage(root: HTMLElement): HTMLElement {
   stage.className = 'tm-stage'
   stage.style.width = `${STAGE_W}px`
   stage.style.height = `${STAGE_H}px`
-
-  // Riel y fieltro decorativos, detrás de las fichas y el HUD.
-  const board = document.createElement('div')
-  board.className = 'tm-board'
-  board.style.cssText =
-    `position:absolute;left:${RAIL.x}px;top:${RAIL.y}px;width:${RAIL.w}px;height:${RAIL.h}px`
-  const felt = document.createElement('div')
-  felt.className = 'tm-felt'
-  board.appendChild(felt)
-  stage.appendChild(board)
 
   frame.appendChild(stage)
   root.appendChild(frame)
@@ -53,6 +43,26 @@ export function createStage(root: HTMLElement): HTMLElement {
   }
   apply()
   new ResizeObserver(apply).observe(frame)
+
+  return stage
+}
+
+/**
+ * Escenario de partida: `createScaledStage` + riel/fieltro decorativos.
+ * Devuelve el elemento sobre el que posicionar hijos en coordenadas de 1920×1080.
+ */
+export function createStage(root: HTMLElement): HTMLElement {
+  const stage = createScaledStage(root)
+
+  // Riel y fieltro decorativos, detrás de las fichas y el HUD.
+  const board = document.createElement('div')
+  board.className = 'tm-board'
+  board.style.cssText =
+    `position:absolute;left:${RAIL.x}px;top:${RAIL.y}px;width:${RAIL.w}px;height:${RAIL.h}px`
+  const felt = document.createElement('div')
+  felt.className = 'tm-felt'
+  board.appendChild(felt)
+  stage.appendChild(board)
 
   return stage
 }

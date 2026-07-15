@@ -13,7 +13,8 @@ GLYPHS = (
     '流途中'         # 流局 / 途中流局
     '搶槓'           # chankan (tampoco en Murecho: lo cubre Noto)
     'ツモロン'        # katakana de tsumo/ron
-    'プレイヤー対戦者'  # selección de personaje
+    'プレイヤー対戦者'  # selección de personaje (slots)
+    'キャラクター選択'  # subtítulo de la pantalla de selección
     'フリー'          # フリー対局
     '対'            # (por si 対局 aparece suelto)
 )
