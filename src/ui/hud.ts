@@ -4,9 +4,11 @@
 // con tema de mesa, dorso de ficha y volúmenes.
 
 import type { HandState } from '../core/state'
+import type { TileId } from '../core/tile'
 import type { Seat } from '../core/seat'
 import { SEATS, relSeat, cornerOf, seatWind, windColor, windKanji, type Corner } from '../core/seat'
 import { BOARD, STAGE_H, place } from './layout'
+import { createTileView, type TileView } from './tile-view'
 import { thumbUrl, type Character } from './characters'
 import {
   saveSettings, setVolumeSetting, type Settings, type TableTheme, type TileBack, type VolumeChannel,
@@ -17,11 +19,15 @@ export interface ButtonDef {
   label: string
   kind: string
   style?: 'primary' | 'normal' | 'muted'
+  /** Mini-fichas dentro del botón (opciones de chi); sustituyen al label. */
+  tiles?: TileId[]
 }
 
 export interface HudInfo {
   kyoku: number
   buttons: ButtonDef[]
+  /** Opciones del picker de chi, en fila propia sobre los botones de acción. */
+  chiOptions: ButtonDef[]
   turnLabel: string | null
 }
 
@@ -54,6 +60,8 @@ export class Hud {
   private readonly human: Seat
   private readonly chars: readonly Character[]
   private readonly onButton: (kind: string) => void
+  // mini-fichas estáticas dentro de botones (mismo patrón que win-screen)
+  private readonly tileView: TileView = createTileView(32)
 
   private readonly portraits = new Map<Seat, {
     panel: HTMLElement
@@ -69,6 +77,7 @@ export class Hud {
   private readonly honbaEl: HTMLElement
   private readonly sticksEl: HTMLElement
   private readonly buttonsRow: HTMLElement
+  private readonly chiRow: HTMLElement
   private readonly turnEl: HTMLElement
   private readonly overlay: HTMLElement
 
@@ -148,8 +157,15 @@ export class Hud {
 
     // --- botones de acción + rótulo de turno ---
     this.buttonsRow = el('div', 'display:flex;gap:10px')
+    this.buttonsRow.className = 'tm-action-row'
     place(this.buttonsRow, { right: 264, bottom: 116, z: 45 })
     stage.appendChild(this.buttonsRow)
+
+    // fila de opciones de chi, encima de los botones de acción
+    this.chiRow = el('div', 'display:flex;gap:10px')
+    this.chiRow.className = 'tm-action-row'
+    place(this.chiRow, { right: 264, bottom: 172, z: 45 })
+    stage.appendChild(this.chiRow)
 
     this.turnEl = el('div', 'font-family:var(--display);font-style:italic;font-size:20px;letter-spacing:.34em;color:var(--gold);text-transform:uppercase')
     place(this.turnEl, {
@@ -260,16 +276,26 @@ export class Hud {
     this.sticksEl.innerHTML =
       `<span style="width:16px;height:6px;border-radius:2px;background:linear-gradient(#f4ecd6,#cfc6ad);border:1px solid #b9a15a"></span>${s.sticks}`
 
-    this.buttonsRow.replaceChildren(
-      ...info.buttons.map((b) => {
+    this.renderButtons(this.buttonsRow, info.buttons)
+    this.renderButtons(this.chiRow, info.chiOptions)
+    this.turnEl.textContent = info.turnLabel ?? ''
+  }
+
+  private renderButtons(row: HTMLElement, defs: ButtonDef[]): void {
+    row.replaceChildren(
+      ...defs.map((b) => {
         const btn = document.createElement('button')
         btn.className = `tm-btn tm-btn--${b.style ?? 'normal'}`
-        btn.textContent = b.label
+        if (b.tiles) {
+          btn.classList.add('tm-btn--tiles')
+          for (const id of b.tiles) btn.appendChild(this.tileView.create('front', id))
+        } else {
+          btn.textContent = b.label
+        }
         btn.addEventListener('click', () => this.onButton(b.kind))
         return btn
       }),
     )
-    this.turnEl.textContent = info.turnLabel ?? ''
   }
 
   // --- overlays de fin ------------------------------------------------------

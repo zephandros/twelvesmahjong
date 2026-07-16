@@ -66,6 +66,7 @@ export function startGame(
   let game: GameState = newGame(Date.now() >>> 0)
   const botRng: Rng = makeRng((Date.now() ^ 0xc0ffee) >>> 0)
   let riichiMode = false
+  let chiPicker = false
   let lastDecisionPending = false
   let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -106,6 +107,7 @@ export function startGame(
     hud.update(s, {
       kyoku: game.kyoku,
       buttons: humanButtons(s),
+      chiOptions: humanChiOptions(s),
       turnLabel: turnLabel(s),
     })
     const pending = humanDecisionPending(s)
@@ -117,7 +119,9 @@ export function startGame(
     if (s.phase === 'ended') return null
     if (riichiMode) return '— RIICHI: CHOOSE DISCARD —'
     if (s.phase === 'discard' && s.turn === HUMAN) return '— YOUR TURN —'
-    if (s.phase === 'reaction' && pendingHumanOffer(s)) return '— CALL? —'
+    if (s.phase === 'reaction' && pendingHumanOffer(s)) {
+      return chiPicker ? '— CHOOSE CHI —' : '— CALL? —'
+    }
     return null
   }
 
@@ -138,17 +142,47 @@ export function startGame(
       if (offer.ron) out.push({ label: 'RON', kind: 'ron', style: 'primary' })
       if (offer.pon) out.push({ label: 'PON', kind: 'pon' })
       if (offer.kan) out.push({ label: 'KAN', kind: 'daiminkan' })
-      for (const start of offer.chi) {
-        out.push({ label: `CHI ${chiLabel(start)}`, kind: `chi:${start}` })
+      if (offer.chi.length > 0) {
+        // con el picker abierto, BACK ocupa el sitio de CHI
+        out.push(chiPicker
+          ? { label: 'BACK', kind: 'chi-cancel', style: 'muted' }
+          : { label: 'CHI', kind: 'chi-open' })
       }
       out.push({ label: 'PASS', kind: 'pass', style: 'muted' })
     }
     return out
   }
 
-  function chiLabel(start: Tile34): string {
-    const rank = (start % 9) + 1
-    return `${rank}${rank + 1}${rank + 2}`
+  /** Opciones del picker de chi (fila superior); vacío si el picker está cerrado. */
+  function humanChiOptions(s: HandState): ButtonDef[] {
+    if (!chiPicker) return []
+    const offer = pendingHumanOffer(s)
+    if (!offer) return []
+    return offer.chi.map((start) => ({
+      label: '',
+      kind: `chi:${start}`,
+      tiles: chiOptionTiles(s, start),
+    }))
+  }
+
+  /**
+   * Fichas concretas de la corrida `start..start+2`: la llamada es la del
+   * descarte; las otras dos se buscan en mano desde el final, el mismo criterio
+   * que `takeFromHand` del reducer, para que el aka mostrado coincida con el
+   * meld que se formará.
+   */
+  function chiOptionTiles(s: HandState, start: Tile34): TileId[] {
+    const called = s.reaction!.tile
+    const hand = s.seats[HUMAN]!.hand
+    const fromHand = (t: Tile34): TileId => {
+      for (let i = hand.length - 1; i >= 0; i--) {
+        if (tile34Of(hand[i]!) === t) return hand[i]!
+      }
+      return (t * 4) as TileId // inalcanzable: la oferta garantiza la copia
+    }
+    return [start, start + 1, start + 2].map((t) =>
+      t === tile34Of(called) ? called : fromHand(t),
+    )
   }
 
   function pendingHumanOffer(s: HandState) {
@@ -179,6 +213,7 @@ export function startGame(
     // asiento que actúa: en reacciones lo lleva la acción; en el resto es el
     // turno actual (antes de reducir, que puede cambiarlo)
     const actor: Seat = 'seat' in action ? action.seat : game.hand.turn
+    chiPicker = false // cualquier acción resuelve (o invalida) la reacción
     try {
       game = { ...game, hand: reduce(game.hand, action) }
     } catch (err) {
@@ -301,6 +336,20 @@ export function startGame(
         return
       }
       case 'kyuushu': return apply({ type: 'kyuushu' })
+      case 'chi-open': {
+        const offer = pendingHumanOffer(s)
+        if (!offer || offer.chi.length === 0) return
+        if (offer.chi.length === 1) {
+          return apply({ type: 'chi', seat: HUMAN, start: offer.chi[0]! })
+        }
+        chiPicker = true
+        render()
+        return
+      }
+      case 'chi-cancel':
+        chiPicker = false
+        render()
+        return
       case 'ron': return apply({ type: 'ron', seat: HUMAN })
       case 'pon': return apply({ type: 'pon', seat: HUMAN })
       case 'daiminkan': return apply({ type: 'daiminkan', seat: HUMAN })

@@ -417,6 +417,10 @@ html, body {
 .tm-btn--primary { color: var(--ink); background: linear-gradient(var(--gold-lt), var(--gold)); border-color: var(--gold-lt); }
 .tm-btn--normal { color: var(--cream); background: rgba(10, 18, 12, 0.85); border-color: var(--gold); }
 .tm-btn--muted { color: var(--muted); background: rgba(10, 18, 12, 0.7); border-color: #5f6f60; }
+.tm-btn--tiles { display: flex; align-items: center; gap: 3px; padding: 4px 8px; }
+
+/* botones de acción (reacción/turno) y opciones de chi: borde más cuadrado */
+.tm-action-row .tm-btn { border-radius: 10px; }
 
 /* --- overlay de fin ------------------------------------------------------------- */
 .tm-overlay {
