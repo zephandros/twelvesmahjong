@@ -10,6 +10,7 @@ const opts = {
   revealAll: false,
   clickable: new Set<number>(),
   highlight: new Set<number>(),
+  dim: new Set<number>(),
 }
 
 const id = (label: string, copy = 0): TileId => ((parseTile(label) << 2) | copy)

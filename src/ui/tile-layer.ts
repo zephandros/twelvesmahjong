@@ -69,6 +69,7 @@ export class TileLayer {
       el.classList.toggle('is-hidden', !p.visible)
       el.classList.toggle('is-clickable', p.clickable)
       el.classList.toggle('is-highlight', p.highlight)
+      el.classList.toggle('is-dim', p.dim)
 
       // accesibilidad: la ficha clicable es un botón real
       if (p.clickable) {

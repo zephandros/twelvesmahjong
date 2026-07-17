@@ -3,7 +3,7 @@
 
 import type { TileId, Tile34 } from '../core/tile'
 import { tile34Of } from '../core/tile'
-import type { Seat } from '../core/seat'
+import { SEATS, type Seat } from '../core/seat'
 import type { Action } from '../core/actions'
 import type { HandState } from '../core/state'
 import { reduce } from '../core/reducer'
@@ -76,15 +76,21 @@ export function startGame(
     const s = game.hand
     const clickable = new Set<TileId>()
     const highlight = new Set<TileId>()
+    const dim = new Set<TileId>()
 
     if (s.phase === 'discard' && s.turn === HUMAN) {
       const st = s.seats[HUMAN]!
-      if (s.drawn !== null) highlight.add(s.drawn)
+      if (!riichiMode && s.drawn !== null) highlight.add(s.drawn)
       if (riichiMode) {
-        for (const id of riichiOptions(s)) {
+        // solo brillan (y se pueden clicar) los descartes que mantienen tenpai;
+        // el resto de la mano se apaga
+        const opts = new Set(riichiOptions(s))
+        for (const id of opts) {
           clickable.add(id)
           highlight.add(id)
         }
+        const pool = s.drawn !== null ? [...st.hand, s.drawn] : [...st.hand]
+        for (const id of pool) if (!opts.has(id)) dim.add(id)
       } else if (st.riichi > 0) {
         if (s.drawn !== null) clickable.add(s.drawn)
       } else {
@@ -96,12 +102,22 @@ export function startGame(
       }
     }
 
+    // llamada pendiente del humano: se apagan todos los descartes menos el que
+    // desencadenó la oferta, para que se vea qué ficha se llama
+    if (pendingHumanOffer(s)) {
+      const called = s.reaction!.tile
+      for (const seat of SEATS) {
+        for (const id of s.seats[seat]!.pond) if (id !== called) dim.add(id)
+      }
+    }
+
     layer.update(
       computePlacements(s, {
         human: HUMAN,
         revealAll: s.phase === 'ended',
         clickable,
         highlight,
+        dim,
       }),
     )
     hud.update(s, {
