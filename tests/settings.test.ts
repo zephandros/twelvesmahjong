@@ -52,4 +52,15 @@ describe('settings', () => {
     localStorage.setItem('tm-settings-v1', '{ not json')
     expect(loadSettings()).toEqual(DEFAULTS)
   })
+
+  it('idioma: default auto, round-trip y rechazo de valores inválidos', () => {
+    expect(DEFAULTS.language).toBe('auto')
+    expect(loadSettings().language).toBe('auto')
+
+    saveSettings({ ...DEFAULTS, language: 'ja' as const })
+    expect(loadSettings().language).toBe('ja')
+
+    localStorage.setItem('tm-settings-v1', JSON.stringify({ language: 'fr' }))
+    expect(loadSettings().language).toBe('auto')
+  })
 })

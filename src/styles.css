@@ -114,11 +114,14 @@
     linear-gradient(180deg, #7d5632 0%, #5c3d20 45%, #3c2814 78%, #22140a 100%);
 
   /* Dorso de ficha: por defecto Amber; lo redefine [data-back]. */
-  --ui: 'Murecho', 'Segoe UI', system-ui, sans-serif;
-  --display: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  /* Todos los stacks acaban en 'Noto Serif JP': su subset (jp_glyphs.py) trae
+     TODOS los glifos CJK/kana del i18n, así los kanji se pintan offline en
+     cualquier stack e idioma (Murecho no cubre 發搶槓 牌 蓮 摸 撈 嶺 盃 燈 雀). */
+  --ui: 'Murecho', 'Noto Serif JP', 'Segoe UI', system-ui, sans-serif;
+  --display: 'Cormorant Garamond', 'EB Garamond', 'Noto Serif JP', Georgia, serif;
   --jp: 'Murecho', 'Noto Serif JP', 'Yu Mincho', serif;
-  --serif: 'EB Garamond', Georgia, serif;
-  --display-serif: 'Cormorant Garamond', Georgia, serif;
+  --serif: 'EB Garamond', 'Noto Serif JP', Georgia, serif;
+  --display-serif: 'Cormorant Garamond', 'Noto Serif JP', Georgia, serif;
 }
 
 /* Temas de mesa (barra superior → Settings.tableTheme). */

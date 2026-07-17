@@ -77,15 +77,15 @@ function doraHits(ctx: WinContext): YakuHit[] {
   }
 
   const dora = countMatches(ctx.doraIndicators)
-  if (dora > 0) hits.push({ id: 'dora', name: `Dora ${dora}`, han: dora })
+  if (dora > 0) hits.push({ id: 'dora', han: dora })
 
   if (ctx.riichi > 0) {
     const ura = countMatches(ctx.uraIndicators)
-    if (ura > 0) hits.push({ id: 'ura', name: `Ura Dora ${ura}`, han: ura })
+    if (ura > 0) hits.push({ id: 'ura', han: ura })
   }
 
   const aka = allTileIds(ctx).filter(isAka).length
-  if (aka > 0) hits.push({ id: 'aka', name: `Aka Dora ${aka}`, han: aka })
+  if (aka > 0) hits.push({ id: 'aka', han: aka })
 
   return hits
 }

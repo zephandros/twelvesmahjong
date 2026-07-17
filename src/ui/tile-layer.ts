@@ -10,6 +10,7 @@ import type { TileId } from '../core/tile'
 import { TILEID_COUNT, labelId } from '../core/tile'
 import type { Placement } from './geometry'
 import type { TileView } from './tile-view'
+import { t } from './i18n'
 
 interface Node {
   el: HTMLElement
@@ -74,7 +75,7 @@ export class TileLayer {
       // accesibilidad: la ficha clicable es un botón real
       if (p.clickable) {
         el.setAttribute('role', 'button')
-        el.setAttribute('aria-label', `descartar ${labelId(id)}`)
+        el.setAttribute('aria-label', t('a11y.discard', { tile: labelId(id) }))
         el.setAttribute('tabindex', '0')
       } else {
         el.removeAttribute('role')

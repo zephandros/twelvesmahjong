@@ -2,25 +2,32 @@
 // del juego NO los toca: son preferencias (volúmenes, tema de mesa, dorso de
 // ficha). loadSettings nunca lanza: ante datos corruptos vuelve a DEFAULTS.
 
+import type { Locale } from './i18n'
+
 export type TableTheme = 'green' | 'red' | 'blue' | 'wood'
 export type TileBack = 'amber' | 'green' | 'red' | 'blue' | 'charcoal'
 export type VolumeChannel = 'master' | 'music' | 'sfx' | 'voices'
+/** 'auto' = seguir al navegador en cada arranque (hasta que el usuario elija). */
+export type Language = Locale | 'auto'
 
 export interface Settings {
   volumes: Record<VolumeChannel, number> // 0..1
   tableTheme: TableTheme
   tileBack: TileBack
+  language: Language
 }
 
 export const DEFAULTS: Settings = {
   volumes: { master: 0.8, music: 0.6, sfx: 0.9, voices: 1 },
   tableTheme: 'green',
   tileBack: 'amber',
+  language: 'auto',
 }
 
 const KEY = 'tm-settings-v1'
 const THEMES: readonly TableTheme[] = ['green', 'red', 'blue', 'wood']
 const BACKS: readonly TileBack[] = ['amber', 'green', 'red', 'blue', 'charcoal']
+const LANGUAGES: readonly Language[] = ['auto', 'es', 'en', 'ja']
 
 const clamp01 = (n: unknown): number | null =>
   typeof n === 'number' && Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : null
@@ -45,6 +52,9 @@ export function loadSettings(): Settings {
       tileBack: BACKS.includes(p.tileBack as TileBack)
         ? (p.tileBack as TileBack)
         : DEFAULTS.tileBack,
+      language: LANGUAGES.includes(p.language as Language)
+        ? (p.language as Language)
+        : DEFAULTS.language,
     }
   } catch {
     return structuredClone(DEFAULTS)

@@ -36,7 +36,8 @@ Autor: `zephandro <twelvesrpg@gmail.com>` (config `--local`). **`raw/` está en
 - Distribución: host estático (GitHub Pages). El SW **no** funciona sobre `file://`.
 
 Comandos: `npm run dev` · `npm run build` · `npm test`. Assets: `npm run assets:tiles`
-· `assets:audio` (requiere ffmpeg) · `assets:fonts` (requiere Python + fontTools).
+· `assets:audio` (requiere ffmpeg) · `assets:fonts` (requiere Python + fontTools)
+· `assets:i18n` (CSV de traducciones → módulo TS; solo node).
 
 ## Arquitectura
 
@@ -93,6 +94,27 @@ Ver el plan para el detalle. Resumen:
    `honor_01→E · 02→W · 03→S · 04→N · 05→chun · 06→hatsu · 07→haku`.
 3. **La mano de ejemplo del mockup es ilegal** (pinfu con pareja de vientos de asiento).
    → Los yaku se derivan **siempre** del motor, nunca se escriben a mano en la vista.
+
+## i18n (es / en / ja)
+
+**Fuente de verdad: `i18n/strings.csv`** (`key|context|es|en|ja`, separador **pipe**
+para no entrecomillar comas; celda en/ja vacía = fallback a es). `npm run assets:i18n` lo compila a
+`src/ui/i18n-strings.generated.ts` (commiteado; claves tipadas `MsgKey`) y **valida**:
+claves, placeholders `{x}` consistentes, y que todo glifo CJK/kana de las 3 columnas
+esté en `GLYPHS` de `scripts/jp_glyphs.py`. Runtime: `src/ui/i18n.ts` (`t(key, params)`,
+`setLocale`, `detectLocale`); idioma en `Settings.language` (`'auto'` = navegador,
+fallback es); `?lang=es|en|ja` fuerza sin persistir. **core/ nunca produce texto**:
+devuelve ids (`YakuId`, `Limit`, `AbortReason`, `windName`) y la UI traduce
+`yaku.${id}`… — el tipo `DerivedKeyCheck` de i18n.ts rompe el typecheck si el CSV
+pierde una clave derivada. Los módulos de UI **no resuelven `t()` en top-level**
+(guardan claves; el cambio de idioma en caliente re-pinta). Nombres/epítetos de
+personajes: `char.<id>.*` + helpers `charName`/`charEpithet`. `src/debug/` queda fuera.
+
+**Flujo del traductor**: editar `i18n/strings.csv` → `npm run assets:i18n` (si aborta
+por glifos: ampliar `GLYPHS` en `scripts/jp_glyphs.py` y `npm run assets:fonts`) →
+`npm test` (integridad + frescura del generado) → commitear CSV + generado (+ woff2).
+Todos los font-stacks de `styles.css` acaban en `'Noto Serif JP'` (su subset trae
+todos los glifos del i18n): los kanji se pintan offline en cualquier idioma.
 
 ## Habilidades (能力)
 

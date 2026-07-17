@@ -5,8 +5,9 @@
 
 import type { HandState } from '../core/state'
 import { createTileView, type TileView } from './tile-view'
-import { portraitUrl, type Character } from './characters'
+import { portraitUrl, charName, charEpithet, type Character } from './characters'
 import { meldLayout, type MeldSlot } from './meld-layout'
+import { t, yakuLabel, getLocale } from './i18n'
 
 const KYOKU_KANJI = ['一', '二', '三', '四']
 
@@ -24,32 +25,34 @@ export function showWinScreen(
   const char = chars[winner]!
   const sc = end.score
   const tsumo = end.type === 'tsumo'
-  const kanji = tsumo ? 'ツモ' : end.chankan ? '搶槓' : 'ロン'
-  const title = tsumo ? 'TSUMO!' : end.chankan ? 'CHANKAN!' : 'RON!'
+  const kanji = tsumo ? t('win.tsumo-kanji') : end.chankan ? t('win.chankan-kanji') : t('win.ron-kanji')
+  const title = tsumo ? t('win.tsumo') : end.chankan ? t('win.chankan') : t('win.ron')
 
   const el = document.createElement('div')
   el.className = 'tm-win'
 
   const yakuPills = sc.yaku
-    .map((y) => `<span class="tm-yaku-pill">${y.name}</span>`)
+    .map((y) => `<span class="tm-yaku-pill">${yakuLabel(y)}</span>`)
     .join('')
-  const limit = sc.limit ? ` · ${sc.limit.toUpperCase()}` : ''
-  const hanfu = sc.yakuman > 0 ? 'YAKUMAN' : `${sc.han} HAN · ${sc.fu} FU${limit}`
+  const limit = sc.limit ? ` · ${t(`limit.${sc.limit}`)}` : ''
+  const hanfu = sc.yakuman > 0 ? t('hud.yakuman') : `${t('hud.han-fu', { han: sc.han, fu: sc.fu })}${limit}`
   const fromLine =
-    end.type === 'ron' ? `<span class="tm-win__from">← ${chars[end.from]!.name}</span>` : ''
+    end.type === 'ron' ? `<span class="tm-win__from">← ${charName(chars[end.from]!)}</span>` : ''
+  // en ja el nombre va en katakana: el uppercase del look Antique solo aplica al latín
+  const winnerName = getLocale() === 'ja' ? charName(char) : charName(char).toUpperCase()
 
   el.innerHTML = `
     <div class="tm-win__rays"></div>
-    <div class="tm-win__art"><img src="${portraitUrl(char)}" alt="${char.name}"></div>
+    <div class="tm-win__art"><img src="${portraitUrl(char)}" alt="${charName(char)}"></div>
     <div class="tm-win__body">
-      <div class="tm-win__kyoku">東${KYOKU_KANJI[kyoku] ?? '一'}局 · ${s.honba} HONBA</div>
+      <div class="tm-win__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>
       <div class="tm-win__kanji">${kanji}</div>
       <div class="tm-win__title">${title}</div>
-      <div class="tm-win__name"><b>${char.name.toUpperCase()}</b><span>${char.epithet}</span>${fromLine}</div>
+      <div class="tm-win__name"><b>${winnerName}</b><span>${charEpithet(char)}</span>${fromLine}</div>
       <div class="tm-yaku-list tm-win__yaku">${yakuPills}</div>
       <div class="tm-win__score"><span>${hanfu}</span><b>+${sc.total.toLocaleString('en-US')}</b></div>
       <div class="tm-win__hand"></div>
-      <button class="tm-btn tm-btn--primary tm-win__continue">CONTINUE</button>
+      <button class="tm-btn tm-btn--primary tm-win__continue">${t('hud.continue')}</button>
     </div>
   `
 

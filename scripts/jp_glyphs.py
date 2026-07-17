@@ -17,4 +17,12 @@ GLYPHS = (
     'キャラクター選択'  # subtítulo de la pantalla de selección
     'フリー'          # フリー対局
     '対'            # (por si 対局 aparece suelto)
+    # i18n: glifos de i18n/strings.csv (las 3 columnas). build-i18n.mjs valida
+    # que todo glifo CJK/kana del CSV esté aquí; al añadir textos nuevos, amplía
+    # esta entrada y relanza `npm run assets:fonts`.
+    'ゥズ・マジチ風設定オディ閉じるダム開始メニュに戻あなたの番捨て牌を鳴きますか？'
+    'カ種ポセテ背言語退出続け残り本場位終了再翻符役満荒断聴ノ連打家立直グベッドエアバコ'
+    '全体音楽効果ボ自動日発門前清摸和海底月河撈魚嶺上花天地平幺盃口色同順刻気通貫々暗子'
+    '混老頭純帯小元国士無双大喜字緑蓮宝燈裏赤跳倍数え不思議ビ代書人シヘザ千夜肖像画つ顔'
+    'ハミピナ仲ァ夫編み手糸し切'
 )

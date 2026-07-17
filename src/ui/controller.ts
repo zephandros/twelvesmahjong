@@ -21,6 +21,7 @@ import { computePlacements } from './geometry'
 import { showWinScreen } from './win-screen'
 import type { Roster, CharacterId } from './characters'
 import { loadSettings } from './settings'
+import { t } from './i18n'
 import { initAudio, playMusic, playSfx, playVoice, playAlert } from './audio/audio'
 import { GAME_TRACKS, type CallKind } from './audio/catalog'
 
@@ -57,7 +58,8 @@ export function startGame(
   const settings = loadSettings()
   const stage = createStage(root)
   const layer = new TileLayer(stage, createTileView(46), onTileClick)
-  const hud = new Hud(stage, HUMAN, roster, settings, onButton, onCharacters)
+  // onLanguageChange = render: re-pinta los textos dinámicos del HUD al vuelo
+  const hud = new Hud(stage, HUMAN, roster, settings, onButton, onCharacters, render)
 
   initAudio(settings) // mismo objeto que el Hud: cambiar el tema afecta al click
   // pista de partida al azar (Math.random, NUNCA el RNG semillado del core)
@@ -133,10 +135,10 @@ export function startGame(
 
   function turnLabel(s: HandState): string | null {
     if (s.phase === 'ended') return null
-    if (riichiMode) return '— RIICHI: CHOOSE DISCARD —'
-    if (s.phase === 'discard' && s.turn === HUMAN) return '— YOUR TURN —'
+    if (riichiMode) return t('game.riichi-choose')
+    if (s.phase === 'discard' && s.turn === HUMAN) return t('game.your-turn')
     if (s.phase === 'reaction' && pendingHumanOffer(s)) {
-      return chiPicker ? '— CHOOSE CHI —' : '— CALL? —'
+      return chiPicker ? t('game.choose-chi') : t('game.call')
     }
     return null
   }
@@ -144,27 +146,27 @@ export function startGame(
   function humanButtons(s: HandState): ButtonDef[] {
     const out: ButtonDef[] = []
     if (s.phase === 'discard' && s.turn === HUMAN) {
-      if (riichiMode) return [{ label: 'CANCEL', kind: 'riichi-cancel', style: 'muted' }]
-      if (tsumoScore(s)) out.push({ label: 'TSUMO', kind: 'tsumo', style: 'primary' })
-      if (riichiOptions(s).length > 0) out.push({ label: 'RIICHI', kind: 'riichi-mode', style: 'primary' })
+      if (riichiMode) return [{ label: t('game.btn.cancel'), kind: 'riichi-cancel', style: 'muted' }]
+      if (tsumoScore(s)) out.push({ label: t('game.btn.tsumo'), kind: 'tsumo', style: 'primary' })
+      if (riichiOptions(s).length > 0) out.push({ label: t('game.btn.riichi'), kind: 'riichi-mode', style: 'primary' })
       if (ankanOptions(s).length > 0 || shouminkanOptions(s).length > 0) {
-        out.push({ label: 'KAN', kind: 'kan' })
+        out.push({ label: t('game.btn.kan'), kind: 'kan' })
       }
-      if (canKyuushu(s)) out.push({ label: '9 TYPES', kind: 'kyuushu', style: 'muted' })
+      if (canKyuushu(s)) out.push({ label: t('game.btn.kyuushu'), kind: 'kyuushu', style: 'muted' })
       return out
     }
     const offer = pendingHumanOffer(s)
     if (offer) {
-      if (offer.ron) out.push({ label: 'RON', kind: 'ron', style: 'primary' })
-      if (offer.pon) out.push({ label: 'PON', kind: 'pon' })
-      if (offer.kan) out.push({ label: 'KAN', kind: 'daiminkan' })
+      if (offer.ron) out.push({ label: t('game.btn.ron'), kind: 'ron', style: 'primary' })
+      if (offer.pon) out.push({ label: t('game.btn.pon'), kind: 'pon' })
+      if (offer.kan) out.push({ label: t('game.btn.kan'), kind: 'daiminkan' })
       if (offer.chi.length > 0) {
         // con el picker abierto, BACK ocupa el sitio de CHI
         out.push(chiPicker
-          ? { label: 'BACK', kind: 'chi-cancel', style: 'muted' }
-          : { label: 'CHI', kind: 'chi-open' })
+          ? { label: t('game.btn.back'), kind: 'chi-cancel', style: 'muted' }
+          : { label: t('game.btn.chi'), kind: 'chi-open' })
       }
-      out.push({ label: 'PASS', kind: 'pass', style: 'muted' })
+      out.push({ label: t('game.btn.pass'), kind: 'pass', style: 'muted' })
     }
     return out
   }

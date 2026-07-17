@@ -1,0 +1,167 @@
+key|context|es|en|ja
+menu.title-jp|Título decorativo japonés de la portada (igual en los 3 idiomas)|トゥウェルブズ・マージャン|トゥウェルブズ・マージャン|トゥウェルブズ・マージャン
+menu.title|Título principal — marca; igual en los 3 idiomas|TWELVES Mahjong|TWELVES Mahjong|TWELVES Mahjong
+menu.tagline|Subtítulo bajo el título de portada|RIICHI MAHJONG · TONPUUSEN|RIICHI MAHJONG · TONPUUSEN|リーチ麻雀・東風戦
+menu.play|Botón principal del menú|JUGAR|PLAY|対局
+menu.settings|Botón de ajustes del menú|AJUSTES|SETTINGS|設定
+menu.credits|Créditos de la portada — marca; igual en los 3 idiomas|Arenacun Software|Arenacun Software|Arenacun Software
+menu.audio-title|Título del modal de ajustes de la portada|Audio|Audio|オーディオ
+menu.close|Botón cerrar del modal de portada|CERRAR|CLOSE|閉じる
+select.title|Título de la pantalla de selección|Selección de personaje|Character Select|キャラクター選択
+select.subtitle|Subtítulo decorativo (en ja se invierte a romaji para no duplicar)|キャラクター選択|キャラクター選択|CHARACTER SELECT
+select.slot.you|Etiqueta del asiento del jugador humano|プレイヤー · TÚ|プレイヤー · YOU|プレイヤー
+select.slot.rival|Etiqueta de asiento rival; {n} = 1..3|対戦者 {n} · RIVAL|対戦者 {n} · RIVAL|対戦者 {n}
+select.random|Botón que rellena asientos al azar|ALEATORIO|RANDOM|ランダム
+select.start|Botón que inicia la partida|INICIAR|START|開始
+select.a11y-back|aria-label del botón ← de volver|Volver al menú|Back to menu|メニューに戻る
+game.your-turn|Rótulo de turno propio|— TU TURNO —|— YOUR TURN —|— あなたの番 —
+game.riichi-choose|Rótulo al elegir descarte de riichi|— RIICHI: ELIGE DESCARTE —|— RIICHI: CHOOSE DISCARD —|— リーチ:捨て牌を選択 —
+game.choose-chi|Rótulo con el picker de chi abierto|— ELIGE CHI —|— CHOOSE CHI —|— チーを選択 —
+game.call|Rótulo cuando hay llamada disponible|— ¿LLAMAR? —|— CALL? —|— 鳴きますか？ —
+game.btn.tsumo|Botón de acción|TSUMO|TSUMO|ツモ
+game.btn.riichi|Botón de acción|RIICHI|RIICHI|リーチ
+game.btn.kan|Botón de acción|KAN|KAN|カン
+game.btn.kyuushu|Botón de aborto por 9 tipos|9 TIPOS|9 TYPES|九種九牌
+game.btn.ron|Botón de reacción|RON|RON|ロン
+game.btn.pon|Botón de reacción|PON|PON|ポン
+game.btn.chi|Botón de reacción|CHI|CHI|チー
+game.btn.back|Cierra el picker de chi|ATRÁS|BACK|戻る
+game.btn.pass|Deja pasar la llamada|PASAR|PASS|スルー
+game.btn.cancel|Cancela el modo riichi|CANCELAR|CANCEL|キャンセル
+hud.menu|Botón del panel del jugador que abre el menú|☰ MENÚ|☰ MENU|☰ メニュー
+hud.menu-title|Título del overlay de menú in-game|Menú|Menu|メニュー
+hud.table|Cycler de tema de mesa|Mesa|Table|テーブル
+hud.tile-back|Cycler de dorso de ficha|Dorso|Tile back|牌の背
+hud.language|Cycler de idioma (también en el modal de portada)|Idioma|Language|言語
+hud.close|Cierra el overlay de menú|CERRAR|CLOSE|閉じる
+hud.exit|Sale de la partida hacia la selección|SALIR|EXIT|退出
+hud.continue|Botón de continuar en overlays de fin|CONTINUAR|CONTINUE|続ける
+hud.riichi|Etiqueta RIICHI del panel de personaje|RIICHI|RIICHI|リーチ
+hud.you|Sufijo del nombre del jugador humano|TÚ|YOU|あなた
+hud.tiles-left|Rótulo bajo el contador del muro|fichas|tiles left|残り牌
+hud.round|Línea de kyoku en kanji; {n} = numeral kanji 一..四|東{n}局|東{n}局|東{n}局
+hud.east-n|Línea de kyoku secundaria; {n} = 1..4|ESTE {n}|EAST {n}|EAST {n}
+hud.honba|Contador de honba en overlays|HONBA|HONBA|本場
+hud.place.1|Puesto 1º en paneles y ranking|1.º|1st|1位
+hud.place.2|Puesto 2º|2.º|2nd|2位
+hud.place.3|Puesto 3º|3.º|3rd|3位
+hud.place.4|Puesto 4º|4.º|4th|4位
+hud.game-over|Título del overlay de fin de partida|FIN DE PARTIDA|GAME OVER|終局
+hud.tonpuusen-complete|Subtítulo del fin de partida|TONPUUSEN COMPLETO|TONPUUSEN COMPLETE|東風戦終了
+hud.characters|Vuelve a la selección de personajes|PERSONAJES|CHARACTERS|キャラクター
+hud.rematch|Revancha con el mismo roster|REVANCHA|REMATCH|再戦
+hud.han-fu|Línea de puntuación|{han} HAN · {fu} FU|{han} HAN · {fu} FU|{han}翻{fu}符
+hud.yakuman|Sustituye a han·fu cuando hay yakuman|YAKUMAN|YAKUMAN|役満
+end.ryuukyoku|Título del agotamiento de muro (igual en los 3)|流局|流局|流局
+end.exhaustive-draw|Subtítulo del agotamiento|AGOTAMIENTO DEL MURO|EXHAUSTIVE DRAW|荒牌流局
+end.tochuu|Título de mano abortada (igual en los 3)|途中流局|途中流局|途中流局
+end.aborted|Prefijo del subtítulo de aborto|ABORTADA|ABORTED|中断
+end.tenpai|Estado de mano al agotarse el muro|TENPAI|TENPAI|聴牌
+end.noten|Estado de mano al agotarse el muro|NOTEN|NOTEN|ノーテン
+abort.kyuushu|Razón de aborto|KYUUSHU KYUUHAI|KYUUSHU KYUUHAI|九種九牌
+abort.suufon|Razón de aborto|SUUFON RENDA|SUUFON RENDA|四風連打
+abort.suucha-riichi|Razón de aborto|SUUCHA RIICHI|SUUCHA RIICHI|四家立直
+abort.suukaikan|Razón de aborto|SUUKAIKAN|SUUKAIKAN|四開槓
+win.tsumo|Título grande de la pantalla de victoria|¡TSUMO!|TSUMO!|TSUMO!
+win.ron|Título grande de la pantalla de victoria|¡RON!|RON!|RON!
+win.chankan|Título grande de la pantalla de victoria|¡CHANKAN!|CHANKAN!|CHANKAN!
+win.tsumo-kanji|Kanji decorativo sobre el título (igual en los 3)|ツモ|ツモ|ツモ
+win.ron-kanji|Kanji decorativo sobre el título (igual en los 3)|ロン|ロン|ロン
+win.chankan-kanji|Kanji decorativo sobre el título (igual en los 3)|搶槓|搶槓|搶槓
+settings.theme.green|Tema de mesa|Terciopelo Verde|Green Velvet|グリーンベルベット
+settings.theme.red|Tema de mesa|Terciopelo Rojo|Red Velvet|レッドベルベット
+settings.theme.blue|Tema de mesa|Terciopelo Azul|Blue Velvet|ブルーベルベット
+settings.theme.wood|Tema de mesa|Madera Envejecida|Aged Wood|エイジドウッド
+settings.back.amber|Dorso de ficha|Ámbar|Amber|アンバー
+settings.back.green|Dorso de ficha|Verde|Green|グリーン
+settings.back.red|Dorso de ficha|Rojo|Red|レッド
+settings.back.blue|Dorso de ficha|Azul|Blue|ブルー
+settings.back.charcoal|Dorso de ficha|Carbón|Charcoal|チャコール
+settings.volume.master|Canal de volumen|General|Master|全体
+settings.volume.music|Canal de volumen|Música|Music|音楽
+settings.volume.sfx|Canal de volumen|Efectos|SFX|効果音
+settings.volume.voices|Canal de volumen|Voces|Voices|ボイス
+settings.lang.auto|Opción del cycler de idioma|Automático|Auto|自動
+settings.lang.es|Autónimo — igual en los 3 idiomas|Español|Español|Español
+settings.lang.en|Autónimo — igual en los 3 idiomas|English|English|English
+settings.lang.ja|Autónimo — igual en los 3 idiomas|日本語|日本語|日本語
+yaku.riichi||Riichi|Riichi|立直
+yaku.double-riichi||Double Riichi|Double Riichi|ダブルリーチ
+yaku.ippatsu||Ippatsu|Ippatsu|一発
+yaku.tsumo||Menzen Tsumo|Menzen Tsumo|門前清自摸和
+yaku.haitei||Haitei|Haitei|海底摸月
+yaku.houtei||Houtei|Houtei|河底撈魚
+yaku.rinshan||Rinshan Kaihou|Rinshan Kaihou|嶺上開花
+yaku.chankan||Chankan|Chankan|搶槓
+yaku.tenhou||Tenhou|Tenhou|天和
+yaku.chiihou||Chiihou|Chiihou|地和
+yaku.pinfu||Pinfu|Pinfu|平和
+yaku.tanyao||Tanyao|Tanyao|断幺九
+yaku.iipeiko||Iipeiko|Iipeiko|一盃口
+yaku.ryanpeiko||Ryanpeiko|Ryanpeiko|二盃口
+yaku.yakuhai-haku||Yakuhai: Haku|Yakuhai: Haku|役牌 白
+yaku.yakuhai-hatsu||Yakuhai: Hatsu|Yakuhai: Hatsu|役牌 發
+yaku.yakuhai-chun||Yakuhai: Chun|Yakuhai: Chun|役牌 中
+yaku.yakuhai-seat||Yakuhai: viento de asiento|Yakuhai: seat wind|自風牌
+yaku.yakuhai-round||Yakuhai: viento de ronda|Yakuhai: round wind|場風牌
+yaku.sanshoku||Sanshoku Doujun|Sanshoku Doujun|三色同順
+yaku.sanshoku-doukou||Sanshoku Doukou|Sanshoku Doukou|三色同刻
+yaku.ittsu||Ittsu|Ittsu|一気通貫
+yaku.toitoi||Toitoi|Toitoi|対々和
+yaku.sanankou||Sanankou|Sanankou|三暗刻
+yaku.sankantsu||Sankantsu|Sankantsu|三槓子
+yaku.honroutou||Honroutou|Honroutou|混老頭
+yaku.junchan||Junchan|Junchan|純全帯幺九
+yaku.chanta||Chanta|Chanta|混全帯幺九
+yaku.shousangen||Shousangen|Shousangen|小三元
+yaku.honitsu||Honitsu|Honitsu|混一色
+yaku.chinitsu||Chinitsu|Chinitsu|清一色
+yaku.chiitoi||Chiitoitsu|Chiitoitsu|七対子
+yaku.kokushi||Kokushi Musou|Kokushi Musou|国士無双
+yaku.suuankou||Suuankou|Suuankou|四暗刻
+yaku.daisangen||Daisangen|Daisangen|大三元
+yaku.daisuushi||Daisuushi|Daisuushi|大四喜
+yaku.shousuushi||Shousuushi|Shousuushi|小四喜
+yaku.tsuuiisou||Tsuuiisou|Tsuuiisou|字一色
+yaku.chinroutou||Chinroutou|Chinroutou|清老頭
+yaku.ryuuiisou||Ryuuiisou|Ryuuiisou|緑一色
+yaku.suukantsu||Suukantsu|Suukantsu|四槓子
+yaku.chuuren||Chuuren Poutou|Chuuren Poutou|九蓮宝燈
+yaku.dora|{n} = nº de dora|Dora {n}|Dora {n}|ドラ{n}
+yaku.ura|{n} = nº de ura dora|Ura Dora {n}|Ura Dora {n}|裏ドラ{n}
+yaku.aka|{n} = nº de aka dora|Aka Dora {n}|Aka Dora {n}|赤ドラ{n}
+limit.mangan||MANGAN|MANGAN|満貫
+limit.haneman||HANEMAN|HANEMAN|跳満
+limit.baiman||BAIMAN|BAIMAN|倍満
+limit.sanbaiman||SANBAIMAN|SANBAIMAN|三倍満
+limit.yakuman||YAKUMAN|YAKUMAN|役満
+limit.kazoe||KAZOE YAKUMAN|KAZOE YAKUMAN|数え役満
+wind.east|Decorativo — igual en los 3 idiomas|東|東|東
+wind.south|Decorativo — igual en los 3 idiomas|南|南|南
+wind.west|Decorativo — igual en los 3 idiomas|西|西|西
+wind.north|Decorativo — igual en los 3 idiomas|北|北|北
+char.alice.name||Alice|Alice|アリス
+char.alice.epithet||Wonderland|Wonderland|不思議の国
+char.bartleby.name||Bartleby|Bartleby|バートルビー
+char.bartleby.epithet||El escribiente|The Scrivener|代書人
+char.cyrano.name||Cyrano|Cyrano|シラノ
+char.cyrano.epithet||Bergerac|Bergerac|ベルジュラック
+char.scheherazade.name||Scheherazade|Scheherazade|シェヘラザード
+char.scheherazade.epithet||Mil y una noches|One Thousand and One Nights|千夜一夜
+char.dorian.name||Dorian|Dorian|ドリアン
+char.dorian.epithet||El retrato|The Portrait|肖像画
+char.jekyll.name||Jekyll|Jekyll|ジキル
+char.jekyll.epithet||Dos caras|Two Faces|二つの顔
+char.dracula.name||Drácula|Dracula|ドラキュラ
+char.dracula.epithet||Nosferatu|Nosferatu|ノスフェラトゥ
+char.hamlet.name||Hamlet|Hamlet|ハムレット
+char.hamlet.epithet||Dinamarca|Denmark|デンマーク
+char.huck.name||Huck|Huck|ハック
+char.huck.epithet||El Mississippi|The Mississippi|ミシシッピ
+char.celestina.name||Celestina|Celestina|セレスティーナ
+char.celestina.epithet||La alcahueta|The Matchmaker|仲人
+char.defarge.name||Mme. Defarge|Mme. Defarge|ドファルジュ夫人
+char.defarge.epithet||La tejedora|The Knitter|編み手
+char.pinocchio.name||Pinocho|Pinocchio|ピノッキオ
+char.pinocchio.epithet||Sin hilos|No Strings|糸なし
+a11y.discard|aria-label de ficha clicable; {tile} = notación canónica|descartar {tile}|discard {tile}|{tile}を切る

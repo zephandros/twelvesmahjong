@@ -3,17 +3,21 @@
 // lo asigna al hueco activo y avanza; ALEATORIO rellena lo que falte; INICIAR
 // arranca con el roster completo. Vive en el escenario 1920×1080 escalado.
 
-import { CHARACTERS, thumbUrl, type Character, type Roster } from './characters'
+import { CHARACTERS, charName, thumbUrl, type Character, type Roster } from './characters'
 import { playUiClick } from './audio/audio'
 import { createScaledStage } from './layout'
+import { t } from './i18n'
 import {
   seatWind,
   windColor,
-  windKanji,
+  windName,
   type Seat,
 } from '../core/seat'
+import type { Tile34 } from '../core/tile'
 
-const SLOT_LABELS = ['プレイヤー · YOU', '対戦者 1 · RIVAL', '対戦者 2 · RIVAL', '対戦者 3 · RIVAL']
+const slotLabel = (i: number): string =>
+  i === 0 ? t('select.slot.you') : t('select.slot.rival', { n: i })
+const windGlyph = (wind: Tile34): string => t(`wind.${windName(wind)}`)
 
 /** Viento inicial de asiento (East 1, dealer = 0 / HUMAN). Rotan en partida. */
 const INITIAL_DEALER: Seat = 0
@@ -30,10 +34,10 @@ export function renderSelect(
 
   wrap.innerHTML = `
     <div class="tm-select__head">
-      ${onBack ? '<button class="tm-select__back" data-act="back" aria-label="Volver al menú">←</button>' : ''}
+      ${onBack ? `<button class="tm-select__back" data-act="back" aria-label="${t('select.a11y-back')}">←</button>` : ''}
       <div class="tm-select__headings">
-        <span class="tm-select__title">Selección de personaje</span>
-        <span class="tm-select__sub">キャラクター選択</span>
+        <span class="tm-select__title">${t('select.title')}</span>
+        <span class="tm-select__sub">${t('select.subtitle')}</span>
       </div>
     </div>
     <div class="tm-select__body">
@@ -41,8 +45,8 @@ export function renderSelect(
       <div class="tm-select__right">
         <div class="tm-select__grid"></div>
         <div class="tm-select__actions">
-          <button class="tm-btn tm-btn--muted" data-act="random">ALEATORIO</button>
-          <button class="tm-btn tm-btn--primary" data-act="start" disabled>INICIAR</button>
+          <button class="tm-btn tm-btn--muted" data-act="random">${t('select.random')}</button>
+          <button class="tm-btn tm-btn--primary" data-act="start" disabled>${t('select.start')}</button>
         </div>
       </div>
     </div>
@@ -79,15 +83,15 @@ export function renderSelect(
   let current = 0
 
   // --- asientos ---
-  const slotEls = SLOT_LABELS.map((label, i) => {
+  const slotEls = [0, 1, 2, 3].map((i) => {
     const seat = i as Seat
     const wind = seatWind(seat, INITIAL_DEALER)
     const el = document.createElement('button')
     el.className = 'tm-slot'
     el.innerHTML =
-      `<span class="tm-slot__label">${label}</span>` +
+      `<span class="tm-slot__label">${slotLabel(i)}</span>` +
       `<span class="tm-slot__frame">` +
-      `<span class="tm-slot__wind">${windKanji(wind)}</span>` +
+      `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
       `<span class="tm-slot__q">?</span>` +
       `</span>` +
       `<span class="tm-slot__name">—</span>`
@@ -108,8 +112,8 @@ export function renderSelect(
     const el = document.createElement('button')
     el.className = 'tm-char'
     el.innerHTML =
-      `<img src="${thumbUrl(c)}" alt="${c.name}">` +
-      `<span>${c.name}</span>`
+      `<img src="${thumbUrl(c)}" alt="${charName(c)}">` +
+      `<span>${charName(c)}</span>`
     el.addEventListener('click', () => {
       if (picked.some((p) => p?.id === c.id)) return
       playUiClick()
@@ -151,12 +155,12 @@ export function renderSelect(
       const wind = seatWind(seat, INITIAL_DEALER)
       if (p) {
         frame.innerHTML =
-          `<span class="tm-slot__wind">${windKanji(wind)}</span>` +
-          `<img src="${thumbUrl(p)}" alt="${p.name}">`
-        name.textContent = p.name
+          `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
+          `<img src="${thumbUrl(p)}" alt="${charName(p)}">`
+        name.textContent = charName(p)
       } else {
         frame.innerHTML =
-          `<span class="tm-slot__wind">${windKanji(wind)}</span>` +
+          `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
           `<span class="tm-slot__q">?</span>`
         name.textContent = '—'
       }

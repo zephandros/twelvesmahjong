@@ -6,14 +6,17 @@
 import type { HandState } from '../core/state'
 import type { TileId } from '../core/tile'
 import type { Seat } from '../core/seat'
-import { SEATS, relSeat, cornerOf, seatWind, windColor, windKanji, type Corner } from '../core/seat'
+import { SEATS, relSeat, cornerOf, seatWind, windColor, windName, type Corner } from '../core/seat'
 import { BOARD, STAGE_H, place } from './layout'
 import { createTileView, type TileView } from './tile-view'
-import { thumbUrl, type Character } from './characters'
+import { charName, thumbUrl, type Character } from './characters'
 import {
-  saveSettings, setVolumeSetting, type Settings, type TableTheme, type TileBack, type VolumeChannel,
+  saveSettings, setVolumeSetting,
+  type Language, type Settings, type TableTheme, type TileBack, type VolumeChannel,
 } from './settings'
 import { setVolume, playUiClick } from './audio/audio'
+import { t, yakuLabel, setLocale, detectLocale } from './i18n'
+import type { MsgKey } from './i18n-strings.generated'
 
 export interface ButtonDef {
   label: string
@@ -32,7 +35,7 @@ export interface HudInfo {
 }
 
 const KYOKU_KANJI = ['一', '二', '三', '四']
-const PLACES = ['1st', '2nd', '3rd', '4th']
+const PLACE_KEYS = ['hud.place.1', 'hud.place.2', 'hud.place.3', 'hud.place.4'] as const
 
 const PANEL_MARGIN = 24
 const PANEL_W = 240 - PANEL_MARGIN * 2
@@ -46,14 +49,24 @@ const PANEL_POS: Record<Corner, Record<string, number>> = {
   br: { right: PANEL_MARGIN, bottom: PANEL_MARGIN },
 }
 
-const TABLE_THEMES: ReadonlyArray<[TableTheme, string]> = [
-  ['green', 'Green Velvet'], ['red', 'Red Velvet'], ['blue', 'Blue Velvet'], ['wood', 'Aged Wood'],
+// Las constantes guardan CLAVES de i18n, no textos resueltos: el cambio de
+// idioma en caliente reconstruye el overlay y traduce en ese momento.
+const TABLE_THEMES: ReadonlyArray<[TableTheme, MsgKey]> = [
+  ['green', 'settings.theme.green'], ['red', 'settings.theme.red'],
+  ['blue', 'settings.theme.blue'], ['wood', 'settings.theme.wood'],
 ]
-const TILE_BACKS: ReadonlyArray<[TileBack, string]> = [
-  ['amber', 'Amber'], ['green', 'Green'], ['red', 'Red'], ['blue', 'Blue'], ['charcoal', 'Charcoal'],
+const TILE_BACKS: ReadonlyArray<[TileBack, MsgKey]> = [
+  ['amber', 'settings.back.amber'], ['green', 'settings.back.green'],
+  ['red', 'settings.back.red'], ['blue', 'settings.back.blue'],
+  ['charcoal', 'settings.back.charcoal'],
 ]
-const VOLUMES: ReadonlyArray<[VolumeChannel, string]> = [
-  ['master', 'General'], ['music', 'Música'], ['sfx', 'Efectos'], ['voices', 'Voces'],
+const VOLUMES: ReadonlyArray<[VolumeChannel, MsgKey]> = [
+  ['master', 'settings.volume.master'], ['music', 'settings.volume.music'],
+  ['sfx', 'settings.volume.sfx'], ['voices', 'settings.volume.voices'],
+]
+const LANGUAGES: ReadonlyArray<[Language, MsgKey]> = [
+  ['auto', 'settings.lang.auto'], ['es', 'settings.lang.es'],
+  ['en', 'settings.lang.en'], ['ja', 'settings.lang.ja'],
 ]
 
 export class Hud {
@@ -69,17 +82,25 @@ export class Hud {
     score: HTMLElement
     windBadge: HTMLElement
     riichiTag: HTMLElement
+    nameEl: HTMLElement
   }>()
 
   private readonly kyokuJp: HTMLElement
   private readonly kyokuEn: HTMLElement
   private readonly wallCount: HTMLElement
+  private readonly wallLabel: HTMLElement
   private readonly honbaEl: HTMLElement
   private readonly sticksEl: HTMLElement
   private readonly buttonsRow: HTMLElement
   private readonly chiRow: HTMLElement
   private readonly turnEl: HTMLElement
   private readonly overlay: HTMLElement
+  private readonly menuBtn: HTMLElement
+  private menuOverlay: HTMLElement
+  private readonly stage: HTMLElement
+  private readonly settings: Settings
+  private readonly onExit: () => void
+  private readonly onLanguageChange: (() => void) | undefined
 
   constructor(
     stage: HTMLElement,
@@ -88,10 +109,15 @@ export class Hud {
     settings: Settings,
     onButton: (kind: string) => void,
     onExit: () => void,
+    onLanguageChange?: () => void,
   ) {
     this.human = human
     this.chars = chars
     this.onButton = onButton
+    this.stage = stage
+    this.settings = settings
+    this.onExit = onExit
+    this.onLanguageChange = onLanguageChange
 
     stage.dataset.table = settings.tableTheme
     stage.dataset.back = settings.tileBack
@@ -106,27 +132,16 @@ export class Hud {
       const panel = document.createElement('div')
       panel.className = `tm-panel${isSelf ? ' tm-panel--self' : ''}`
       panel.innerHTML =
-        `<img class="tm-panel__img" src="${thumbUrl(c)}" alt="${c.name}">` +
+        `<img class="tm-panel__img" src="${thumbUrl(c)}" alt="">` +
         `<div class="tm-panel__wind"></div>` +
-        `<div class="tm-panel__riichi">RIICHI</div>` +
+        `<div class="tm-panel__riichi"></div>` +
         `<div class="tm-panel__info">` +
         `<div class="tm-panel__row"><span class="tm-panel__place"></span>` +
-        `<span class="tm-panel__name">${isSelf ? `${c.name} · YOU` : c.name}</span></div>` +
+        `<span class="tm-panel__name"></span></div>` +
         `<div class="tm-panel__score"></div>` +
         `</div>`
       place(panel, { ...PANEL_POS[corner], width: PANEL_W, height: PANEL_H, z: 40 })
       stage.appendChild(panel)
-
-      if (isSelf) {
-        const menuBtn = document.createElement('button')
-        menuBtn.className = 'tm-panel__menu'
-        menuBtn.textContent = '☰ MENÚ'
-        menuBtn.addEventListener('click', () => {
-          playUiClick()
-          menuOverlay.classList.remove('is-hidden')
-        })
-        panel.appendChild(menuBtn)
-      }
 
       this.portraits.set(seat, {
         panel,
@@ -134,8 +149,18 @@ export class Hud {
         score: panel.querySelector('.tm-panel__score')!,
         windBadge: panel.querySelector('.tm-panel__wind')!,
         riichiTag: panel.querySelector('.tm-panel__riichi')!,
+        nameEl: panel.querySelector('.tm-panel__name')!,
       })
     }
+
+    const selfPanel = this.portraits.get(human)!.panel
+    this.menuBtn = document.createElement('button')
+    this.menuBtn.className = 'tm-panel__menu'
+    this.menuBtn.addEventListener('click', () => {
+      playUiClick()
+      this.menuOverlay.classList.remove('is-hidden')
+    })
+    selfPanel.appendChild(this.menuBtn)
 
     // --- contador central (recuadro cian 180×180) ---
     const counter = document.createElement('div')
@@ -146,7 +171,7 @@ export class Hud {
     kyokuRow.append(this.kyokuJp, this.kyokuEn)
     this.wallCount = el('div', 'font-family:var(--display);font-weight:700;font-size:54px;line-height:.85;color:var(--cream);text-shadow:0 3px 8px rgba(0,0,0,.5)')
     const wallLabel = el('div', 'font-size:9px;letter-spacing:.24em;color:var(--muted2);text-transform:uppercase')
-    wallLabel.textContent = 'tiles left'
+    this.wallLabel = wallLabel
     const meta = el('div', 'display:flex;gap:12px;margin-top:4px;font-family:var(--display);font-weight:600;font-size:17px;color:#e0d7bd')
     this.honbaEl = el('span', 'display:flex;align-items:center;gap:4px')
     this.sticksEl = el('span', 'display:flex;align-items:center;gap:4px')
@@ -176,34 +201,51 @@ export class Hud {
     })
     stage.appendChild(this.turnEl)
 
-    // --- overlay de menú (tema / dorso / volúmenes) ---
-    const menuOverlay = this.buildMenuOverlay(stage, settings, onExit)
+    // --- overlay de menú (idioma / tema / dorso / volúmenes) ---
+    this.menuOverlay = this.buildMenuOverlay()
 
     // --- overlay de fin ---
     this.overlay = document.createElement('div')
     this.overlay.className = 'tm-overlay is-hidden'
     stage.appendChild(this.overlay)
+
+    this.applyStaticTexts()
+  }
+
+  // Textos del HUD que no pasan por update(); se re-aplican al cambiar idioma.
+  private applyStaticTexts(): void {
+    this.menuBtn.textContent = t('hud.menu')
+    this.wallLabel.textContent = t('hud.tiles-left')
+    for (const seat of SEATS) {
+      const p = this.portraits.get(seat)!
+      const name = charName(this.chars[seat]!)
+      p.nameEl.textContent = seat === this.human ? `${name} · ${t('hud.you')}` : name
+      p.riichiTag.textContent = t('hud.riichi')
+      p.panel.querySelector('.tm-panel__img')!.setAttribute('alt', name)
+    }
   }
 
   // Overlay de ajustes de mesa, abierto desde el botón MENÚ del panel del jugador.
-  private buildMenuOverlay(stage: HTMLElement, settings: Settings, onExit: () => void): HTMLElement {
+  // Se reconstruye entero al cambiar de idioma (los textos se traducen aquí).
+  private buildMenuOverlay(): HTMLElement {
+    const { stage, settings } = this
     const ov = document.createElement('div')
     ov.className = 'tm-overlay tm-menu-ov is-hidden'
     const card = document.createElement('div')
     card.className = 'tm-overlay__card'
-    card.innerHTML = `<div class="tm-overlay__title" style="font-size:44px">Menú</div>`
+    card.innerHTML = `<div class="tm-overlay__title" style="font-size:44px">${t('hud.menu-title')}</div>`
 
-    const cycler = (caption: string, opts: ReadonlyArray<[string, string]>, cur: string, pick: (v: string) => void): HTMLElement => {
+    const cycler = (caption: string, opts: ReadonlyArray<[string, MsgKey]>, cur: string, pick: (v: string) => void): HTMLElement => {
       const row = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%')
       const cap = el('span', 'font-family:var(--serif);font-size:16px;color:var(--cream)')
       cap.textContent = caption
       const btn = document.createElement('button')
       btn.className = 'tm-btn tm-btn--muted'
       let idx = Math.max(0, opts.findIndex(([v]) => v === cur))
-      btn.textContent = opts[idx]![1]
+      btn.textContent = t(opts[idx]![1])
       btn.addEventListener('click', () => {
         idx = (idx + 1) % opts.length
-        btn.textContent = opts[idx]![1]
+        btn.textContent = t(opts[idx]![1])
         playUiClick()
         pick(opts[idx]![0])
       })
@@ -211,21 +253,34 @@ export class Hud {
       return row
     }
 
-    card.appendChild(cycler('Mesa', TABLE_THEMES, settings.tableTheme, (v) => {
+    card.appendChild(cycler(t('hud.language'), LANGUAGES, settings.language, (v) => {
+      const lang = v as Language
+      settings.language = lang
+      saveSettings(settings)
+      setLocale(lang === 'auto' ? detectLocale() : lang)
+      this.applyStaticTexts()
+      // reconstruir el overlay con los textos nuevos, manteniéndolo visible
+      const fresh = this.buildMenuOverlay()
+      fresh.classList.remove('is-hidden')
+      this.menuOverlay.remove()
+      this.menuOverlay = fresh
+      this.onLanguageChange?.() // re-pinta botones/rótulos dinámicos del HUD
+    }))
+    card.appendChild(cycler(t('hud.table'), TABLE_THEMES, settings.tableTheme, (v) => {
       settings.tableTheme = v as TableTheme
       stage.dataset.table = v
       saveSettings(settings)
     }))
-    card.appendChild(cycler('Dorso', TILE_BACKS, settings.tileBack, (v) => {
+    card.appendChild(cycler(t('hud.tile-back'), TILE_BACKS, settings.tileBack, (v) => {
       settings.tileBack = v as TileBack
       stage.dataset.back = v
       saveSettings(settings)
     }))
 
-    for (const [ch, label] of VOLUMES) {
+    for (const [ch, key] of VOLUMES) {
       const row = el('label', 'display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%')
       row.innerHTML =
-        `<span style="font-family:var(--serif);font-size:16px;color:var(--cream)">${label}</span>` +
+        `<span style="font-family:var(--serif);font-size:16px;color:var(--cream)">${t(key)}</span>` +
         `<input type="range" min="0" max="100" value="${Math.round(settings.volumes[ch] * 100)}" style="flex:1;accent-color:var(--gold)">`
       const input = row.querySelector<HTMLInputElement>('input')!
       input.addEventListener('input', () => {
@@ -240,12 +295,12 @@ export class Hud {
     const actions = el('div', 'display:flex;gap:10px;margin-top:8px')
     const close = document.createElement('button')
     close.className = 'tm-btn tm-btn--primary'
-    close.textContent = 'CERRAR'
+    close.textContent = t('hud.close')
     close.addEventListener('click', () => { playUiClick(); ov.classList.add('is-hidden') })
     const exit = document.createElement('button')
     exit.className = 'tm-btn tm-btn--muted'
-    exit.textContent = 'SALIR'
-    exit.addEventListener('click', () => { playUiClick(); onExit() })
+    exit.textContent = t('hud.exit')
+    exit.addEventListener('click', () => { playUiClick(); this.onExit() })
     actions.append(exit, close)
     card.appendChild(actions)
 
@@ -259,17 +314,17 @@ export class Hud {
     for (const seat of SEATS) {
       const p = this.portraits.get(seat)!
       const st = s.seats[seat]!
-      p.placeEl.textContent = PLACES[order.indexOf(seat)]!
+      p.placeEl.textContent = t(PLACE_KEYS[order.indexOf(seat)]!)
       p.score.textContent = st.points.toLocaleString('en-US')
       const wind = seatWind(seat, s.dealer)
-      p.windBadge.textContent = windKanji(wind)
+      p.windBadge.textContent = t(`wind.${windName(wind)}`)
       p.windBadge.style.background = windColor(wind)
       p.panel.classList.toggle('is-turn', s.phase !== 'ended' && s.turn === seat)
       p.riichiTag.classList.toggle('is-on', st.riichi > 0)
     }
 
-    this.kyokuJp.textContent = `東${KYOKU_KANJI[info.kyoku] ?? '一'}局`
-    this.kyokuEn.textContent = `EAST ${info.kyoku + 1}`
+    this.kyokuJp.textContent = t('hud.round', { n: KYOKU_KANJI[info.kyoku] ?? '一' })
+    this.kyokuEn.textContent = t('hud.east-n', { n: info.kyoku + 1 })
     this.wallCount.textContent = String(s.wall.live.length)
     this.honbaEl.innerHTML =
       `<span style="width:9px;height:9px;border-radius:50%;background:#d94f4f"></span>${s.honba}`
@@ -302,31 +357,31 @@ export class Hud {
 
   showHandEnd(s: HandState, kyoku: number, onContinue: () => void): void {
     const end = s.end!
-    const names = (seat: Seat) => this.chars[seat]!.name
+    const names = (seat: Seat) => charName(this.chars[seat]!)
     let title = ''
     let subtitle = ''
     let body = ''
 
     if (end.type === 'tsumo' || end.type === 'ron') {
-      title = end.type === 'tsumo' ? 'TSUMO!' : end.chankan ? 'CHANKAN!' : 'RON!'
+      title = end.type === 'tsumo' ? t('win.tsumo') : end.chankan ? t('win.chankan') : t('win.ron')
       subtitle = end.type === 'tsumo' ? names(end.winner) : `${names(end.winner)} ← ${names(end.from)}`
       const sc = end.score
-      const yakuRows = sc.yaku.map((y) => `<span class="tm-yaku-pill">${y.name}</span>`).join('')
-      const limit = sc.limit ? ` · ${sc.limit.toUpperCase()}` : ''
-      const hanfu = sc.yakuman > 0 ? 'YAKUMAN' : `${sc.han} HAN · ${sc.fu} FU${limit}`
+      const yakuRows = sc.yaku.map((y) => `<span class="tm-yaku-pill">${yakuLabel(y)}</span>`).join('')
+      const limit = sc.limit ? ` · ${t(`limit.${sc.limit}`)}` : ''
+      const hanfu = sc.yakuman > 0 ? t('hud.yakuman') : `${t('hud.han-fu', { han: sc.han, fu: sc.fu })}${limit}`
       body =
         `<div class="tm-yaku-list">${yakuRows}</div>` +
         `<div class="tm-score-line"><span>${hanfu}</span><b>+${sc.total.toLocaleString('en-US')}</b></div>`
     } else if (end.type === 'exhaustive') {
-      title = '流局'
-      subtitle = 'EXHAUSTIVE DRAW'
+      title = t('end.ryuukyoku')
+      subtitle = t('end.exhaustive-draw')
       body =
         '<div class="tm-yaku-list">' +
-        SEATS.map((x) => `<span class="tm-yaku-pill ${end.tenpai[x] ? '' : 'is-muted'}">${names(x)}: ${end.tenpai[x] ? 'TENPAI' : 'NOTEN'}</span>`).join('') +
+        SEATS.map((x) => `<span class="tm-yaku-pill ${end.tenpai[x] ? '' : 'is-muted'}">${names(x)}: ${end.tenpai[x] ? t('end.tenpai') : t('end.noten')}</span>`).join('') +
         '</div>'
     } else {
-      title = '途中流局'
-      subtitle = `ABORTED · ${end.reason.toUpperCase()}`
+      title = t('end.tochuu')
+      subtitle = `${t('end.aborted')} · ${t(`abort.${end.reason}`)}`
     }
 
     const deltas = SEATS.map((x) => {
@@ -337,33 +392,33 @@ export class Hud {
 
     this.overlay.innerHTML =
       `<div class="tm-overlay__card">` +
-      `<div class="tm-overlay__kyoku">東${KYOKU_KANJI[kyoku] ?? '一'}局 · ${s.honba} HONBA</div>` +
+      `<div class="tm-overlay__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>` +
       `<div class="tm-overlay__title">${title}</div>` +
       `<div class="tm-overlay__sub">${subtitle}</div>` +
       body +
       `<div class="tm-deltas">${deltas}</div>` +
-      `<button class="tm-btn tm-btn--primary tm-overlay__continue">CONTINUE</button>` +
+      `<button class="tm-btn tm-btn--primary tm-overlay__continue">${t('hud.continue')}</button>` +
       `</div>`
     this.overlay.classList.remove('is-hidden')
     this.overlay.querySelector('.tm-overlay__continue')!.addEventListener('click', onContinue, { once: true })
   }
 
   showGameEnd(s: HandState, onRematch: () => void, onCharacters: () => void): void {
-    const names = (seat: Seat) => this.chars[seat]!.name
+    const names = (seat: Seat) => charName(this.chars[seat]!)
     const order = [...SEATS].sort((a, b) => s.seats[b]!.points - s.seats[a]!.points || a - b)
     const rows = order
       .map((seat, i) =>
         `<div class="tm-delta ${seat === this.human ? 'is-plus' : ''}">` +
-        `<span>${PLACES[i]} · ${names(seat)}</span><b>${s.seats[seat]!.points.toLocaleString('en-US')}</b></div>`)
+        `<span>${t(PLACE_KEYS[i]!)} · ${names(seat)}</span><b>${s.seats[seat]!.points.toLocaleString('en-US')}</b></div>`)
       .join('')
     this.overlay.innerHTML =
       `<div class="tm-overlay__card">` +
-      `<div class="tm-overlay__title">GAME OVER</div>` +
-      `<div class="tm-overlay__sub">TONPUUSEN COMPLETE</div>` +
+      `<div class="tm-overlay__title">${t('hud.game-over')}</div>` +
+      `<div class="tm-overlay__sub">${t('hud.tonpuusen-complete')}</div>` +
       `<div class="tm-deltas">${rows}</div>` +
       `<div style="display:flex;gap:10px;margin-top:8px">` +
-      `<button class="tm-btn tm-btn--muted" data-act="chars">CHARACTERS</button>` +
-      `<button class="tm-btn tm-btn--primary" data-act="rematch">REMATCH</button>` +
+      `<button class="tm-btn tm-btn--muted" data-act="chars">${t('hud.characters')}</button>` +
+      `<button class="tm-btn tm-btn--primary" data-act="rematch">${t('hud.rematch')}</button>` +
       `</div></div>`
     this.overlay.classList.remove('is-hidden')
     this.overlay.querySelector('[data-act="rematch"]')!.addEventListener('click', onRematch, { once: true })

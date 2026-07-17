@@ -10,13 +10,32 @@
 //  - Con yakuman no cuentan ni yaku normales ni dora.
 
 import type { Tile34 } from './tile'
-import { isDragon, isWind, isHonor, isTerminalOrHonor, label34 } from './tile'
+import { isDragon, isWind, isHonor, isTerminalOrHonor } from './tile'
 import type { WinContext, Decomposition, Block } from './win'
 import { allTile34s } from './win'
 
+/**
+ * Id canónico de cada yaku (incluye los contadores de dora de score.ts). El
+ * core NUNCA produce texto presentable: la UI traduce `yaku.${id}` vía i18n.
+ */
+export type YakuId =
+  // situacionales
+  | 'riichi' | 'double-riichi' | 'ippatsu' | 'tsumo' | 'haitei' | 'houtei'
+  | 'rinshan' | 'chankan' | 'tenhou' | 'chiihou'
+  // de forma
+  | 'pinfu' | 'tanyao' | 'iipeiko' | 'ryanpeiko'
+  | 'yakuhai-haku' | 'yakuhai-hatsu' | 'yakuhai-chun' | 'yakuhai-seat' | 'yakuhai-round'
+  | 'sanshoku' | 'sanshoku-doukou' | 'ittsu' | 'toitoi' | 'sanankou' | 'sankantsu'
+  | 'honroutou' | 'junchan' | 'chanta' | 'shousangen' | 'honitsu' | 'chinitsu'
+  | 'chiitoi' | 'kokushi'
+  // yakuman
+  | 'suuankou' | 'daisangen' | 'daisuushi' | 'shousuushi' | 'tsuuiisou'
+  | 'chinroutou' | 'ryuuiisou' | 'suukantsu' | 'chuuren'
+  // dora (han = nº de dora)
+  | 'dora' | 'ura' | 'aka'
+
 export interface YakuHit {
-  readonly id: string
-  readonly name: string
+  readonly id: YakuId
   readonly han: number
   readonly yakuman?: true
 }
@@ -48,20 +67,20 @@ export function situationalYaku(
   const normal: YakuHit[] = []
 
   if (ctx.tenhou && ctx.dealer && ctx.tsumo) {
-    yakuman.push({ id: 'tenhou', name: 'Tenhou', han: 13, yakuman: true })
+    yakuman.push({ id: 'tenhou', han: 13, yakuman: true })
   }
   if (ctx.chiihou && !ctx.dealer && ctx.tsumo) {
-    yakuman.push({ id: 'chiihou', name: 'Chiihou', han: 13, yakuman: true })
+    yakuman.push({ id: 'chiihou', han: 13, yakuman: true })
   }
 
-  if (ctx.riichi === 2) normal.push({ id: 'double-riichi', name: 'Double Riichi', han: 2 })
-  else if (ctx.riichi === 1) normal.push({ id: 'riichi', name: 'Riichi', han: 1 })
-  if (ctx.ippatsu && ctx.riichi > 0) normal.push({ id: 'ippatsu', name: 'Ippatsu', han: 1 })
-  if (ctx.tsumo && menzen) normal.push({ id: 'tsumo', name: 'Menzen Tsumo', han: 1 })
-  if (ctx.haitei && ctx.tsumo) normal.push({ id: 'haitei', name: 'Haitei', han: 1 })
-  if (ctx.houtei && !ctx.tsumo) normal.push({ id: 'houtei', name: 'Houtei', han: 1 })
-  if (ctx.rinshan && ctx.tsumo) normal.push({ id: 'rinshan', name: 'Rinshan Kaihou', han: 1 })
-  if (ctx.chankan && !ctx.tsumo) normal.push({ id: 'chankan', name: 'Chankan', han: 1 })
+  if (ctx.riichi === 2) normal.push({ id: 'double-riichi', han: 2 })
+  else if (ctx.riichi === 1) normal.push({ id: 'riichi', han: 1 })
+  if (ctx.ippatsu && ctx.riichi > 0) normal.push({ id: 'ippatsu', han: 1 })
+  if (ctx.tsumo && menzen) normal.push({ id: 'tsumo', han: 1 })
+  if (ctx.haitei && ctx.tsumo) normal.push({ id: 'haitei', han: 1 })
+  if (ctx.houtei && !ctx.tsumo) normal.push({ id: 'houtei', han: 1 })
+  if (ctx.rinshan && ctx.tsumo) normal.push({ id: 'rinshan', han: 1 })
+  if (ctx.chankan && !ctx.tsumo) normal.push({ id: 'chankan', han: 1 })
 
   return { yakuman, normal }
 }
@@ -87,29 +106,29 @@ export function standardYaku(
 
   // ---- yakuman de forma ----
   if (ankouCount === 4) {
-    yakuman.push({ id: 'suuankou', name: 'Suuankou', han: 13, yakuman: true })
+    yakuman.push({ id: 'suuankou', han: 13, yakuman: true })
   }
   const dragonTriplets = triplets.filter((b) => isDragon(b.tile)).length
   if (dragonTriplets === 3) {
-    yakuman.push({ id: 'daisangen', name: 'Daisangen', han: 13, yakuman: true })
+    yakuman.push({ id: 'daisangen', han: 13, yakuman: true })
   }
   const windTriplets = triplets.filter((b) => isWind(b.tile)).length
   if (windTriplets === 4) {
-    yakuman.push({ id: 'daisuushi', name: 'Daisuushi', han: 13, yakuman: true })
+    yakuman.push({ id: 'daisuushi', han: 13, yakuman: true })
   } else if (windTriplets === 3 && isWind(pair.tile)) {
-    yakuman.push({ id: 'shousuushi', name: 'Shousuushi', han: 13, yakuman: true })
+    yakuman.push({ id: 'shousuushi', han: 13, yakuman: true })
   }
   if (tiles.every(isHonor)) {
-    yakuman.push({ id: 'tsuuiisou', name: 'Tsuuiisou', han: 13, yakuman: true })
+    yakuman.push({ id: 'tsuuiisou', han: 13, yakuman: true })
   }
   if (tiles.every(isTerminal)) {
-    yakuman.push({ id: 'chinroutou', name: 'Chinroutou', han: 13, yakuman: true })
+    yakuman.push({ id: 'chinroutou', han: 13, yakuman: true })
   }
   if (tiles.every((t) => GREEN.has(t))) {
-    yakuman.push({ id: 'ryuuiisou', name: 'Ryuuiisou', han: 13, yakuman: true })
+    yakuman.push({ id: 'ryuuiisou', han: 13, yakuman: true })
   }
   if (kanCount === 4) {
-    yakuman.push({ id: 'suukantsu', name: 'Suukantsu', han: 13, yakuman: true })
+    yakuman.push({ id: 'suukantsu', han: 13, yakuman: true })
   }
   if (ctx.melds.length === 0 && !tiles.some(isHonor)) {
     const suit = Math.floor(tiles[0]! / 9)
@@ -117,7 +136,7 @@ export function standardYaku(
       const c = new Array<number>(9).fill(0)
       for (const t of tiles) c[t % 9]!++
       if (c[0]! >= 3 && c[8]! >= 3 && c.every((n) => n >= 1)) {
-        yakuman.push({ id: 'chuuren', name: 'Chuuren Poutou', han: 13, yakuman: true })
+        yakuman.push({ id: 'chuuren', han: 13, yakuman: true })
       }
     }
   }
@@ -129,14 +148,14 @@ export function standardYaku(
   const pairIsYakuhai =
     isDragon(pair.tile) || pair.tile === ctx.seatWind || pair.tile === ctx.roundWind
   if (menzen && runs.length === 4 && !pairIsYakuhai && d.wait === 'ryanmen') {
-    normal.push({ id: 'pinfu', name: 'Pinfu', han: 1 })
+    normal.push({ id: 'pinfu', han: 1 })
   }
 
   // tanyao (kuitan permitido)
   const hasTerminalOrHonor = blocks.some((b) =>
     b.type === 'run' ? runHasTerminal(b.tile) : isTerminalOrHonor(b.tile),
   )
-  if (!hasTerminalOrHonor) normal.push({ id: 'tanyao', name: 'Tanyao', han: 1 })
+  if (!hasTerminalOrHonor) normal.push({ id: 'tanyao', han: 1 })
 
   // iipeiko / ryanpeiko (solo menzen)
   if (menzen) {
@@ -144,20 +163,24 @@ export function standardYaku(
     for (const r of runs) runCounts.set(r.tile, (runCounts.get(r.tile) ?? 0) + 1)
     let dupPairs = 0
     for (const n of runCounts.values()) dupPairs += Math.floor(n / 2)
-    if (dupPairs === 2) normal.push({ id: 'ryanpeiko', name: 'Ryanpeiko', han: 3 })
-    else if (dupPairs === 1) normal.push({ id: 'iipeiko', name: 'Iipeiko', han: 1 })
+    if (dupPairs === 2) normal.push({ id: 'ryanpeiko', han: 3 })
+    else if (dupPairs === 1) normal.push({ id: 'iipeiko', han: 1 })
   }
 
   // yakuhai por cada trío/kan de dragón o viento propio/de ronda
   for (const b of triplets) {
     if (isDragon(b.tile)) {
-      normal.push({ id: `yakuhai-${label34(b.tile)}`, name: `Yakuhai: ${label34(b.tile)}`, han: 1 })
+      // 31..33 = haku/hatsu/chun (índice canónico de tile.ts)
+      normal.push({
+        id: (['yakuhai-haku', 'yakuhai-hatsu', 'yakuhai-chun'] as const)[b.tile - 31]!,
+        han: 1,
+      })
     }
     if (b.tile === ctx.seatWind) {
-      normal.push({ id: 'yakuhai-seat', name: `Yakuhai: viento de asiento`, han: 1 })
+      normal.push({ id: 'yakuhai-seat', han: 1 })
     }
     if (b.tile === ctx.roundWind) {
-      normal.push({ id: 'yakuhai-round', name: `Yakuhai: viento de ronda`, han: 1 })
+      normal.push({ id: 'yakuhai-round', han: 1 })
     }
   }
 
@@ -166,7 +189,7 @@ export function standardYaku(
   for (const r of runs) runRanksBySuit[Math.floor(r.tile / 9)]!.add(r.tile % 9)
   for (let rank = 0; rank <= 6; rank++) {
     if (runRanksBySuit.every((s) => s.has(rank))) {
-      normal.push({ id: 'sanshoku', name: 'Sanshoku Doujun', han: menzen ? 2 : 1 })
+      normal.push({ id: 'sanshoku', han: menzen ? 2 : 1 })
       break
     }
   }
@@ -176,7 +199,7 @@ export function standardYaku(
   }
   for (let rank = 0; rank <= 8; rank++) {
     if (tripRanksBySuit.every((s) => s.has(rank))) {
-      normal.push({ id: 'sanshoku-doukou', name: 'Sanshoku Doukou', han: 2 })
+      normal.push({ id: 'sanshoku-doukou', han: 2 })
       break
     }
   }
@@ -185,15 +208,15 @@ export function standardYaku(
   for (let suit = 0; suit < 3; suit++) {
     const ranks = runRanksBySuit[suit]!
     if (ranks.has(0) && ranks.has(3) && ranks.has(6)) {
-      normal.push({ id: 'ittsu', name: 'Ittsu', han: menzen ? 2 : 1 })
+      normal.push({ id: 'ittsu', han: menzen ? 2 : 1 })
       break
     }
   }
 
   // toitoi / sanankou / sankantsu
-  if (triplets.length === 4) normal.push({ id: 'toitoi', name: 'Toitoi', han: 2 })
-  if (ankouCount === 3) normal.push({ id: 'sanankou', name: 'Sanankou', han: 2 })
-  if (kanCount === 3) normal.push({ id: 'sankantsu', name: 'Sankantsu', han: 2 })
+  if (triplets.length === 4) normal.push({ id: 'toitoi', han: 2 })
+  if (ankouCount === 3) normal.push({ id: 'sanankou', han: 2 })
+  if (kanCount === 3) normal.push({ id: 'sankantsu', han: 2 })
 
   // familia chanta: honroutou > junchan > chanta (no apilan entre sí)
   const everyBlockTH = blocks.every((b) =>
@@ -201,26 +224,26 @@ export function standardYaku(
   )
   if (everyBlockTH) {
     if (runs.length === 0) {
-      normal.push({ id: 'honroutou', name: 'Honroutou', han: 2 })
+      normal.push({ id: 'honroutou', han: 2 })
     } else if (!tiles.some(isHonor)) {
-      normal.push({ id: 'junchan', name: 'Junchan', han: menzen ? 3 : 2 })
+      normal.push({ id: 'junchan', han: menzen ? 3 : 2 })
     } else {
-      normal.push({ id: 'chanta', name: 'Chanta', han: menzen ? 2 : 1 })
+      normal.push({ id: 'chanta', han: menzen ? 2 : 1 })
     }
   }
 
   // shousangen
   if (dragonTriplets === 2 && isDragon(pair.tile)) {
-    normal.push({ id: 'shousangen', name: 'Shousangen', han: 2 })
+    normal.push({ id: 'shousangen', han: 2 })
   }
 
   // honitsu / chinitsu
   const suits = new Set(tiles.filter((t) => t < 27).map((t) => Math.floor(t / 9)))
   if (suits.size === 1) {
     if (tiles.some(isHonor)) {
-      normal.push({ id: 'honitsu', name: 'Honitsu', han: menzen ? 3 : 2 })
+      normal.push({ id: 'honitsu', han: menzen ? 3 : 2 })
     } else {
-      normal.push({ id: 'chinitsu', name: 'Chinitsu', han: menzen ? 6 : 5 })
+      normal.push({ id: 'chinitsu', han: menzen ? 6 : 5 })
     }
   }
 
@@ -234,24 +257,24 @@ export function chiitoiYaku(ctx: WinContext): { yakuman: YakuHit[]; normal: Yaku
   const tiles = allTile34s(ctx)
   if (tiles.every(isHonor)) {
     return {
-      yakuman: [{ id: 'tsuuiisou', name: 'Tsuuiisou', han: 13, yakuman: true }],
+      yakuman: [{ id: 'tsuuiisou', han: 13, yakuman: true }],
       normal: [],
     }
   }
-  const normal: YakuHit[] = [{ id: 'chiitoi', name: 'Chiitoitsu', han: 2 }]
-  if (!tiles.some(isTerminalOrHonor)) normal.push({ id: 'tanyao', name: 'Tanyao', han: 1 })
-  if (tiles.every(isTerminalOrHonor)) normal.push({ id: 'honroutou', name: 'Honroutou', han: 2 })
+  const normal: YakuHit[] = [{ id: 'chiitoi', han: 2 }]
+  if (!tiles.some(isTerminalOrHonor)) normal.push({ id: 'tanyao', han: 1 })
+  if (tiles.every(isTerminalOrHonor)) normal.push({ id: 'honroutou', han: 2 })
   const suits = new Set(tiles.filter((t) => t < 27).map((t) => Math.floor(t / 9)))
   if (suits.size === 1) {
-    if (tiles.some(isHonor)) normal.push({ id: 'honitsu', name: 'Honitsu', han: 3 })
-    else normal.push({ id: 'chinitsu', name: 'Chinitsu', han: 6 })
+    if (tiles.some(isHonor)) normal.push({ id: 'honitsu', han: 3 })
+    else normal.push({ id: 'chinitsu', han: 6 })
   }
   return { yakuman: [], normal }
 }
 
 export function kokushiYaku(): { yakuman: YakuHit[]; normal: YakuHit[] } {
   return {
-    yakuman: [{ id: 'kokushi', name: 'Kokushi Musou', han: 13, yakuman: true }],
+    yakuman: [{ id: 'kokushi', han: 13, yakuman: true }],
     normal: [],
   }
 }

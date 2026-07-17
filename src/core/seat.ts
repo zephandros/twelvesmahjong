@@ -77,7 +77,13 @@ export function windColor(wind: Tile34): string {
   }
 }
 
-/** Kanji del viento, para la UI. */
+/** Kanji del viento, para páginas de debug (la UI real traduce windName vía i18n). */
 export function windKanji(wind: Tile34): string {
   return (['東', '南', '西', '北'] as const)[wind - 27] ?? '東'
+}
+
+/** Id canónico del viento; la UI lo traduce como `wind.${windName(w)}`. */
+export type WindName = 'east' | 'south' | 'west' | 'north'
+export function windName(wind: Tile34): WindName {
+  return (['east', 'south', 'west', 'north'] as const)[wind - 27] ?? 'east'
 }

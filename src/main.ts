@@ -1,8 +1,16 @@
 import './styles.css'
 import { unlockAudio, audioRunning } from './ui/audio/audio'
+import { setLocale, detectLocale, isLocale } from './ui/i18n'
+import { loadSettings } from './ui/settings'
 
 const app = document.getElementById('app')
 if (!app) throw new Error('#app no encontrado')
+
+// Locale ANTES del primer render. `?lang=` fuerza sin persistir (para probar);
+// si no, manda Settings ('auto' = idioma del navegador con fallback a es).
+const forcedLang = new URLSearchParams(location.search).get('lang')
+const savedLang = loadSettings().language
+setLocale(isLocale(forcedLang) ? forcedLang : savedLang === 'auto' ? detectLocale() : savedLang)
 
 // Autoplay: el AudioContext no puede sonar hasta un gesto del usuario. Se
 // escucha hasta que el contexto arranca de verdad (existe solo tras initAudio).
