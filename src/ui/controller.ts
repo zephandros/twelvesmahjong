@@ -10,6 +10,7 @@ import { reduce } from '../core/reducer'
 import { newGame, advanceGame, type GameState } from '../core/game'
 import {
   tsumoScore, riichiOptions, ankanOptions, shouminkanOptions, canKyuushu,
+  seatWaits, isTenpai, seatFuriten, remainingFor,
 } from '../core/rules'
 import { makeRng, type Rng } from '../core/rng'
 import { botTurnAction, botReaction } from '../ai/bot'
@@ -122,11 +123,19 @@ export function startGame(
         dim,
       }),
     )
+    // tira de esperas: sobre la mano de 13 (sin la robada) = "tus esperas tras
+    // tu último descarte"; el tenpai formal puede incluir esperas sin yaku
+    const showWaits = settings.showWaits && s.phase !== 'ended' && isTenpai(s, HUMAN)
+    const remaining = showWaits ? remainingFor(s, HUMAN) : null
     hud.update(s, {
       kyoku: game.kyoku,
       buttons: humanButtons(s),
       chiOptions: humanChiOptions(s),
       turnLabel: turnLabel(s),
+      waits: showWaits
+        ? seatWaits(s, HUMAN).map((w) => ({ tile: w, live: remaining![w]! }))
+        : null,
+      furiten: showWaits && seatFuriten(s, HUMAN),
     })
     const pending = humanDecisionPending(s)
     if (pending && !lastDecisionPending) playAlert()
@@ -315,7 +324,7 @@ export function startGame(
     }
 
     if (s.end!.type === 'tsumo' || s.end!.type === 'ron') {
-      showWinScreen(stage, s, game.kyoku, roster, afterContinue)
+      showWinScreen(stage, s, game.kyoku, roster, afterContinue, HUMAN)
     } else {
       hud.showHandEnd(s, game.kyoku, afterContinue)
     }

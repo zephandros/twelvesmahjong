@@ -28,4 +28,9 @@ GLYPHS = (
     'ハミピナ仲ァ夫編み手糸し切'
     '生時停止曲次ュ解除'  # reproductor de música in-game (music.*)
     'はい'            # confirmación del menú in-game (hud.yes)
+    '待表示'          # tira de esperas (hud.waits / hud.show-waits)
+    'ち'             # 待ち
+    # glosario de yaku (glossary.* + yaku.*.desc)
+    '覧状況で宣、点。巡目後以内分最引加されが配第組と外両面使わず揃作だ含む集めもう枚ご算見ら'
+
 )

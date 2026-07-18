@@ -23,6 +23,7 @@ export const isLocale = (v: unknown): v is Locale => LOCALES.includes(v as Local
 type AssertKeys<T extends MsgKey> = T
 export type DerivedKeyCheck = AssertKeys<
   | `yaku.${YakuId}`
+  | `yaku.${YakuId}.desc`
   | `limit.${Limit}`
   | `abort.${AbortReason}`
   | `wind.${WindName}`

@@ -10,6 +10,7 @@ import { loadSettings, saveSettings, type Language, type VolumeChannel } from '.
 import { initAudio, playMusic, playTitle, setVolume, playUiClick } from './audio/audio'
 import { MENU_TRACK } from './audio/catalog'
 import { createScaledStage } from './layout'
+import { openGlossary } from './glossary'
 import { t, setLocale, detectLocale } from './i18n'
 import type { MsgKey } from './i18n-strings.generated'
 
@@ -50,6 +51,7 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
     <div class="tm-menu__actions">
       <button class="tm-btn tm-btn--primary tm-menu__play" data-act="start"></button>
       <button class="tm-btn tm-btn--muted tm-menu__settings-btn" data-act="settings"></button>
+      <button class="tm-btn tm-btn--muted tm-menu__glossary-btn" data-act="glossary"></button>
     </div>
     <div class="tm-menu__credits"></div>
   `
@@ -120,6 +122,7 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
     menu.querySelector<HTMLElement>('.tm-menu__tag')!.textContent = t('menu.tagline')
     menu.querySelector<HTMLElement>('[data-act="start"]')!.textContent = t('menu.play')
     menu.querySelector<HTMLElement>('[data-act="settings"]')!.textContent = t('menu.settings')
+    menu.querySelector<HTMLElement>('[data-act="glossary"]')!.textContent = t('menu.glossary')
     menu.querySelector<HTMLElement>('.tm-menu__credits')!.textContent = t('menu.credits')
     overlay.querySelector<HTMLElement>('#tm-audio-title')!.textContent = t('menu.audio-title')
     overlay.querySelector<HTMLElement>('[data-act="close-settings"]')!.textContent = t('menu.close')
@@ -138,6 +141,12 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
     .addEventListener('click', () => {
       playUiClick()
       overlay.classList.add('is-hidden')
+    })
+
+  menu.querySelector<HTMLButtonElement>('[data-act="glossary"]')!
+    .addEventListener('click', () => {
+      playUiClick()
+      openGlossary(stage)
     })
 
   menu.querySelector<HTMLButtonElement>('[data-act="start"]')!

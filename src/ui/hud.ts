@@ -4,9 +4,10 @@
 // con tema de mesa, dorso de ficha y volúmenes.
 
 import type { HandState } from '../core/state'
-import type { TileId } from '../core/tile'
+import type { Tile34, TileId } from '../core/tile'
 import type { Seat } from '../core/seat'
 import { SEATS, relSeat, cornerOf, seatWind, windColor, windName, type Corner } from '../core/seat'
+import { uraIndicators } from '../core/wall'
 import { BOARD, STAGE_H, STAGE_W, place } from './layout'
 import { createTileView, type TileView } from './tile-view'
 import { charName, thumbUrl, type Character } from './characters'
@@ -16,6 +17,7 @@ import {
 } from './settings'
 import { setVolume, playUiClick } from './audio/audio'
 import { createMusicBar, type MusicBar } from './music-bar'
+import { openGlossary } from './glossary'
 import { t, yakuLabel, setLocale, detectLocale } from './i18n'
 import type { MsgKey } from './i18n-strings.generated'
 import { ICONS } from './icons.generated'
@@ -34,6 +36,9 @@ export interface HudInfo {
   /** Opciones del picker de chi, en fila propia sobre los botones de acción. */
   chiOptions: ButtonDef[]
   turnLabel: string | null
+  /** Esperas del humano tenpai (`live` = copias no visibles); null = ocultar. */
+  waits: ReadonlyArray<{ tile: Tile34; live: number }> | null
+  furiten: boolean
 }
 
 const KYOKU_KANJI = ['一', '二', '三', '四']
@@ -74,6 +79,9 @@ const LANGUAGES: ReadonlyArray<[Language, MsgKey]> = [
   ['auto', 'settings.lang.auto'], ['es', 'settings.lang.es'],
   ['en', 'settings.lang.en'], ['ja', 'settings.lang.ja'],
 ]
+const TOGGLE: ReadonlyArray<[string, MsgKey]> = [
+  ['on', 'settings.toggle.on'], ['off', 'settings.toggle.off'],
+]
 
 export class Hud {
   private readonly human: Seat
@@ -94,12 +102,14 @@ export class Hud {
 
   private readonly kyokuJp: HTMLElement
   private readonly kyokuEn: HTMLElement
+  private readonly doraLabel: HTMLElement
   private readonly wallCount: HTMLElement
   private readonly wallLabel: HTMLElement
   private readonly honbaEl: HTMLElement
   private readonly sticksEl: HTMLElement
   private readonly buttonsRow: HTMLElement
   private readonly chiRow: HTMLElement
+  private readonly waitsEl: HTMLElement
   private readonly turnEl: HTMLElement
   private readonly overlay: HTMLElement
   private readonly menuBtn: HTMLElement
@@ -183,6 +193,8 @@ export class Hud {
     // --- contador central (recuadro cian 180×180) ---
     const counter = document.createElement('div')
     counter.className = 'tm-counter'
+    // bajo la fila de indicadores de dora (viven en el padding-top del recuadro)
+    this.doraLabel = el('div', 'font-size:9px;letter-spacing:.24em;color:var(--muted2);text-transform:uppercase;margin-bottom:2px')
     this.kyokuJp = el('span', 'font-family:var(--jp);font-weight:700;font-size:18px;color:var(--gold)')
     this.kyokuEn = el('span', 'font-family:var(--ui);font-size:15px;letter-spacing:.1em;color:var(--muted)')
     const kyokuRow = el('div', 'display:flex;align-items:baseline;gap:6px')
@@ -194,7 +206,7 @@ export class Hud {
     this.honbaEl = el('span', 'display:flex;align-items:center;gap:4px')
     this.sticksEl = el('span', 'display:flex;align-items:center;gap:4px')
     meta.append(this.honbaEl, this.sticksEl)
-    counter.append(kyokuRow, this.wallCount, wallLabel, meta)
+    counter.append(this.doraLabel, kyokuRow, this.wallCount, wallLabel, meta)
     place(counter, { left: 960, top: 540, transform: 'translate(-50%,-50%)', z: 30 })
     stage.appendChild(counter)
 
@@ -209,6 +221,12 @@ export class Hud {
     this.chiRow.className = 'tm-action-row'
     place(this.chiRow, { right: 264, bottom: 172, z: 45 })
     stage.appendChild(this.chiRow)
+
+    // tira de esperas del humano (espejo izquierdo de los botones de acción)
+    this.waitsEl = document.createElement('div')
+    this.waitsEl.className = 'tm-waits is-hidden'
+    place(this.waitsEl, { left: BOARD.x + 40, bottom: 116, z: 35 })
+    stage.appendChild(this.waitsEl)
 
     this.turnEl = el('div', 'font-family:var(--ui);font-size:20px;letter-spacing:.34em;color:var(--gold);text-transform:uppercase')
     place(this.turnEl, {
@@ -236,6 +254,7 @@ export class Hud {
   // Textos del HUD que no pasan por update(); se re-aplican al cambiar idioma.
   private applyStaticTexts(): void {
     this.menuBtn.innerHTML = `${ICONS.menu}<span>${t('hud.menu')}</span>`
+    this.doraLabel.textContent = t('hud.dora-label')
     this.wallLabel.textContent = t('hud.tiles-left')
     for (const p of this.portraits.values()) p.oyaEl.textContent = t('hud.dealer')
     this.musicBar.applyTexts()
@@ -327,6 +346,11 @@ export class Hud {
       stage.dataset.back = v
       saveSettings(settings)
     }))
+    card.appendChild(cycler(t('hud.show-waits'), TOGGLE, settings.showWaits ? 'on' : 'off', (v) => {
+      settings.showWaits = v === 'on'
+      saveSettings(settings)
+      this.onLanguageChange?.() // mismo callback de re-render: refresca la tira
+    }))
 
     section('hud.section-audio')
     for (const [ch, key] of VOLUMES) {
@@ -350,11 +374,16 @@ export class Hud {
     footer.className = 'tm-menu-ov__footer'
     const resetFooter = (): void => {
       footer.innerHTML = ''
+      const glossary = document.createElement('button')
+      glossary.className = 'tm-btn tm-btn--muted'
+      glossary.textContent = t('hud.glossary')
+      // se apila sobre el menú (mismo z, añadido después); al cerrarse reaparece
+      glossary.addEventListener('click', () => { playUiClick(); openGlossary(stage) })
       const exit = document.createElement('button')
       exit.className = 'tm-btn tm-btn--danger'
       exit.textContent = t('hud.exit')
       exit.addEventListener('click', () => { playUiClick(); askConfirm() })
-      footer.appendChild(exit)
+      footer.append(glossary, exit)
     }
     const askConfirm = (): void => {
       footer.innerHTML = ''
@@ -408,6 +437,42 @@ export class Hud {
     this.renderButtons(this.buttonsRow, info.buttons)
     this.renderButtons(this.chiRow, info.chiOptions)
     this.turnEl.textContent = info.turnLabel ?? ''
+    this.renderWaits(info.waits, info.furiten)
+  }
+
+  // La tira se reconstruye en cada update (traduce con el locale vigente); el
+  // cambio de idioma en caliente pasa por onLanguageChange → render → update.
+  private renderWaits(
+    waits: HudInfo['waits'],
+    furiten: boolean,
+  ): void {
+    if (!waits || waits.length === 0) {
+      this.waitsEl.classList.add('is-hidden')
+      return
+    }
+    this.waitsEl.classList.remove('is-hidden')
+    this.waitsEl.replaceChildren()
+    const label = document.createElement('span')
+    label.className = 'tm-waits__label'
+    label.textContent = t('hud.waits')
+    this.waitsEl.appendChild(label)
+    for (const w of waits) {
+      const cell = document.createElement('span')
+      cell.className = 'tm-waits__tile'
+      // copia 1, nunca la 0: en 5m/5p/5s la copia 0 es el aka (ids 16/52/88)
+      cell.appendChild(this.tileView.create('front', ((w.tile << 2) | 1) as TileId))
+      const n = document.createElement('span')
+      n.className = 'tm-waits__count'
+      n.textContent = `×${w.live}`
+      cell.appendChild(n)
+      this.waitsEl.appendChild(cell)
+    }
+    if (furiten) {
+      const pill = document.createElement('span')
+      pill.className = 'tm-waits__furiten'
+      pill.textContent = t('hud.furiten')
+      this.waitsEl.appendChild(pill)
+    }
   }
 
   private renderButtons(row: HTMLElement, defs: ButtonDef[]): void {
@@ -464,15 +529,24 @@ export class Hud {
       return `<div class="tm-delta ${cls}"><span>${names(x)}</span><b>${d > 0 ? '+' : ''}${d.toLocaleString('en-US')}</b><i>${s.seats[x]!.points.toLocaleString('en-US')}</i></div>`
     }).join('')
 
+    // el humano en riichi que no ganó ve los ura que le habrían tocado; solo en
+    // agotamiento (en abortos la mano no llegó a resolverse)
+    const showUra = end.type === 'exhaustive' && s.seats[this.human]!.riichi > 0
+
     this.overlay.innerHTML =
       `<div class="tm-overlay__card">` +
       `<div class="tm-overlay__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>` +
       `<div class="tm-overlay__title">${title}</div>` +
       `<div class="tm-overlay__sub">${subtitle}</div>` +
       body +
+      (showUra ? `<div class="tm-ura-row"><span>${t('hud.ura-reveal')}</span></div>` : '') +
       `<div class="tm-deltas">${deltas}</div>` +
       `<button class="tm-btn tm-btn--primary tm-overlay__continue">${t('hud.continue')}</button>` +
       `</div>`
+    if (showUra) {
+      const row = this.overlay.querySelector('.tm-ura-row')!
+      for (const id of uraIndicators(s.wall)) row.appendChild(this.tileView.create('front', id))
+    }
     this.overlay.classList.remove('is-hidden')
     this.overlay.querySelector('.tm-overlay__continue')!.addEventListener('click', onContinue, { once: true })
   }

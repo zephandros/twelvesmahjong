@@ -5,6 +5,7 @@ menu.title-sub|Título principal línea 2 — marca; igual en los 3 idiomas|MAHJ
 menu.tagline|Subtítulo bajo el título de portada|RIICHI MAHJONG · TONPUUSEN|RIICHI MAHJONG · TONPUUSEN|リーチ麻雀・東風戦
 menu.play|Botón principal del menú|JUGAR|PLAY|対局
 menu.settings|Botón de ajustes del menú|AJUSTES|SETTINGS|設定
+menu.glossary|Botón de portada que abre el glosario de yaku|GLOSARIO|GLOSSARY|役一覧
 menu.credits|Créditos de la portada — marca; igual en los 3 idiomas|Arenacun Software|Arenacun Software|Arenacun Software
 menu.audio-title|Título del modal de ajustes de la portada|Audio|Audio|オーディオ
 menu.close|Botón cerrar del modal de portada|CERRAR|CLOSE|閉じる
@@ -35,6 +36,7 @@ hud.table|Cycler de tema de mesa|Mesa|Table|テーブル
 hud.tile-back|Cycler de dorso de ficha|Dorso|Tile back|牌の背
 hud.language|Cycler de idioma (también en el modal de portada)|Idioma|Language|言語
 hud.close|Cierra el overlay de menú|CERRAR|CLOSE|閉じる
+hud.glossary|Botón del menú in-game que abre el glosario|GLOSARIO DE YAKU|YAKU GLOSSARY|役一覧
 hud.exit|Sale de la partida hacia la selección|ABANDONAR PARTIDA|LEAVE GAME|対局を退出
 hud.exit-confirm|Confirmación al abandonar la partida|¿Abandonar la partida?|Leave the game?|対局を退出しますか？
 hud.yes|Confirmar (menú in-game)|Sí|Yes|はい
@@ -45,6 +47,10 @@ hud.continue|Botón de continuar en overlays de fin|CONTINUAR|CONTINUE|続ける
 hud.riichi|Etiqueta RIICHI del panel de personaje|RIICHI|RIICHI|リーチ
 hud.you|Sufijo del nombre del jugador humano|TÚ|YOU|あなた
 hud.tiles-left|Rótulo bajo el contador del muro|fichas|tiles left|残り牌
+hud.dora-label|Rótulo bajo los indicadores de dora del centro|DORA|DORA|ドラ
+hud.waits|Rótulo de la tira de esperas del jugador tenpai|ESPERAS|WAITS|待ち
+hud.furiten|Píldora de furiten en la tira de esperas|FURITEN|FURITEN|フリテン
+hud.show-waits|Cycler de ajustes: mostrar la tira de esperas|Esperas|Show waits|待ち表示
 hud.round|Línea de kyoku en kanji; {n} = numeral kanji 一..四|東{n}局|東{n}局|東{n}局
 hud.east-n|Línea de kyoku secundaria; {n} = 1..4|ESTE {n}|EAST {n}|EAST {n}
 hud.honba|Contador de honba en overlays|HONBA|HONBA|本場
@@ -59,6 +65,7 @@ hud.characters|Vuelve a la selección de personajes|PERSONAJES|CHARACTERS|キャ
 hud.rematch|Revancha con el mismo roster|REVANCHA|REMATCH|再戦
 hud.han-fu|Línea de puntuación|{han} HAN · {fu} FU|{han} HAN · {fu} FU|{han}翻{fu}符
 hud.yakuman|Sustituye a han·fu cuando hay yakuman|YAKUMAN|YAKUMAN|役満
+hud.ura-reveal|Ura revelados al humano riichi que no ganó|TUS URA DORA|YOUR URA DORA|あなたの裏ドラ
 end.ryuukyoku|Título del agotamiento de muro (igual en los 3)|流局|流局|流局
 end.exhaustive-draw|Subtítulo del agotamiento|AGOTAMIENTO DEL MURO|EXHAUSTIVE DRAW|荒牌流局
 end.tochuu|Título de mano abortada (igual en los 3)|途中流局|途中流局|途中流局
@@ -88,6 +95,8 @@ settings.volume.master|Canal de volumen|General|Master|全体
 settings.volume.music|Canal de volumen|Música|Music|音楽
 settings.volume.sfx|Canal de volumen|Efectos|SFX|効果音
 settings.volume.voices|Canal de volumen|Voces|Voices|ボイス
+settings.toggle.on|Valor genérico de toggle activado|SÍ|ON|オン
+settings.toggle.off|Valor genérico de toggle desactivado|NO|OFF|オフ
 settings.lang.auto|Opción del cycler de idioma|Automático|Auto|自動
 settings.lang.es|Autónimo — igual en los 3 idiomas|Español|Español|Español
 settings.lang.en|Autónimo — igual en los 3 idiomas|English|English|English
@@ -134,6 +143,57 @@ yaku.chinroutou||Chinroutou|Chinroutou|清老頭
 yaku.ryuuiisou||Ryuuiisou|Ryuuiisou|緑一色
 yaku.suukantsu||Suukantsu|Suukantsu|四槓子
 yaku.chuuren||Chuuren Poutou|Chuuren Poutou|九蓮宝燈
+glossary.title|Título del overlay del glosario|Glosario de yaku|Yaku glossary|役一覧
+glossary.han-legend|Leyenda de la columna de han del glosario|HAN: MANO CERRADA / ABIERTA|HAN: CLOSED / OPEN HAND|翻:門前 / 鳴き
+glossary.sec.situational|Sección del glosario|Situacionales|Situational|状況役
+glossary.sec.form|Sección del glosario|De forma|Hand shape|手役
+glossary.sec.yakuman|Sección del glosario|Yakuman|Yakuman|役満
+glossary.sec.dora|Sección del glosario|Dora|Dora|ドラ
+yaku.riichi.desc|Glosario: descripción corta|Declarar tenpai con la mano cerrada apostando 1000 puntos.|Declare tenpai with a closed hand, staking 1000 points.|門前で聴牌を宣言し、千点を場に出す。
+yaku.double-riichi.desc|Glosario: descripción corta|Riichi en el primer descarte, sin llamadas previas.|Riichi on your very first discard, before any call.|鳴きのない一巡目にリーチを宣言する。
+yaku.ippatsu.desc|Glosario: descripción corta|Ganar antes de tu siguiente robo tras el riichi, sin llamadas de por medio.|Win before your next draw after riichi, with no calls in between.|リーチ後、鳴きなしの一巡以内に和了する。
+yaku.tsumo.desc|Glosario: descripción corta|Ganar robando del muro con la mano cerrada.|Win by self-draw with a closed hand.|門前のまま自分のツモで和了する。
+yaku.haitei.desc|Glosario: descripción corta|Tsumo con la última ficha del muro.|Self-draw win on the last tile of the wall.|最後のツモ牌で和了する。
+yaku.houtei.desc|Glosario: descripción corta|Ron sobre el último descarte de la mano.|Ron on the final discard of the hand.|最後の捨て牌でロン和了する。
+yaku.rinshan.desc|Glosario: descripción corta|Ganar con la ficha extra robada tras declarar un kan.|Win on the replacement tile drawn after a kan.|カンの後に引いた嶺上牌で和了する。
+yaku.chankan.desc|Glosario: descripción corta|Ron sobre la ficha con la que un rival amplía su pon a kan.|Ron on the tile a rival adds to upgrade a pon into a kan.|加槓された牌でロン和了する。
+yaku.tenhou.desc|Glosario: descripción corta|El oya gana con su mano inicial, antes de cualquier descarte.|The dealer wins with the starting hand, before any discard.|親が配牌のまま和了する。
+yaku.chiihou.desc|Glosario: descripción corta|Un no-oya gana con su primer robo, sin llamadas previas.|A non-dealer wins on the first draw, before any call.|子が鳴きのない第一ツモで和了する。
+yaku.pinfu.desc|Glosario: descripción corta|Cuatro corridas y pareja sin valor, ganando con espera de dos lados.|Four runs and a valueless pair, won on a two-sided wait.|順子4組と役牌以外の雀頭、両面待ちで和了する。
+yaku.tanyao.desc|Glosario: descripción corta|Solo fichas del 2 al 8: sin terminales ni honores.|Only tiles 2 through 8: no terminals or honors.|一九字牌を使わずに揃える。
+yaku.iipeiko.desc|Glosario: descripción corta|Dos corridas idénticas; solo con mano cerrada.|Two identical runs; closed hand only.|同じ順子を2組作る。門前のみ。
+yaku.ryanpeiko.desc|Glosario: descripción corta|Dos pares de corridas idénticas; solo con mano cerrada.|Two pairs of identical runs; closed hand only.|一盃口を二つ作る。門前のみ。
+yaku.yakuhai-haku.desc|Glosario: descripción corta|Trío o kan del dragón blanco.|A triplet or kan of the white dragon.|白の刻子か槓子を作る。
+yaku.yakuhai-hatsu.desc|Glosario: descripción corta|Trío o kan del dragón verde.|A triplet or kan of the green dragon.|發の刻子か槓子を作る。
+yaku.yakuhai-chun.desc|Glosario: descripción corta|Trío o kan del dragón rojo.|A triplet or kan of the red dragon.|中の刻子か槓子を作る。
+yaku.yakuhai-seat.desc|Glosario: descripción corta|Trío o kan de tu viento de asiento.|A triplet or kan of your seat wind.|自風牌の刻子か槓子を作る。
+yaku.yakuhai-round.desc|Glosario: descripción corta|Trío o kan del viento de la ronda.|A triplet or kan of the round wind.|場風牌の刻子か槓子を作る。
+yaku.sanshoku.desc|Glosario: descripción corta|La misma corrida en los tres palos.|The same run in all three suits.|三色で同じ順子を作る。
+yaku.sanshoku-doukou.desc|Glosario: descripción corta|El mismo trío en los tres palos.|The same triplet in all three suits.|三色で同じ刻子を作る。
+yaku.ittsu.desc|Glosario: descripción corta|Corridas 123, 456 y 789 del mismo palo.|Runs 123, 456 and 789 in a single suit.|同じ色で123・456・789を揃える。
+yaku.toitoi.desc|Glosario: descripción corta|Cuatro tríos o kans más la pareja.|Four triplets or kans plus the pair.|刻子と槓子だけで4組作る。
+yaku.sanankou.desc|Glosario: descripción corta|Tres tríos cerrados (no completados por ron).|Three concealed triplets (not completed by ron).|暗刻を3組作る。
+yaku.sankantsu.desc|Glosario: descripción corta|Tres kans declarados.|Three declared kans.|槓子を3組作る。
+yaku.honroutou.desc|Glosario: descripción corta|Solo terminales y honores, en tríos o pares.|Terminals and honors only, in triplets or pairs.|一九字牌だけで刻子と雀頭を作る。
+yaku.junchan.desc|Glosario: descripción corta|Cada bloque contiene un 1 o un 9; sin honores.|Every block contains a 1 or a 9; no honors.|全ての面子と雀頭に一九牌を含む。字牌なし。
+yaku.chanta.desc|Glosario: descripción corta|Cada bloque contiene terminal u honor.|Every block contains a terminal or an honor.|全ての面子と雀頭に一九字牌を含む。
+yaku.shousangen.desc|Glosario: descripción corta|Tríos de dos dragones y pareja del tercero.|Triplets of two dragons and a pair of the third.|三元牌の刻子2組と雀頭を作る。
+yaku.honitsu.desc|Glosario: descripción corta|Un solo palo más honores.|One suit plus honor tiles.|一色の数牌と字牌だけで揃える。
+yaku.chinitsu.desc|Glosario: descripción corta|Un solo palo, sin honores.|A single suit with no honors.|一色の数牌だけで揃える。
+yaku.chiitoi.desc|Glosario: descripción corta|Siete pares distintos; solo con mano cerrada.|Seven distinct pairs; closed hand only.|七種の対子で揃える。門前のみ。
+yaku.kokushi.desc|Glosario: descripción corta|Una de cada terminal y honor, más una repetida.|One of each terminal and honor, plus one duplicate.|一九字牌13種を全て集めて和了する。
+yaku.suuankou.desc|Glosario: descripción corta|Cuatro tríos cerrados.|Four concealed triplets.|暗刻を4組作る。
+yaku.daisangen.desc|Glosario: descripción corta|Tríos de los tres dragones.|Triplets of all three dragons.|三元牌の刻子を3組作る。
+yaku.daisuushi.desc|Glosario: descripción corta|Tríos de los cuatro vientos.|Triplets of all four winds.|風牌の刻子を4組作る。
+yaku.shousuushi.desc|Glosario: descripción corta|Tríos de tres vientos y pareja del cuarto.|Triplets of three winds and a pair of the fourth.|風牌の刻子3組と雀頭を作る。
+yaku.tsuuiisou.desc|Glosario: descripción corta|Solo honores.|Honor tiles only.|字牌だけで揃える。
+yaku.chinroutou.desc|Glosario: descripción corta|Solo unos y nueves.|Ones and nines only.|一九牌だけで揃える。
+yaku.ryuuiisou.desc|Glosario: descripción corta|Solo fichas verdes: 2, 3, 4, 6 y 8 de bambú y hatsu.|Green tiles only: 2, 3, 4, 6, 8 of bamboo and hatsu.|緑色の牌だけで揃える。
+yaku.suukantsu.desc|Glosario: descripción corta|Cuatro kans declarados.|Four declared kans.|槓子を4組作る。
+yaku.chuuren.desc|Glosario: descripción corta|1112345678999 del mismo palo más una ficha extra.|1112345678999 in one suit plus any one extra tile.|同じ色で1112345678999ともう1枚。
+yaku.dora.desc|Glosario: descripción corta|Cada dora señalada por el indicador suma 1 han.|Each dora shown by the indicator adds 1 han.|ドラ1枚ごとに1翻加算。
+yaku.ura.desc|Glosario: descripción corta|Dora oculta bajo el indicador; solo para quien gana con riichi.|Hidden dora under the indicator; riichi winners only.|リーチ和了の時だけ見られる裏のドラ。
+yaku.aka.desc|Glosario: descripción corta|Cada cinco rojo suma 1 han.|Each red five adds 1 han.|赤い5の牌は1枚で1翻。
 yaku.dora|{n} = nº de dora|Dora {n}|Dora {n}|ドラ{n}
 yaku.ura|{n} = nº de ura dora|Ura Dora {n}|Ura Dora {n}|裏ドラ{n}
 yaku.aka|{n} = nº de aka dora|Aka Dora {n}|Aka Dora {n}|赤ドラ{n}

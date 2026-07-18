@@ -96,12 +96,21 @@ function makePlayer(): MusicPlayer {
   return { el, fade }
 }
 
+// Los sliders guardan su posición 0..1 en Settings; la ganancia real sigue una
+// curva perceptual (Weber-Fechner): con copia lineal, el tramo 0-20% da saltos
+// bruscos y el 80-100% apenas se nota. x² ≈ 40 dB de rango útil y gain(0)=0
+// exacto. Solo aplica a los canales de usuario; ducking y fades son relativos.
+const VOLUME_CURVE = 2
+function perceptualGain(x: number): number {
+  return Math.pow(x, VOLUME_CURVE)
+}
+
 function applyVolumes(): void {
   if (!ctx) return
-  master.gain.value = settings.volumes.master
-  musicGain.gain.value = settings.musicMuted ? 0 : settings.volumes.music
-  sfxGain.gain.value = settings.volumes.sfx
-  voicesGain.gain.value = settings.volumes.voices
+  master.gain.value = perceptualGain(settings.volumes.master)
+  musicGain.gain.value = settings.musicMuted ? 0 : perceptualGain(settings.volumes.music)
+  sfxGain.gain.value = perceptualGain(settings.volumes.sfx)
+  voicesGain.gain.value = perceptualGain(settings.volumes.voices)
 }
 
 // --- desbloqueo de autoplay --------------------------------------------------

@@ -17,6 +17,8 @@ export interface Settings {
   tableTheme: TableTheme
   tileBack: TileBack
   language: Language
+  /** Mostrar la tira de esperas/furiten del humano cuando está tenpai. */
+  showWaits: boolean
 }
 
 export const DEFAULTS: Settings = {
@@ -25,6 +27,7 @@ export const DEFAULTS: Settings = {
   tableTheme: 'green',
   tileBack: 'amber',
   language: 'auto',
+  showWaits: true,
 }
 
 const KEY = 'tm-settings-v1'
@@ -59,6 +62,7 @@ export function loadSettings(): Settings {
       language: LANGUAGES.includes(p.language as Language)
         ? (p.language as Language)
         : DEFAULTS.language,
+      showWaits: typeof p.showWaits === 'boolean' ? p.showWaits : DEFAULTS.showWaits,
     }
   } catch {
     return structuredClone(DEFAULTS)

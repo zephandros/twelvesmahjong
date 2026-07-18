@@ -4,6 +4,8 @@
 // agotamientos y abortos usan la tarjeta sobria del HUD.
 
 import type { HandState } from '../core/state'
+import type { Seat } from '../core/seat'
+import { uraIndicators } from '../core/wall'
 import { createTileView, type TileView } from './tile-view'
 import { portraitUrl, charName, charEpithet, type Character } from './characters'
 import { meldLayout, type MeldSlot } from './meld-layout'
@@ -17,6 +19,7 @@ export function showWinScreen(
   kyoku: number,
   chars: readonly Character[],
   onContinue: () => void,
+  human?: Seat,
 ): void {
   const end = s.end!
   if (end.type !== 'tsumo' && end.type !== 'ron') throw new Error('no es una victoria')
@@ -38,6 +41,9 @@ export function showWinScreen(
   const hanfu = sc.yakuman > 0 ? t('hud.yakuman') : `${t('hud.han-fu', { han: sc.han, fu: sc.fu })}${limit}`
   const fromLine =
     end.type === 'ron' ? `<span class="tm-win__from">← ${charName(chars[end.from]!)}</span>` : ''
+  // el humano en riichi que perdió la mano ve los ura que le habrían tocado;
+  // el ganador riichi ya los tiene como píldora "Ura Dora {n}" entre los yaku
+  const showUra = human !== undefined && winner !== human && s.seats[human]!.riichi > 0
   // en ja el nombre va en katakana: el uppercase del look Antique solo aplica al latín
   const winnerName = getLocale() === 'ja' ? charName(char) : charName(char).toUpperCase()
 
@@ -51,6 +57,7 @@ export function showWinScreen(
       <div class="tm-win__name"><b>${winnerName}</b><span>${charEpithet(char)}</span>${fromLine}</div>
       <div class="tm-yaku-list tm-win__yaku">${yakuPills}</div>
       <div class="tm-win__score"><span>${hanfu}</span><b>+${sc.total.toLocaleString('en-US')}</b></div>
+      ${showUra ? `<div class="tm-win__ura"><span>${t('hud.ura-reveal')}</span></div>` : ''}
       <div class="tm-win__hand"></div>
       <button class="tm-btn tm-btn--primary tm-win__continue">${t('hud.continue')}</button>
     </div>
@@ -59,6 +66,11 @@ export function showWinScreen(
   // mano ganadora: oculta ordenada + melds + la ficha ganadora separada
   const handEl = el.querySelector<HTMLElement>('.tm-win__hand')!
   const r = createTileView(38)
+  if (showUra) {
+    const uraEl = el.querySelector<HTMLElement>('.tm-win__ura')!
+    const ru = createTileView(32)
+    for (const id of uraIndicators(s.wall)) uraEl.appendChild(ru.create('front', id))
+  }
   const st = s.seats[winner]!
   const concealed = [...st.hand].sort((a, b) => a - b)
   for (const id of concealed) handEl.appendChild(r.create('front', id))

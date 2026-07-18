@@ -208,3 +208,29 @@ export function isTenpai(s: HandState, seat: Seat): boolean {
   const st = s.seats[seat]!
   return shanten(countsOf(t34s(st.hand)), st.melds.length) === 0
 }
+
+/** Furiten actual de un asiento (permanente, temporal o de riichi). */
+export function seatFuriten(s: HandState, seat: Seat): boolean {
+  const st = s.seats[seat]!
+  const waits = waitsOf(t34s(st.hand), st.melds.length)
+  return isFuriten(waits, st.discarded, st.missedRon, st.riichiFuriten)
+}
+
+/**
+ * Copias de cada tipo aún NO visibles para `viewer` (UI de esperas): 4 − mano
+ * propia (incl. la robada) − ponds − fichas de melds − indicadores de dora
+ * revelados. Se cuenta pond + melds y NUNCA `discarded`: la ficha llamada
+ * sigue en el historial pero también en el meld (sería doble conteo).
+ */
+export function remainingFor(s: HandState, viewer: Seat): number[] {
+  const seen = new Array<number>(34).fill(0)
+  const add = (id: TileId): void => { seen[tile34Of(id)]!++ }
+  for (const id of s.seats[viewer]!.hand) add(id)
+  if (s.turn === viewer && s.drawn !== null) add(s.drawn)
+  for (const st of s.seats) {
+    for (const id of st.pond) add(id)
+    for (const m of st.melds) for (const id of m.tiles) add(id)
+  }
+  for (const id of doraIndicators(s.wall)) add(id)
+  return seen.map((n) => Math.max(0, 4 - n))
+}
