@@ -185,7 +185,15 @@ function placePond(st: HandState['seats'][number], edge: Edge, put: Put): void {
       else if (edge === 'left') cy += 15
       else cy -= 15
     }
-    if (rIdx === i) rot += 90 // ficha con la que se declaró riichi
+    // la ficha de riichi gira 90° y ocupa 60px (no 45) en la dirección de
+    // llenado: se corre 7.5px ((60-45)/2) para quedar a ras de la anterior
+    if (rIdx === i) {
+      rot += 90
+      if (edge === 'bottom') cx += 7.5
+      else if (edge === 'top') cx -= 7.5
+      else if (edge === 'left') cy += 7.5
+      else cy -= 7.5
+    }
     put(id, { cx, cy, w: DISC.w, h: DISC.h, rot, face: 'front', z: 15 })
   })
 }

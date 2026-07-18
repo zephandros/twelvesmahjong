@@ -39,13 +39,15 @@ export function showWinScreen(
     .join('')
   const limit = sc.limit ? ` · ${t(`limit.${sc.limit}`)}` : ''
   const hanfu = sc.yakuman > 0 ? t('hud.yakuman') : `${t('hud.han-fu', { han: sc.han, fu: sc.fu })}${limit}`
+  // en ja el nombre va en katakana: el uppercase del look Antique solo aplica al latín
+  const displayName = (c: Character): string =>
+    getLocale() === 'ja' ? charName(c) : charName(c).toUpperCase()
   const fromLine =
-    end.type === 'ron' ? `<span class="tm-win__from">← ${charName(chars[end.from]!)}</span>` : ''
+    end.type === 'ron' ? `<span class="tm-win__from">← ${displayName(chars[end.from]!)}</span>` : ''
   // el humano en riichi que perdió la mano ve los ura que le habrían tocado;
   // el ganador riichi ya los tiene como píldora "Ura Dora {n}" entre los yaku
   const showUra = human !== undefined && winner !== human && s.seats[human]!.riichi > 0
-  // en ja el nombre va en katakana: el uppercase del look Antique solo aplica al latín
-  const winnerName = getLocale() === 'ja' ? charName(char) : charName(char).toUpperCase()
+  const winnerName = displayName(char)
 
   el.innerHTML = `
     <div class="tm-win__rays"></div>
@@ -54,7 +56,10 @@ export function showWinScreen(
       <div class="tm-win__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>
       <div class="tm-win__kanji">${kanji}</div>
       <div class="tm-win__title">${title}</div>
-      <div class="tm-win__name"><b>${winnerName}</b><span>${charEpithet(char)}</span>${fromLine}</div>
+      <div class="tm-win__name">
+        <div class="tm-win__name-line"><b>${winnerName}</b>${fromLine}</div>
+        <span class="tm-win__epithet">${charEpithet(char)}</span>
+      </div>
       <div class="tm-yaku-list tm-win__yaku">${yakuPills}</div>
       <div class="tm-win__score"><span>${hanfu}</span><b>+${sc.total.toLocaleString('en-US')}</b></div>
       ${showUra ? `<div class="tm-win__ura"><span>${t('hud.ura-reveal')}</span></div>` : ''}
@@ -97,6 +102,12 @@ export function showWinScreen(
   )
 
   stage.appendChild(el)
+
+  // con melds la mano puede exceder el ancho del body (620px, styles.css); las
+  // fichas no se encogen (flex 0 0 auto) → se escala la fila entera para que quepa
+  const BODY_W = 620
+  const handW = handEl.scrollWidth
+  if (handW > BODY_W) handEl.style.transform = `scale(${BODY_W / handW})`
 }
 
 function appendWinMeld(root: HTMLElement, view: TileView, slots: readonly MeldSlot[]): void {

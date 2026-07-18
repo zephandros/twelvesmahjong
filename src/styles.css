@@ -579,6 +579,7 @@ html, body {
 .tm-score-line span { font-size: 24px; letter-spacing: 0.06em; color: var(--muted); }
 .tm-score-line b { font-family: var(--title); font-weight: 300; font-size: 44px; line-height: 0.9; color: var(--cream); text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
 /* tira de esperas del humano tenpai (banda inferior izquierda de la mesa) */
+.tm-waits.is-hidden { display: none; }
 .tm-waits {
   display: flex;
   align-items: center;
@@ -660,13 +661,49 @@ html, body {
 /* --- glosario de yaku --------------------------------------------------------- */
 .tm-glossary {
   width: 780px;
-  max-height: 88%;
+  /* alto FIJO en px (no max-height: la tarjeta cambiaría de tamaño según el
+     contenido de cada pestaña y las tabs saltarían de sitio; en % tampoco se
+     resuelve bien contra la pista auto del grid de .tm-overlay) */
+  height: 950px;
   align-items: stretch;
   text-align: left;
   position: relative;
   gap: 8px;
   padding: 24px 30px 26px;
 }
+.tm-glossary > .tm-menu-ov__title,
+.tm-glossary__legend,
+.tm-glossary__tabs {
+  flex-shrink: 0; /* solo el cuerpo scrollea; título, leyenda y tabs no se comprimen */
+}
+.tm-glossary__tabs {
+  display: flex;
+  gap: 6px;
+  margin: 2px 0 4px;
+}
+.tm-glossary__tab {
+  font-family: var(--ui);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(231, 197, 106, 0.45);
+  background: rgba(10, 18, 12, 0.7);
+  color: var(--muted);
+  cursor: pointer;
+}
+.tm-glossary__tab.is-active {
+  color: var(--ink);
+  background: linear-gradient(var(--gold-lt), var(--gold));
+  border-color: var(--gold-lt);
+}
+.tm-glossary__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tm-glossary__panel.is-hidden { display: none; }
 .tm-glossary__legend {
   font-family: var(--ui);
   font-size: 13px;
@@ -701,6 +738,14 @@ html, body {
   white-space: nowrap;
 }
 .tm-glossary__desc { font-family: var(--ui); font-size: 14px; color: var(--muted); line-height: 1.35; }
+.tm-glossary__hand {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+.tm-glossary__group { display: flex; gap: 2px; }
+.tm-glossary__hand .tm-tile.is-dim { opacity: 0.35; filter: grayscale(0.55); }
 
 /* --- selección de personaje ------------------------------------------------- */
 /* Diseño fijo dentro del stage 1920×1080; el letterbox lo escala todo.
@@ -1117,21 +1162,25 @@ html, body {
 }
 .tm-win__name {
   display: inline-flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   background: rgba(8, 14, 10, 0.72);
   border-left: 4px solid var(--gold);
   border-radius: 0 8px 8px 0;
   padding: 8px 18px;
 }
+.tm-win__name-line { display: flex; align-items: baseline; gap: 12px; }
 .tm-win__name b { font-size: 22px; letter-spacing: 0.08em; color: var(--cream); }
-.tm-win__name span { font-family: var(--jp); font-weight: 700; font-size: 15px; color: #8fbf9f; }
-.tm-win__from { font-size: 14px; color: var(--muted); }
+.tm-win__epithet { font-size: 15px; color: #8fbf9f; }
+.tm-win__from { font-size: 17px; letter-spacing: 0.08em; color: var(--muted); }
 .tm-win__yaku { max-width: 520px; justify-content: flex-start; }
 .tm-win__score { display: flex; align-items: baseline; gap: 14px; font-family: var(--ui); }
 .tm-win__score span { font-size: 28px; letter-spacing: 0.06em; color: var(--muted); }
 .tm-win__score b { font-family: var(--title); font-weight: 300; font-size: 54px; line-height: 0.8; color: var(--cream); text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
-.tm-win__hand { display: flex; align-items: flex-end; margin-top: auto; gap: 3px; }
+.tm-win__hand { display: flex; align-items: flex-end; margin-top: auto; gap: 3px; transform-origin: left bottom; }
+/* nada se encoge: si la mano no cabe en el body, el JS la escala entera */
+.tm-win__hand > * { flex: 0 0 auto; }
 .tm-win__gap { width: 8px; }
 .tm-win__gap--wide { width: 18px; }
 .tm-win__meld-slot {
@@ -1147,8 +1196,13 @@ html, body {
   width: 53px;
   height: 38px;
 }
+/* centrado explícito: place-items no centra la ficha (53px) al desbordar la
+   celda (38px) y la caja girada sobresalía 7.5px por debajo de la fila */
 .tm-win__meld-slot--sideways > .tm-tile:not(.tm-win__tile--stack) {
-  transform: rotate(90deg);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 .tm-win__tile--stack {
   position: absolute;

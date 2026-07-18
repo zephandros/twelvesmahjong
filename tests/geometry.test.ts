@@ -122,6 +122,22 @@ describe('geometry: colocación de fichas', () => {
     }
   })
 
+  it('la ficha de riichi girada queda a ras de sus vecinas en el pond', () => {
+    const s = stateForMelds()
+    const st = s.seats[0]!
+    st.pond = [id('1m'), id('2m'), id('3m'), id('4m')]
+    st.riichiIndex = 2
+
+    const p = computePlacements(s, opts)
+    const prev = p.get(id('2m'))!
+    const riichi = p.get(id('3m'))!
+    const next = p.get(id('4m'))!
+    expect(riichi.rot).toBe(90)
+    // girada ocupa 60px en la dirección de llenado: bordes a ras por ambos lados
+    expect(riichi.cx - 60 / 2).toBeCloseTo(prev.cx + 45 / 2, 5)
+    expect(riichi.cx + 60 / 2).toBeCloseTo(next.cx - 45 / 2, 5)
+  })
+
   it('apila la ficha añadida del shouminkan sobre la llamada', () => {
     const called = id('7s')
     const a = id('7s', 1)

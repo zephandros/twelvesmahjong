@@ -153,6 +153,7 @@ export const MESSAGES = {
   "glossary.sec.form": { es: "De forma", en: "Hand shape", ja: "手役" },
   "glossary.sec.yakuman": { es: "Yakuman", en: "Yakuman", ja: "役満" },
   "glossary.sec.dora": { es: "Dora", en: "Dora", ja: "ドラ" },
+  "glossary.tab.han": { es: "{n} HAN", en: "{n} HAN", ja: "{n}翻" },
   "yaku.riichi.desc": { es: "Declarar tenpai con la mano cerrada apostando 1000 puntos.", en: "Declare tenpai with a closed hand, staking 1000 points.", ja: "門前で聴牌を宣言し、千点を場に出す。" },
   "yaku.double-riichi.desc": { es: "Riichi en el primer descarte, sin llamadas previas.", en: "Riichi on your very first discard, before any call.", ja: "鳴きのない一巡目にリーチを宣言する。" },
   "yaku.ippatsu.desc": { es: "Ganar antes de tu siguiente robo tras el riichi, sin llamadas de por medio.", en: "Win before your next draw after riichi, with no calls in between.", ja: "リーチ後、鳴きなしの一巡以内に和了する。" },
