@@ -4,6 +4,7 @@
 // arranca con el roster completo. Vive en el escenario 1920×1080 escalado.
 
 import { CHARACTERS, charName, thumbUrl, type Character, type Roster } from './characters'
+import { ICONS } from './icons.generated'
 import { playUiClick } from './audio/audio'
 import { createScaledStage } from './layout'
 import { t } from './i18n'
@@ -34,7 +35,7 @@ export function renderSelect(
 
   wrap.innerHTML = `
     <div class="tm-select__head">
-      ${onBack ? `<button class="tm-select__back" data-act="back" aria-label="${t('select.a11y-back')}">←</button>` : ''}
+      ${onBack ? `<button class="tm-select__back" data-act="back" aria-label="${t('select.a11y-back')}">${ICONS['arrow-big-left']}</button>` : ''}
       <div class="tm-select__headings">
         <span class="tm-select__title">${t('select.title')}</span>
         <span class="tm-select__sub">${t('select.subtitle')}</span>
@@ -93,8 +94,7 @@ export function renderSelect(
       `<span class="tm-slot__frame">` +
       `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
       `<span class="tm-slot__q">?</span>` +
-      `</span>` +
-      `<span class="tm-slot__name">—</span>`
+      `</span>`
     const windEl = el.querySelector<HTMLElement>('.tm-slot__wind')!
     windEl.style.background = windColor(wind)
     el.addEventListener('click', () => {
@@ -150,19 +150,18 @@ export function renderSelect(
       const el = slotEls[i]!
       el.classList.toggle('is-current', i === current)
       const frame = el.querySelector<HTMLElement>('.tm-slot__frame')!
-      const name = el.querySelector<HTMLElement>('.tm-slot__name')!
       const seat = i as Seat
       const wind = seatWind(seat, INITIAL_DEALER)
       if (p) {
+        // nombre embebido en el marco (abajo-derecha, sobre degradado)
         frame.innerHTML =
           `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
-          `<img src="${thumbUrl(p)}" alt="${charName(p)}">`
-        name.textContent = charName(p)
+          `<img src="${thumbUrl(p)}" alt="${charName(p)}">` +
+          `<span class="tm-slot__name">${charName(p)}</span>`
       } else {
         frame.innerHTML =
           `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
           `<span class="tm-slot__q">?</span>`
-        name.textContent = '—'
       }
       frame.querySelector<HTMLElement>('.tm-slot__wind')!.style.background =
         windColor(wind)

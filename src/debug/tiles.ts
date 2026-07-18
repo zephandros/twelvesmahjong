@@ -27,7 +27,7 @@ export function renderDebugTiles(root: HTMLElement): void {
   const title = document.createElement('div')
   title.textContent = 'DEBUG · TILES — verificación del mapeo (raw/tiles → public/tiles)'
   title.style.cssText =
-    'font-family:var(--display);font-size:22px;letter-spacing:.08em;color:var(--gold);margin-bottom:18px'
+    'font-family:var(--ui);font-size:22px;letter-spacing:.08em;color:var(--gold);margin-bottom:18px'
   page.appendChild(title)
 
   const grid = document.createElement('div')

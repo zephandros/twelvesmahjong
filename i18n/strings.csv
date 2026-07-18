@@ -1,6 +1,7 @@
 key|context|es|en|ja
 menu.title-jp|Título decorativo japonés de la portada (igual en los 3 idiomas)|トゥウェルブズ・マージャン|トゥウェルブズ・マージャン|トゥウェルブズ・マージャン
-menu.title|Título principal — marca; igual en los 3 idiomas|TWELVES Mahjong|TWELVES Mahjong|TWELVES Mahjong
+menu.title-main|Título principal línea 1 — marca; igual en los 3 idiomas|TWELVES|TWELVES|TWELVES
+menu.title-sub|Título principal línea 2 — marca; igual en los 3 idiomas|MAHJONG|MAHJONG|MAHJONG
 menu.tagline|Subtítulo bajo el título de portada|RIICHI MAHJONG · TONPUUSEN|RIICHI MAHJONG · TONPUUSEN|リーチ麻雀・東風戦
 menu.play|Botón principal del menú|JUGAR|PLAY|対局
 menu.settings|Botón de ajustes del menú|AJUSTES|SETTINGS|設定
@@ -28,13 +29,18 @@ game.btn.chi|Botón de reacción|CHI|CHI|チー
 game.btn.back|Cierra el picker de chi|ATRÁS|BACK|戻る
 game.btn.pass|Deja pasar la llamada|PASAR|PASS|スルー
 game.btn.cancel|Cancela el modo riichi|CANCELAR|CANCEL|キャンセル
-hud.menu|Botón del panel del jugador que abre el menú|☰ MENÚ|☰ MENU|☰ メニュー
+hud.menu|Botón del marco de la mesa que abre el menú (lleva icono SVG)|MENÚ|MENU|メニュー
 hud.menu-title|Título del overlay de menú in-game|Menú|Menu|メニュー
 hud.table|Cycler de tema de mesa|Mesa|Table|テーブル
 hud.tile-back|Cycler de dorso de ficha|Dorso|Tile back|牌の背
 hud.language|Cycler de idioma (también en el modal de portada)|Idioma|Language|言語
 hud.close|Cierra el overlay de menú|CERRAR|CLOSE|閉じる
-hud.exit|Sale de la partida hacia la selección|SALIR|EXIT|退出
+hud.exit|Sale de la partida hacia la selección|ABANDONAR PARTIDA|LEAVE GAME|対局を退出
+hud.exit-confirm|Confirmación al abandonar la partida|¿Abandonar la partida?|Leave the game?|対局を退出しますか？
+hud.yes|Confirmar (menú in-game)|Sí|Yes|はい
+hud.no|Cancelar (menú in-game)|No|No|いいえ
+hud.section-settings|Subheader de sección del menú in-game|Ajustes|Settings|設定
+hud.section-audio|Subheader de sección del menú in-game|Audio|Audio|オーディオ
 hud.continue|Botón de continuar en overlays de fin|CONTINUAR|CONTINUE|続ける
 hud.riichi|Etiqueta RIICHI del panel de personaje|RIICHI|RIICHI|リーチ
 hud.you|Sufijo del nombre del jugador humano|TÚ|YOU|あなた
@@ -42,10 +48,11 @@ hud.tiles-left|Rótulo bajo el contador del muro|fichas|tiles left|残り牌
 hud.round|Línea de kyoku en kanji; {n} = numeral kanji 一..四|東{n}局|東{n}局|東{n}局
 hud.east-n|Línea de kyoku secundaria; {n} = 1..4|ESTE {n}|EAST {n}|EAST {n}
 hud.honba|Contador de honba en overlays|HONBA|HONBA|本場
-hud.place.1|Puesto 1º en paneles y ranking|1.º|1st|1位
-hud.place.2|Puesto 2º|2.º|2nd|2位
-hud.place.3|Puesto 3º|3.º|3rd|3位
-hud.place.4|Puesto 4º|4.º|4th|4位
+hud.place.1|Puesto 1º en paneles y ranking (dígito + sufijo ordinal)|1ro|1st|1位
+hud.place.2|Puesto 2º|2do|2nd|2位
+hud.place.3|Puesto 3º|3ro|3rd|3位
+hud.place.4|Puesto 4º|4to|4th|4位
+hud.dealer|Insignia del dealer (oya), kanji clásico|親|親|親
 hud.game-over|Título del overlay de fin de partida|FIN DE PARTIDA|GAME OVER|終局
 hud.tonpuusen-complete|Subtítulo del fin de partida|TONPUUSEN COMPLETO|TONPUUSEN COMPLETE|東風戦終了
 hud.characters|Vuelve a la selección de personajes|PERSONAJES|CHARACTERS|キャラクター

@@ -1,7 +1,7 @@
 // Ata el pipeline de fuentes (npm run assets:fonts) al CSS: cada woff2 que
 // styles.css declara en @font-face debe existir en public/fonts/, y las
 // familias retiradas no deben reaparecer. Guardia extra: el insumo intermedio
-// _noto-serif-jp-full.ttf (13 MB) no puede vivir en public/ (acabaría en dist/).
+// _kosugi-full.ttf (~2 MB) no puede vivir en public/ (acabaría en dist/).
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -18,11 +18,14 @@ describe('assets de fuentes (public/fonts)', () => {
     const families = new Set(
       [...CSS.matchAll(/font-family:\s*'([^']+)';/g)].map((m) => m[1]!),
     )
-    for (const f of ['Murecho', 'Cormorant Garamond', 'EB Garamond', 'Noto Serif JP']) {
+    for (const f of ['Lexend', 'Belanosima', 'Kosugi']) {
       expect(families, `falta @font-face de ${f}`).toContain(f)
     }
     expect(families, 'Rajdhani fue retirada en A2').not.toContain('Rajdhani')
     expect(families, 'Teko fue retirada en A6').not.toContain('Teko')
+    for (const f of ['Murecho', 'Cormorant Garamond', 'EB Garamond', 'Noto Serif JP']) {
+      expect(families, `${f} fue retirada en el cambio a Lexend/Belanosima/Kosugi`).not.toContain(f)
+    }
   })
 
   it('cada woff2 declarado en @font-face existe', () => {

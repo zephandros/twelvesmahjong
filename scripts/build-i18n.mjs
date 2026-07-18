@@ -32,8 +32,8 @@ const HEADER = ['key', 'context', 'es', 'en', 'ja']
 const SEP = '|'
 const KEY_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/
 // Glifos que dependen del subset JP: símbolos CJK (々・), hiragana, katakana,
-// ideogramas y formas de ancho completo. El latín (acentos, ¿¡, º) vive en el
-// rango U+0000-00FF del subset de Murecho y no se valida aquí.
+// ideogramas y formas de ancho completo. El latín (acentos, ¿¡, º) vive en los
+// slices latinos U+0000-00FF de Lexend/Belanosima y no se valida aquí.
 const CJK_RE = /[　-〿぀-ゟ゠-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/gu
 
 /** Parser mínimo estilo RFC 4180 con `|` de separador: comillas, `""`, pipes/saltos dentro de campo. */

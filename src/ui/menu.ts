@@ -41,7 +41,10 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
   menu.innerHTML = `
     <div class="tm-menu__hero">
       <div class="tm-menu__jp"></div>
-      <h1 class="tm-menu__title"></h1>
+      <h1 class="tm-menu__title">
+        <span class="tm-menu__title-main"></span>
+        <span class="tm-menu__title-sub"></span>
+      </h1>
       <div class="tm-menu__tag"></div>
     </div>
     <div class="tm-menu__actions">
@@ -71,7 +74,7 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
   const langRow = overlay.querySelector<HTMLElement>('.tm-audio-ov__lang')!
   langRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%'
   const langCap = document.createElement('span')
-  langCap.style.cssText = 'font-family:var(--serif);font-size:16px;color:var(--cream)'
+  langCap.style.cssText = 'font-family:var(--ui);font-size:16px;color:var(--cream)'
   const langBtn = document.createElement('button')
   langBtn.className = 'tm-btn tm-btn--muted'
   let langIdx = Math.max(0, LANGUAGES.findIndex(([v]) => v === settings.language))
@@ -112,7 +115,8 @@ export function renderMenu(root: HTMLElement, opts: { onStart: () => void }): vo
   // Textos en el locale activo; se re-aplica al cambiar idioma (in situ).
   function applyTexts(): void {
     menu.querySelector<HTMLElement>('.tm-menu__jp')!.textContent = t('menu.title-jp')
-    menu.querySelector<HTMLElement>('.tm-menu__title')!.textContent = t('menu.title')
+    menu.querySelector<HTMLElement>('.tm-menu__title-main')!.textContent = t('menu.title-main')
+    menu.querySelector<HTMLElement>('.tm-menu__title-sub')!.textContent = t('menu.title-sub')
     menu.querySelector<HTMLElement>('.tm-menu__tag')!.textContent = t('menu.tagline')
     menu.querySelector<HTMLElement>('[data-act="start"]')!.textContent = t('menu.play')
     menu.querySelector<HTMLElement>('[data-act="settings"]')!.textContent = t('menu.settings')

@@ -1,92 +1,29 @@
 /* Fuentes auto-alojadas (pipeline: npm run assets:fonts).
-   - Murecho: variable (wght 100-900), latino + kana + kanji del juego; es
-     --ui y la primera opción de --jp. A Murecho le faltan 發搶槓: los pinta
-     el subset de Noto Serif JP (~12 KB), que queda de fallback en --jp.
-   - Cormorant / EB Garamond: look Antique Parlour (--display-serif / --serif).
-   - Teko sigue siendo --display hasta A6 (métricas condensadas del layout). */
+   - Lexend: variable (wght 100-900), slice latino. Títulos (--title).
+   - Belanosima (solo 400, slice latino): acciones, submenús y UI (--ui).
+     Regla del proyecto: Belanosima NUNCA en negrita (ni 600/700 ni <b> UA).
+   - Kosugi: única fuente CJK del juego (subset de jp_glyphs.py, sin fallback);
+     cierra todos los stacks para que kana/kanji se pinten offline. */
 @font-face {
-  font-family: 'Murecho';
+  font-family: 'Lexend';
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('/fonts/murecho-var-subset.woff2') format('woff2');
+  src: url('/fonts/lexend-var-latin.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/cormorant-500-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/cormorant-600-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/cormorant-700-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: italic;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/cormorant-500-italic-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: italic;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/cormorant-600-italic-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: italic;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/cormorant-700-italic-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'EB Garamond';
+  font-family: 'Belanosima';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/ebgaramond-400-latin.woff2') format('woff2');
+  src: url('/fonts/belanosima-400-latin.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'EB Garamond';
+  font-family: 'Kosugi';
   font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/ebgaramond-500-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'EB Garamond';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/ebgaramond-600-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'EB Garamond';
-  font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/ebgaramond-400-italic-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Noto Serif JP';
-  font-style: normal;
-  font-weight: 400 900;
-  font-display: swap;
-  src: url('/fonts/noto-serif-jp-subset.woff2') format('woff2');
+  src: url('/fonts/kosugi-subset.woff2') format('woff2');
 }
 
 /* Tokens (Mahjong Twelves · Antique Parlour). */
@@ -114,14 +51,13 @@
     linear-gradient(180deg, #7d5632 0%, #5c3d20 45%, #3c2814 78%, #22140a 100%);
 
   /* Dorso de ficha: por defecto Amber; lo redefine [data-back]. */
-  /* Todos los stacks acaban en 'Noto Serif JP': su subset (jp_glyphs.py) trae
-     TODOS los glifos CJK/kana del i18n, así los kanji se pintan offline en
-     cualquier stack e idioma (Murecho no cubre 發搶槓 牌 蓮 摸 撈 嶺 盃 燈 雀). */
-  --ui: 'Murecho', 'Noto Serif JP', 'Segoe UI', system-ui, sans-serif;
-  --display: 'Cormorant Garamond', 'EB Garamond', 'Noto Serif JP', Georgia, serif;
-  --jp: 'Murecho', 'Noto Serif JP', 'Yu Mincho', serif;
-  --serif: 'EB Garamond', 'Noto Serif JP', Georgia, serif;
-  --display-serif: 'Cormorant Garamond', 'Noto Serif JP', Georgia, serif;
+  /* Todos los stacks acaban en 'Kosugi': su subset (jp_glyphs.py) trae TODOS
+     los glifos CJK/kana del i18n, así los kanji se pintan offline en cualquier
+     stack e idioma (Lexend/Belanosima solo traen el slice latino). */
+  --title: 'Lexend', 'Kosugi', system-ui, sans-serif;
+  --ui: 'Belanosima', 'Kosugi', 'Segoe UI', system-ui, sans-serif;
+  /* El subset de Kosugi no trae latino: Belanosima recoge A-Z en textos --jp. */
+  --jp: 'Kosugi', 'Belanosima', sans-serif;
 }
 
 /* Temas de mesa (barra superior → Settings.tableTheme). */
@@ -139,6 +75,10 @@
 .tm-stage[data-back='charcoal'] { --tile-back-1: #4a4a4e; --tile-back-2: #2b2b2f; --tile-back-edge: #202024; }
 
 * { box-sizing: border-box; }
+
+/* Belanosima se usa SIEMPRE en regular: sin negrita UA en <b>/<strong>
+   (el énfasis lo dan color y tamaño). */
+b, strong { font-weight: 400; }
 
 html, body {
   margin: 0;
@@ -255,8 +195,7 @@ html, body {
 }
 /* Etiqueta del BoxRenderer (fallback ?renderer=box); solo boca arriba */
 .tm-tile__label {
-  font-family: var(--display);
-  font-weight: 600;
+  font-family: var(--ui);
   font-size: 22px;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -337,16 +276,54 @@ html, body {
   color: #fdf6e6;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
+/* Ordinal de puesto (1ro/1st/1位): dígito Lexend Bold + sufijo en superíndice,
+   arriba-derecha del retrato. */
+.tm-panel__place {
+  position: absolute;
+  right: 8px;
+  top: 4px;
+  z-index: 1;
+  font-family: var(--title);
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+}
+.tm-panel__place sup {
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: top;
+  position: relative;
+  top: 1px;
+}
+/* Insignia 親 (oya/dealer), pegada a la insignia de viento; solo con .is-dealer. */
+.tm-panel__oya {
+  position: absolute;
+  left: 52px;
+  top: 0;
+  z-index: 1;
+  display: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-bottom-right-radius: 12px;
+  background: #d94f4f;
+  color: #fff;
+  font-family: var(--jp);
+  font-size: 19px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.tm-panel.is-dealer .tm-panel__oya { display: grid; }
 .tm-panel__riichi {
   position: absolute;
   right: 8px;
-  top: 8px;
+  top: 56px;
   padding: 2px 10px;
   border-radius: 5px;
   background: #d94f4f;
   color: #fff;
-  font-family: var(--display);
-  font-weight: 700;
+  font-family: var(--ui);
   font-size: 18px;
   letter-spacing: 0.1em;
   display: none;
@@ -360,27 +337,29 @@ html, body {
   padding: 12px 14px 14px;
   background: linear-gradient(180deg, transparent, rgba(8, 5, 2, 0.9) 55%);
 }
-.tm-panel__row { display: flex; align-items: baseline; gap: 8px; }
-.tm-panel__place { font-family: var(--display); font-size: 24px; color: var(--gold); letter-spacing: 0.04em; }
-.tm-panel__name { font-family: var(--display); font-weight: 600; font-size: 24px; color: var(--cream); text-shadow: 0 1px 3px #000; }
-.tm-panel__score { font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 1; color: #f4ecd6; letter-spacing: 0.02em; }
-.tm-panel__menu {
-  position: absolute;
-  right: 12px;
-  top: 12px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(20, 14, 7, 0.94), rgba(9, 6, 3, 0.92));
-  border: 1px solid rgba(231, 197, 106, 0.5);
+.tm-panel__row { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
+.tm-panel__name { font-family: var(--ui); font-size: 24px; color: var(--cream); text-shadow: 0 1px 3px #000; }
+.tm-panel__score { font-family: var(--title); font-weight: 300; font-size: 34px; line-height: 1; color: #f4ecd6; letter-spacing: 0.02em; text-align: right; }
+/* Botón de menú: pastilla sobre la banda superior del marco de la mesa (24px),
+   a juego con el reproductor de la banda inferior. */
+.tm-hud-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(13, 10, 4, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(231, 197, 106, 0.35), 0 2px 10px rgba(0, 0, 0, 0.35);
   color: var(--gold);
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 22px;
-  letter-spacing: 0.06em;
+  font-family: var(--ui);
+  font-size: 15px;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  z-index: 2;
 }
-.tm-panel__menu:hover { filter: brightness(1.2); }
+.tm-hud-menu:hover { filter: brightness(1.25); }
+.tm-hud-menu:active { transform: translateY(1px); }
+.tm-hud-menu svg { width: 15px; height: 15px; }
 
 /* --- contador central (recuadro 180×180) ------------------------------------- */
 .tm-counter {
@@ -398,8 +377,87 @@ html, body {
 }
 
 /* --- menú de mesa (overlay) -------------------------------------------------- */
-.tm-menu-ov .tm-overlay__card { width: 460px; gap: 16px; }
-.tm-menu-ov input[type='range'] { cursor: pointer; }
+/* Menú in-game: tarjeta con título + X, secciones (AJUSTES / AUDIO) y filas en
+   grid de dos columnas para que todos los controles compartan ancho y columna. */
+.tm-menu-ov .tm-overlay__card {
+  width: 600px;
+  gap: 18px;
+  padding: 26px 34px 30px;
+  align-items: stretch;
+  position: relative;
+}
+.tm-menu-ov__title {
+  font-family: var(--title);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--gold-lt);
+  text-align: left;
+}
+.tm-menu-ov__close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--ui);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.tm-menu-ov__close:hover { color: var(--gold-lt); background: rgba(231, 197, 106, 0.12); }
+.tm-menu-ov__close svg { width: 24px; height: 24px; }
+.tm-menu-ov__sec {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  font-family: var(--ui);
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.tm-menu-ov__sec::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(231, 197, 106, 0.25);
+}
+.tm-menu-ov__row {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  align-items: center;
+  column-gap: 18px;
+}
+.tm-menu-ov__label {
+  font-family: var(--ui);
+  font-size: 20px;
+  color: var(--cream);
+}
+.tm-menu-ov__row .tm-btn { width: 100%; font-size: 20px; }
+.tm-menu-ov__row input[type='range'] {
+  width: 100%;
+  height: 20px;
+  margin: 0; /* Chromium trae 2px por defecto y desalinea la columna */
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.tm-menu-ov__footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+.tm-menu-ov__confirm { font-family: var(--ui); font-size: 20px; color: var(--cream); }
 
 /* --- botones ------------------------------------------------------------------ */
 .tm-btn {
@@ -407,7 +465,7 @@ html, body {
   text-align: center;
   padding: 7px 12px;
   border-radius: 22px;
-  font-family: var(--display);
+  font-family: var(--ui);
   font-size: 22px;
   letter-spacing: 0.06em;
   line-height: 1;
@@ -421,6 +479,8 @@ html, body {
 .tm-btn--primary { color: var(--ink); background: linear-gradient(var(--gold-lt), var(--gold)); border-color: var(--gold-lt); }
 .tm-btn--normal { color: var(--cream); background: rgba(10, 18, 12, 0.85); border-color: var(--gold); }
 .tm-btn--muted { color: var(--muted); background: rgba(10, 18, 12, 0.7); border-color: #5f6f60; }
+.tm-btn--danger { color: #e08a8a; background: rgba(24, 8, 8, 0.75); border-color: #8a3d3d; }
+.tm-btn--danger:hover { color: #f2b0b0; border-color: #d94f4f; }
 .tm-btn--tiles { display: flex; align-items: center; gap: 3px; padding: 4px 8px; }
 
 /* botones de acción (reacción/turno) y opciones de chi: borde más cuadrado */
@@ -432,13 +492,12 @@ html, body {
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  border-radius: 12px 12px 0 0;
+  border-radius: 12px;
   background: rgba(13, 10, 4, 0.82);
-  box-shadow: inset 0 0 0 1px rgba(231, 197, 106, 0.35), 0 -2px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(231, 197, 106, 0.35), 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .tm-music__title {
-  font-family: var(--display);
-  font-style: italic;
+  font-family: var(--ui);
   font-size: 15px;
   letter-spacing: 0.08em;
   color: var(--cream);
@@ -458,6 +517,7 @@ html, body {
   cursor: pointer;
   transition: filter 0.15s ease, color 0.15s ease;
 }
+.tm-music__btn svg { width: 15px; height: 15px; }
 .tm-music__btn:hover { filter: brightness(1.25); background: rgba(231, 197, 106, 0.12); }
 .tm-music__btn:active { transform: translateY(1px); }
 .tm-music__btn.is-muted { color: var(--muted); }
@@ -489,11 +549,10 @@ html, body {
 }
 .tm-overlay__kyoku { font-size: 11px; letter-spacing: 0.24em; color: var(--muted2); text-transform: uppercase; }
 .tm-overlay__title {
-  font-family: var(--display);
+  font-family: var(--title);
   font-weight: 700;
   font-size: 64px;
   line-height: 0.9;
-  font-style: italic;
   letter-spacing: 0.02em;
   background: linear-gradient(180deg, #fbf0c8 0%, #e7c56a 46%, #b98a29 100%);
   -webkit-background-clip: text;
@@ -501,10 +560,9 @@ html, body {
   color: transparent;
   text-shadow: 0 6px 26px rgba(0, 0, 0, 0.5);
 }
-.tm-overlay__sub { font-family: var(--display); font-size: 18px; letter-spacing: 0.12em; color: var(--muted); }
+.tm-overlay__sub { font-family: var(--ui); font-size: 18px; letter-spacing: 0.12em; color: var(--muted); }
 .tm-yaku-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .tm-yaku-pill {
-  font-weight: 600;
   font-size: 14px;
   color: var(--ink);
   background: linear-gradient(var(--gold-lt), var(--gold));
@@ -516,10 +574,10 @@ html, body {
   display: flex;
   align-items: baseline;
   gap: 14px;
-  font-family: var(--display);
+  font-family: var(--ui);
 }
 .tm-score-line span { font-size: 24px; letter-spacing: 0.06em; color: var(--muted); }
-.tm-score-line b { font-size: 44px; line-height: 0.9; color: var(--cream); text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
+.tm-score-line b { font-family: var(--title); font-weight: 300; font-size: 44px; line-height: 0.9; color: var(--cream); text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
 .tm-deltas { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
 .tm-delta {
   display: flex;
@@ -528,14 +586,14 @@ html, body {
   padding: 3px 10px;
   border-radius: 6px;
   background: rgba(6, 12, 9, 0.55);
-  font-family: var(--display);
+  font-family: var(--ui);
   font-size: 18px;
 }
 .tm-delta span { flex: 1; text-align: left; color: var(--muted); letter-spacing: 0.06em; }
-.tm-delta b { color: var(--cream); }
+.tm-delta b { font-family: var(--title); font-weight: 300; color: var(--cream); }
 .tm-delta.is-plus b { color: #9fd98a; }
 .tm-delta.is-minus b { color: #e08a8a; }
-.tm-delta i { font-style: normal; color: var(--muted2); min-width: 64px; text-align: right; }
+.tm-delta i { font-family: var(--title); font-weight: 300; font-style: normal; color: var(--muted2); min-width: 64px; text-align: right; }
 .tm-overlay__continue { margin-top: 8px; }
 
 /* --- selección de personaje ------------------------------------------------- */
@@ -570,13 +628,12 @@ html, body {
   border: 2px solid var(--gold);
   background: rgba(10, 18, 12, 0.7);
   color: var(--cream);
-  font-family: var(--display);
-  font-size: 40px;
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   transition: filter 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
 }
+.tm-select__back svg { width: 34px; height: 34px; }
 .tm-select__back:hover { filter: brightness(1.15); border-color: var(--gold-lt); }
 .tm-select__back:active { transform: translateY(1px); }
 .tm-select__headings {
@@ -586,7 +643,7 @@ html, body {
 }
 .tm-select__title {
   display: block;
-  font-family: var(--jp);
+  font-family: var(--title);
   font-size: 64px;
   letter-spacing: 0.06em;
   color: var(--gold);
@@ -595,7 +652,7 @@ html, body {
 }
 .tm-select__sub {
   display: block;
-  font-family: var(--jp);
+  font-family: var(--title);
   font-size: 28px;
   letter-spacing: 0.18em;
   color: var(--muted2);
@@ -638,6 +695,7 @@ html, body {
 .tm-slot.is-current { background: rgba(231, 197, 106, 0.1); outline: 3px solid var(--gold); }
 .tm-slot__label {
   flex: 0 0 auto;
+  font-family: var(--title);
   font-size: 16px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -681,13 +739,21 @@ html, body {
   color: #fdf6e6;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
-.tm-slot__q { font-family: var(--display); font-size: 72px; color: #5f6f7e; }
+.tm-slot__q { font-family: var(--title); font-size: 72px; color: #5f6f7e; }
+/* Nombre embebido en el marco, abajo-derecha, sobre degradado (como la banda
+   de info de los paneles del tablero). */
 .tm-slot__name {
-  flex: 0 0 auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 30px 12px 8px;
+  text-align: right;
+  background: linear-gradient(180deg, transparent, rgba(8, 5, 2, 0.9) 55%);
+  font-family: var(--title);
   font-size: 22px;
-  font-weight: 700;
   color: var(--cream);
-  min-height: 26px;
 }
 .tm-select__right {
   display: flex;
@@ -703,9 +769,9 @@ html, body {
   width: 860px;
 }
 .tm-char {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
   background: none;
   border: none;
   cursor: pointer;
@@ -714,15 +780,30 @@ html, body {
 }
 .tm-char img {
   width: 100%;
-  height: 190px;
+  height: 216px;
   object-fit: cover;
   object-position: top;
   border-radius: 12px;
   border: 3px solid rgba(231, 197, 106, 0.25);
   transition: border-color 0.15s ease, transform 0.12s ease, filter 0.15s ease;
 }
-.tm-char:hover img { border-color: var(--gold); transform: translateY(-5px); }
-.tm-char span { font-size: 22px; font-weight: 600; color: var(--parchment); text-align: center; }
+.tm-char { transition: transform 0.12s ease; }
+.tm-char:hover { transform: translateY(-5px); }
+.tm-char:hover img { border-color: var(--gold); }
+/* Nombre embebido en la tarjeta (dentro del borde de 3px del retrato). */
+.tm-char span {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  padding: 26px 10px 6px;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, transparent, rgba(8, 5, 2, 0.9) 55%);
+  font-family: var(--title);
+  font-size: 20px;
+  color: var(--parchment);
+  text-align: right;
+}
 .tm-char.is-taken { pointer-events: none; }
 .tm-char.is-taken img { filter: grayscale(0.9) brightness(0.45); border-color: #3a4238; }
 .tm-char.is-taken span { color: var(--muted2); }
@@ -763,30 +844,46 @@ html, body {
   padding-left: 0.42em;
   color: #c8ab63;
 }
+/* Logo en dos líneas: TWELVES (Lexend Bold) sobre MAHJONG (Belanosima regular
+   con tracking 20%). El dorado se aplica por span (background-clip con hijos). */
 .tm-menu__title {
   margin: 14px 0 18px;
-  padding: 0 0.08em;
-  font-family: var(--jp);
-  font-weight: 700;
-  font-size: 184px;
   line-height: 1;
   white-space: nowrap;
+}
+.tm-menu__title-main,
+.tm-menu__title-sub {
+  display: block;
   background: linear-gradient(180deg, #fbf0c8 0%, #e7c56a 46%, #b98a29 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow: 0 6px 26px rgba(0, 0, 0, 0.5);
 }
+.tm-menu__title-main {
+  padding: 0 0.08em;
+  font-family: var(--title);
+  font-weight: 700;
+  font-size: 170px;
+}
+.tm-menu__title-sub {
+  margin-top: 12px;
+  font-family: var(--ui);
+  font-weight: 400;
+  font-size: 86px;
+  letter-spacing: 0.2em;
+  padding-left: 0.2em; /* compensa el tracking tras el último carácter */
+  text-transform: uppercase;
+}
 .tm-menu__tag {
-  font-family: var(--serif);
+  font-family: var(--ui);
   font-size: 26px;
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: #8a7f66;
 }
 .tm-menu__play {
-  font-family: var(--display-serif);
-  font-weight: 700;
+  font-family: var(--ui);
   font-size: 54px;
   letter-spacing: 0.08em;
   padding: 20px 64px;
@@ -816,7 +913,7 @@ html, body {
   gap: 22px;
 }
 .tm-audio-ov__slider-label {
-  font-family: var(--serif);
+  font-family: var(--ui);
   font-size: 26px;
   color: var(--cream);
 }
@@ -827,14 +924,13 @@ html, body {
   cursor: pointer;
 }
 .tm-audio-ov__slider-val {
-  font-family: var(--display-serif);
-  font-weight: 600;
+  font-family: var(--ui);
   font-size: 26px;
   color: var(--gold);
   text-align: right;
 }
 .tm-menu__credits {
-  font-family: var(--serif);
+  font-family: var(--ui);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: #6f6650;
@@ -902,12 +998,11 @@ html, body {
   text-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
 }
 .tm-win__title {
-  font-family: var(--display);
+  font-family: var(--title);
   font-weight: 700;
   font-size: 128px;
   line-height: 0.82;
   letter-spacing: 0.02em;
-  font-style: italic;
   background: linear-gradient(180deg, #fbf0c8 0%, #e7c56a 46%, #b98a29 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -923,13 +1018,13 @@ html, body {
   border-radius: 0 8px 8px 0;
   padding: 8px 18px;
 }
-.tm-win__name b { font-weight: 700; font-size: 22px; letter-spacing: 0.08em; color: var(--cream); }
+.tm-win__name b { font-size: 22px; letter-spacing: 0.08em; color: var(--cream); }
 .tm-win__name span { font-family: var(--jp); font-weight: 700; font-size: 15px; color: #8fbf9f; }
 .tm-win__from { font-size: 14px; color: var(--muted); }
 .tm-win__yaku { max-width: 520px; justify-content: flex-start; }
-.tm-win__score { display: flex; align-items: baseline; gap: 14px; font-family: var(--display); }
+.tm-win__score { display: flex; align-items: baseline; gap: 14px; font-family: var(--ui); }
 .tm-win__score span { font-size: 28px; letter-spacing: 0.06em; color: var(--muted); }
-.tm-win__score b { font-size: 54px; line-height: 0.8; color: var(--cream); text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
+.tm-win__score b { font-family: var(--title); font-weight: 300; font-size: 54px; line-height: 0.8; color: var(--cream); text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
 .tm-win__hand { display: flex; align-items: flex-end; margin-top: auto; gap: 3px; }
 .tm-win__gap { width: 8px; }
 .tm-win__gap--wide { width: 18px; }

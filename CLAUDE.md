@@ -113,7 +113,7 @@ personajes: `char.<id>.*` + helpers `charName`/`charEpithet`. `src/debug/` queda
 **Flujo del traductor**: editar `i18n/strings.csv` → `npm run assets:i18n` (si aborta
 por glifos: ampliar `GLYPHS` en `scripts/jp_glyphs.py` y `npm run assets:fonts`) →
 `npm test` (integridad + frescura del generado) → commitear CSV + generado (+ woff2).
-Todos los font-stacks de `styles.css` acaban en `'Noto Serif JP'` (su subset trae
+Todos los font-stacks de `styles.css` acaban en `'Kosugi'` (su subset trae
 todos los glifos del i18n): los kanji se pintan offline en cualquier idioma.
 
 ## Habilidades (能力)
@@ -151,7 +151,8 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | Carpeta | Qué es | Estado |
 |---|---|---|
 | `raw/code/` | Nuevo diseño del tablero "Antique Parlour" (mockup dc.html, pantallas 1A/1B, temas de mesa y dorsos) | Pendiente (fase A6) |
-| `raw/font/Murencho/` | Fuente **Murecho** (variable TTF + estáticas + OFL) | Pendiente (fase A2) |
+| `raw/font/` | Insumos de fuentes: `_kosugi-full.ttf` (lo baja fetch-fonts.mjs) + `Murencho/` (Murecho, **obsoleta** desde el cambio a Lexend/Belanosima/Kosugi) | Hecho |
+| `raw/icons/` | 9 SVG Lucide (menu, x, arrow-big-left, play/pause/skip-\*/volume-\*) para botones de UI | Hecho (assets:icons) |
 | `raw/music/` | 9 temas × 2 (normal + `_Alt`), mp3 | Pendiente (fase A3) |
 | `raw/portraits/` | PNG originales de retratos (fuente del bake; **Dante fuera, Scheherazade dentro**) | Horneados en `public/portraits/` |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
@@ -180,12 +181,18 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   script **falla si algún personaje con voz no tiene las 6 llamadas**. Al añadir voces
   de un personaje nuevo: se dejan en `raw/voices/`, se añade el actor a `ACTORS` del
   script y el slug a `VOICED` en `src/ui/audio/catalog.ts`.
-- **Fuentes** — `npm run assets:fonts` (`scripts/fetch-fonts.mjs` + `scripts/subset-murecho.py`
-  + `scripts/subset-jp.py`; requiere Python + fontTools + brotli) → woff2 en
-  `public/fonts/`. La lista de glifos JP vive en `scripts/jp_glyphs.py` (compartida
-  por ambos subsets): **al añadir kanji nuevos a la UI, ampliarla y relanzar**.
-  El subset de Murecho verifica el cmap y falla si pierde glifos (los que Murecho
-  no trae —發搶槓— los cubre el fallback Noto).
+- **Fuentes** — `npm run assets:fonts` (`scripts/fetch-fonts.mjs` +
+  `scripts/subset-jp.py`; requiere Python + fontTools + brotli) → woff2 en
+  `public/fonts/`: Lexend variable + Belanosima 400 (slices latinos de
+  Google Fonts) + `kosugi-subset.woff2`. La lista de glifos JP vive en
+  `scripts/jp_glyphs.py`: **al añadir kanji nuevos a la UI, ampliarla y relanzar**.
+  El subset de Kosugi verifica el cmap y **falla** si algún glifo pedido no acaba
+  en el woff2 (Kosugi es la única fuente CJK, sin fallback).
+- **Iconos** — `npm run assets:icons` (`scripts/build-icons.mjs`, devDep svgo) lee
+  `raw/icons/*.svg` (Lucide, stroke=currentColor) y emite
+  `src/ui/icons.generated.ts` (**commiteado**; `ICONS`/`IconName` tipados). Se
+  inyectan inline vía innerHTML: heredan el color del botón y no tocan el
+  precache. Añadir un icono = soltar el SVG en `raw/icons/` y relanzar.
 - **Retratos** — `scripts/bake-portraits.ps1` (PowerShell + System.Drawing, ya existente)
   lee de `raw/portraits/` (fuente real; `../Resources/Portraits` quedó obsoleta) →
   `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px). La tabla `$roster`
@@ -213,18 +220,33 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
 - **Click de ficha**: aleatorio entre un set de **4 notas según el tema de mesa** (para
   no cansar con el mismo sonido): mesa `wood` → {c2, d2, e2, f2}; el resto → {f2, g2,
   a2, b2}. Sin repetir la última nota sonada.
-- **Fuentes**: **Murecho** reemplaza Rajdhani (`--ui`) y encabeza `--jp`. Cobertura
-  verificada: a Murecho le faltan **發搶槓**, así que el subset de Noto Serif JP se
-  queda **permanentemente** de fallback en `--jp` (los pinta Noto en serif; asumido).
-  **Cormorant Garamond + EB Garamond** auto-alojadas (`--display-serif` / `--serif`)
-  para el look Antique Parlour. **A6 hecho**: `--display` = Cormorant y **Teko retirada**
-  (sin `@font-face` ni descarga). El TTF completo de Noto (insumo del subset, 13 MB)
-  vive en `raw/font/`, nunca en `public/`.
+- **Fuentes** (cambio total 2026-07-17): solo 3 familias — **Lexend** para títulos
+  (`--title`: logo, victoria, selección, títulos de modales), **Belanosima** para
+  acciones/submenús y el resto de la UI (`--ui`), **Kosugi** para todo el japonés
+  (`--jp` y cierre CJK de todos los stacks; cobertura verificada, incluye 發搶槓).
+  Retiradas: Murecho, Cormorant Garamond, EB Garamond, Noto Serif JP (antes ya
+  Rajdhani y Teko). Los stacks `--display`/`--serif`/`--display-serif` desaparecieron.
+  **Belanosima NUNCA en negrita** (regla del usuario): solo existe el face 400,
+  ningún texto `--ui` lleva `font-weight` 600/700 y `b, strong { font-weight: 400 }`
+  neutraliza la negrita UA. Kosugi solo trae peso 400 (el bold CJK de `--jp` es
+  sintético; los pesos sobre Lexend sí se usan); Lexend/Belanosima no traen
+  itálica (se eliminó todo `font-style: italic`). Los **números** (contador del
+  muro, marcadores de paneles, deltas, puntos de victoria) van en **Lexend Light
+  300**. En la selección de personaje los textos pequeños usan Lexend y el nombre
+  va **embebido en la tarjeta/marco** (abajo-derecha, degradado como la banda de
+  info de los paneles). Logo de portada en dos líneas:
+  TWELVES (Lexend Bold) sobre MAHJONG (Belanosima 400, tracking 0.2em), claves i18n
+  `menu.title-main`/`menu.title-sub`. El TTF completo de Kosugi (insumo del subset,
+  ~2 MB) vive en `raw/font/`, nunca en `public/`.
 - **Antique Parlour (A6)**: fondo de salón oscuro + mesa 4:3 (`.tm-board`) con marco de
   madera; **temas de fieltro** (green/red/blue/wood) y **5 dorsos de ficha** seleccionables
-  desde el **menú in-game** (botón ☰ en el panel del jugador — ya no es barra), aplicados
+  desde el **menú in-game**, aplicados
   vía `[data-table]`/`[data-back]` en `.tm-stage` y persistidos en Settings. Layout portado
-  al mockup Figma 1920×1080 (ver Layout). Pantalla de victoria (1B): mismo diseño,
+  al mockup Figma 1920×1080 (ver Layout). El botón de menú y el reproductor de música son
+  pastillas de 24px ancladas al marco de la mesa (bandas superior/inferior, esquina
+  derecha); el puesto (1ro/1st/1位, Lexend Bold con sufijo en superíndice) va
+  arriba-derecha del retrato y el dealer se marca con la insignia roja 親 junto a la
+  insignia de viento (`hud.dealer` en i18n). Pantalla de victoria (1B): mismo diseño,
   reescalada a 1920×1080 (`.tm-win` = caja 1280×720 centrada ×1.5). Único fleco:
   `?debug=board` con coordenadas viejas (página de depuración, no afecta al juego).
 

@@ -1,11 +1,10 @@
 // Descarga y auto-aloja las fuentes de la PWA en public/fonts/:
-//  - Cormorant Garamond (500/600/700 + itálicas) y EB Garamond (400/500/600 +
-//    400 itálica): display/serif del look Antique Parlour. Slice latino.
-//  - Noto Serif JP: se descarga el TTF variable y scripts/subset-jp.py lo
-//    recorta a los glifos del juego (fallback de --jp: cubre 發搶槓, que
-//    Murecho no trae).
-//  - Murecho NO se descarga: vive en raw/font/ y lo subsetea
-//    scripts/subset-murecho.py.
+//  - Lexend (variable, eje wght): títulos (--title). Slice latino.
+//  - Belanosima (solo 400 — NUNCA se usa en negrita): acciones, submenús y UI
+//    en general (--ui). Slice latino.
+//  - Kosugi: caracteres japoneses (--jp y fallback CJK de todos los stacks).
+//    Se descarga el TTF completo y scripts/subset-jp.py lo recorta a los
+//    glifos del juego (jp_glyphs.py).
 // Reproducible: npm run assets:fonts
 
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -51,31 +50,33 @@ async function download(url, file, dir = out) {
   console.log(`${file.padEnd(28)} ${(buf.length / 1024).toFixed(1)} KB`)
 }
 
-// Cormorant Garamond (display del look Antique Parlour; el mockup usa
-// itálica 700 en título y "Tsumo!")
+// Lexend variable (títulos). Pedir el rango wght@100..900 hace que la API
+// css2 sirva el woff2 variable en un solo slice latino.
 {
   const css = await fetchText(
-    'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap',
   )
-  for (const [key, url] of latinUrls(css)) {
-    await download(url, `cormorant-${key}-latin.woff2`)
-  }
+  const urls = latinUrls(css)
+  const url = urls.get('100 900') ?? urls.get('400')
+  if (!url) throw new Error('no se encontró el slice latino variable de Lexend')
+  await download(url, 'lexend-var-latin.woff2')
 }
 
-// EB Garamond (serif de texto del mockup; "your turn" es itálica 400)
+// Belanosima (acciones/submenús/UI). Solo 400: el proyecto no usa Belanosima
+// en negrita (regla explícita del usuario).
 {
   const css = await fetchText(
-    'https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap',
+    'https://fonts.googleapis.com/css2?family=Belanosima:wght@400&display=swap',
   )
-  for (const [key, url] of latinUrls(css)) {
-    await download(url, `ebgaramond-${key}-latin.woff2`)
-  }
+  const url = latinUrls(css).get('400')
+  if (!url) throw new Error('no se encontró Belanosima 400 (slice latino)')
+  await download(url, 'belanosima-400-latin.woff2')
 }
 
-// Noto Serif JP variable TTF (entrada del subset; NO se sirve tal cual)
+// Kosugi TTF completo (entrada del subset JP; NO se sirve tal cual)
 await download(
-  'https://github.com/google/fonts/raw/main/ofl/notoserifjp/NotoSerifJP%5Bwght%5D.ttf',
-  '_noto-serif-jp-full.ttf',
+  'https://github.com/google/fonts/raw/main/apache/kosugi/Kosugi-Regular.ttf',
+  '_kosugi-full.ttf',
   rawFont,
 )
-console.log('ahora: python scripts/subset-murecho.py && python scripts/subset-jp.py')
+console.log('ahora: python scripts/subset-jp.py')

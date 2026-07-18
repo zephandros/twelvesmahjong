@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "assets:tiles": "node scripts/build-tiles.mjs",
     "assets:i18n": "node scripts/build-i18n.mjs",
-    "assets:fonts": "node scripts/fetch-fonts.mjs && python scripts/subset-murecho.py && python scripts/subset-jp.py",
+    "assets:icons": "node scripts/build-icons.mjs",
+    "assets:fonts": "node scripts/fetch-fonts.mjs && python scripts/subset-jp.py",
     "assets:audio": "node scripts/build-audio.mjs"
   },
   "devDependencies": {

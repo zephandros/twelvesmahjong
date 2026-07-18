@@ -1,12 +1,13 @@
 // Reproductor de música in-game: título del tema que suena + botones de mute,
 // anterior, play/pausa y siguiente. Rota solo GAME_TRACKS (el tema del menú no
-// entra). Anclado a la banda inferior del marco, con el borde derecho alineado
-// al panel del jugador inferior-derecho. Iconos como SVG inline: las fuentes
-// subseteadas no traen los glifos Unicode de media.
+// entra). Pastilla sobre la banda inferior del marco de la mesa, alineada a su
+// esquina izquierda (a juego con el botón de menú de la banda superior). Iconos
+// del set Lucide vía icons.generated.ts (pipeline assets:icons).
 // Muere con el stage de partida: el Hud llama a dispose() al salir.
 
-import { place } from './layout'
+import { BOARD, STAGE_H, place } from './layout'
 import { t } from './i18n'
+import { ICONS } from './icons.generated'
 import { GAME_TRACKS, MUSIC_TITLES } from './audio/catalog'
 import {
   getCurrentTrack, isMusicPaused, onMusicChange, playMusic, playUiClick,
@@ -19,18 +20,6 @@ export interface MusicBar {
   applyTexts(): void
   /** Da de baja el oyente de audio y retira la barra del stage. */
   dispose(): void
-}
-
-// Iconos 16×16 en currentColor (formas simples estilo reproductor clásico).
-const svg = (paths: string): string =>
-  `<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">${paths}</svg>`
-const ICON = {
-  prev: svg('<path d="M3 2h2v12H3z"/><path d="M13 2 6 8l7 6z"/>'),
-  next: svg('<path d="M11 2h2v12h-2z"/><path d="M3 2l7 6-7 6z"/>'),
-  play: svg('<path d="M4 2l10 6-10 6z"/>'),
-  pause: svg('<path d="M4 2h3v12H4z"/><path d="M9 2h3v12H9z"/>'),
-  sound: svg('<path d="M2 5h3l4-4v14l-4-4H2z"/><path d="M11 5.5a3.4 3.4 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12.8 3.6a6 6 0 0 1 0 8.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'),
-  muted: svg('<path d="M2 5h3l4-4v14l-4-4H2z"/><path d="m11 5.5 4 5M15 5.5l-4 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'),
 }
 
 export function createMusicBar(stage: HTMLElement, settings: Settings): MusicBar {
@@ -66,7 +55,15 @@ export function createMusicBar(stage: HTMLElement, settings: Settings): MusicBar
   })
 
   bar.append(title, prevBtn, playBtn, nextBtn, muteBtn)
-  place(bar, { right: 24, bottom: 0, height: 24, z: 45 })
+  // banda inferior del marco de madera (BOARD es el fieltro; el marco son los
+  // 24px de padding de .tm-board), esquina izquierda (inset 34px por el radio)
+  const FRAME = 24
+  place(bar, {
+    left: BOARD.x - FRAME + 34,
+    bottom: STAGE_H - (BOARD.y + BOARD.h + FRAME),
+    height: FRAME,
+    z: 45,
+  })
   stage.appendChild(bar)
 
   const label = (b: HTMLElement, text: string): void => {
@@ -78,10 +75,10 @@ export function createMusicBar(stage: HTMLElement, settings: Settings): MusicBar
   const refresh = (): void => {
     const track = getCurrentTrack()
     title.textContent = track ? (MUSIC_TITLES[track] ?? track) : ''
-    prevBtn.innerHTML = ICON.prev
-    nextBtn.innerHTML = ICON.next
-    playBtn.innerHTML = isMusicPaused() ? ICON.play : ICON.pause
-    muteBtn.innerHTML = settings.musicMuted ? ICON.muted : ICON.sound
+    prevBtn.innerHTML = ICONS['skip-back']
+    nextBtn.innerHTML = ICONS['skip-forward']
+    playBtn.innerHTML = isMusicPaused() ? ICONS.play : ICONS.pause
+    muteBtn.innerHTML = settings.musicMuted ? ICONS['volume-x'] : ICONS['volume-2']
     muteBtn.classList.toggle('is-muted', settings.musicMuted)
     label(prevBtn, t('music.prev'))
     label(nextBtn, t('music.next'))

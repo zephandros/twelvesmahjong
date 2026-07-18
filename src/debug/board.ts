@@ -78,8 +78,8 @@ function portrait(place_: string, name: string, wind: Tile34, score: string, isS
   head.style.alignItems = 'center'
   head.style.gap = '6px'
   head.innerHTML =
-    `<span style="font-family:var(--display);font-size:19px;color:var(--gold);letter-spacing:.06em">${place_}</span>` +
-    `<span style="font-weight:700;font-size:13px;color:var(--cream);text-shadow:0 1px 2px #000">${name}</span>`
+    `<span style="font-family:var(--ui);font-size:19px;color:var(--gold);letter-spacing:.06em">${place_}</span>` +
+    `<span style="font-size:13px;color:var(--cream);text-shadow:0 1px 2px #000">${name}</span>`
 
   const frame = document.createElement('div')
   frame.style.position = 'relative'
@@ -103,7 +103,7 @@ function portrait(place_: string, name: string, wind: Tile34, score: string, isS
     'display:flex;align-items:center;gap:6px;background:rgba(6,12,9,.72);border:1px solid rgba(231,197,106,.3);border-radius:7px;padding:2px 8px'
   scoreBar.innerHTML =
     `<span style="width:7px;height:7px;border-radius:50%;background:${isSelf ? 'var(--gold)' : '#7c8a7f'}"></span>` +
-    `<span style="font-family:var(--display);font-size:26px;color:var(--cream)">${score}</span>`
+    `<span style="font-family:var(--ui);font-size:26px;color:var(--cream)">${score}</span>`
 
   col.append(head, frame, scoreBar)
   wrap.appendChild(col)
@@ -119,10 +119,10 @@ function centerCounter(wall: number): HTMLElement {
   box.innerHTML =
     `<div style="display:flex;align-items:center;gap:6px">` +
     `<span style="font-family:var(--jp);font-weight:700;font-size:15px;color:var(--gold)">東一局</span>` +
-    `<span style="font-family:var(--display);font-size:15px;letter-spacing:.1em;color:var(--muted)">EAST 1</span></div>` +
-    `<div style="font-family:var(--display);font-size:60px;line-height:.82;color:var(--cream);text-shadow:0 3px 8px rgba(0,0,0,.5)">${wall}</div>` +
+    `<span style="font-family:var(--ui);font-size:15px;letter-spacing:.1em;color:var(--muted)">EAST 1</span></div>` +
+    `<div style="font-family:var(--ui);font-size:60px;line-height:.82;color:var(--cream);text-shadow:0 3px 8px rgba(0,0,0,.5)">${wall}</div>` +
     `<div style="font-size:10px;letter-spacing:.24em;color:var(--muted2);text-transform:uppercase;margin-top:-2px">tiles left</div>` +
-    `<div style="display:flex;gap:10px;margin-top:6px;font-family:var(--display);font-size:18px;color:#e0d7bd">` +
+    `<div style="display:flex;gap:10px;margin-top:6px;font-family:var(--ui);font-size:18px;color:#e0d7bd">` +
     `<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#d94f4f"></span>0</span>` +
     `<span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:6px;border-radius:2px;background:linear-gradient(#f4ecd6,#cfc6ad);border:1px solid #b9a15a"></span>1</span></div>`
   return box
@@ -141,7 +141,7 @@ function actionButtons(): HTMLElement {
     const b = document.createElement('div')
     b.textContent = label
     b.style.cssText =
-      `min-width:56px;text-align:center;padding:7px 12px;border-radius:22px;font-family:var(--display);` +
+      `min-width:56px;text-align:center;padding:7px 12px;border-radius:22px;font-family:var(--ui);` +
       `font-size:22px;letter-spacing:.06em;line-height:1;color:${fg};background:${bg};border:1.5px solid ${bd};box-shadow:0 4px 12px rgba(0,0,0,.45)`
     row.appendChild(b)
   }
@@ -225,6 +225,6 @@ export function renderDebugBoard(root: HTMLElement): void {
   stage.appendChild(place(actionButtons(), { right: 150, bottom: 104, z: 45 }))
   const turn = document.createElement('div')
   turn.textContent = '— YOUR TURN —'
-  turn.style.cssText = 'font-family:var(--display);font-size:16px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase'
+  turn.style.cssText = 'font-family:var(--ui);font-size:16px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase'
   stage.appendChild(place(turn, { left: 640, bottom: 98, transform: 'translateX(-50%)', z: 35 }))
 }

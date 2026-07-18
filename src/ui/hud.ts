@@ -7,7 +7,7 @@ import type { HandState } from '../core/state'
 import type { TileId } from '../core/tile'
 import type { Seat } from '../core/seat'
 import { SEATS, relSeat, cornerOf, seatWind, windColor, windName, type Corner } from '../core/seat'
-import { BOARD, STAGE_H, place } from './layout'
+import { BOARD, STAGE_H, STAGE_W, place } from './layout'
 import { createTileView, type TileView } from './tile-view'
 import { charName, thumbUrl, type Character } from './characters'
 import {
@@ -18,6 +18,7 @@ import { setVolume, playUiClick } from './audio/audio'
 import { createMusicBar, type MusicBar } from './music-bar'
 import { t, yakuLabel, setLocale, detectLocale } from './i18n'
 import type { MsgKey } from './i18n-strings.generated'
+import { ICONS } from './icons.generated'
 
 export interface ButtonDef {
   label: string
@@ -41,6 +42,10 @@ const PLACE_KEYS = ['hud.place.1', 'hud.place.2', 'hud.place.3', 'hud.place.4'] 
 const PANEL_MARGIN = 24
 const PANEL_W = 240 - PANEL_MARGIN * 2
 const PANEL_H = 540 - PANEL_MARGIN * 2
+
+// Grosor del marco de madera de la mesa (padding de .tm-board); BOARD de
+// layout.ts es el rect del fieltro, el marco queda FUERA de él.
+const FRAME = 24
 
 // Esquina de pantalla → posición del panel, separado del marco y del viewport.
 const PANEL_POS: Record<Corner, Record<string, number>> = {
@@ -84,6 +89,7 @@ export class Hud {
     windBadge: HTMLElement
     riichiTag: HTMLElement
     nameEl: HTMLElement
+    oyaEl: HTMLElement
   }>()
 
   private readonly kyokuJp: HTMLElement
@@ -136,10 +142,11 @@ export class Hud {
       panel.innerHTML =
         `<img class="tm-panel__img" src="${thumbUrl(c)}" alt="">` +
         `<div class="tm-panel__wind"></div>` +
+        `<div class="tm-panel__oya"></div>` +
+        `<span class="tm-panel__place"></span>` +
         `<div class="tm-panel__riichi"></div>` +
         `<div class="tm-panel__info">` +
-        `<div class="tm-panel__row"><span class="tm-panel__place"></span>` +
-        `<span class="tm-panel__name"></span></div>` +
+        `<div class="tm-panel__row"><span class="tm-panel__name"></span></div>` +
         `<div class="tm-panel__score"></div>` +
         `</div>`
       place(panel, { ...PANEL_POS[corner], width: PANEL_W, height: PANEL_H, z: 40 })
@@ -152,29 +159,38 @@ export class Hud {
         windBadge: panel.querySelector('.tm-panel__wind')!,
         riichiTag: panel.querySelector('.tm-panel__riichi')!,
         nameEl: panel.querySelector('.tm-panel__name')!,
+        oyaEl: panel.querySelector('.tm-panel__oya')!,
       })
     }
 
-    const selfPanel = this.portraits.get(human)!.panel
+    // botón de menú: pastilla sobre la banda superior del marco de madera
+    // (BOARD es el fieltro; el marco son los 24px de padding de .tm-board),
+    // alineado a su esquina derecha (inset 34px por el radio de la esquina)
     this.menuBtn = document.createElement('button')
-    this.menuBtn.className = 'tm-panel__menu'
+    this.menuBtn.className = 'tm-hud-menu'
     this.menuBtn.addEventListener('click', () => {
       playUiClick()
       this.menuOverlay.classList.remove('is-hidden')
     })
-    selfPanel.appendChild(this.menuBtn)
+    place(this.menuBtn, {
+      right: STAGE_W - (BOARD.x + BOARD.w + FRAME) + 34,
+      top: BOARD.y - FRAME,
+      height: FRAME,
+      z: 45,
+    })
+    stage.appendChild(this.menuBtn)
 
     // --- contador central (recuadro cian 180×180) ---
     const counter = document.createElement('div')
     counter.className = 'tm-counter'
     this.kyokuJp = el('span', 'font-family:var(--jp);font-weight:700;font-size:18px;color:var(--gold)')
-    this.kyokuEn = el('span', 'font-family:var(--display);font-size:15px;letter-spacing:.1em;color:var(--muted)')
+    this.kyokuEn = el('span', 'font-family:var(--ui);font-size:15px;letter-spacing:.1em;color:var(--muted)')
     const kyokuRow = el('div', 'display:flex;align-items:baseline;gap:6px')
     kyokuRow.append(this.kyokuJp, this.kyokuEn)
-    this.wallCount = el('div', 'font-family:var(--display);font-weight:700;font-size:54px;line-height:.85;color:var(--cream);text-shadow:0 3px 8px rgba(0,0,0,.5)')
+    this.wallCount = el('div', 'font-family:var(--title);font-weight:300;font-size:54px;line-height:.85;color:var(--cream);text-shadow:0 3px 8px rgba(0,0,0,.5)')
     const wallLabel = el('div', 'font-size:9px;letter-spacing:.24em;color:var(--muted2);text-transform:uppercase')
     this.wallLabel = wallLabel
-    const meta = el('div', 'display:flex;gap:12px;margin-top:4px;font-family:var(--display);font-weight:600;font-size:17px;color:#e0d7bd')
+    const meta = el('div', 'display:flex;gap:12px;margin-top:4px;font-family:var(--ui);font-size:17px;color:#e0d7bd')
     this.honbaEl = el('span', 'display:flex;align-items:center;gap:4px')
     this.sticksEl = el('span', 'display:flex;align-items:center;gap:4px')
     meta.append(this.honbaEl, this.sticksEl)
@@ -194,7 +210,7 @@ export class Hud {
     place(this.chiRow, { right: 264, bottom: 172, z: 45 })
     stage.appendChild(this.chiRow)
 
-    this.turnEl = el('div', 'font-family:var(--display);font-style:italic;font-size:20px;letter-spacing:.34em;color:var(--gold);text-transform:uppercase')
+    this.turnEl = el('div', 'font-family:var(--ui);font-size:20px;letter-spacing:.34em;color:var(--gold);text-transform:uppercase')
     place(this.turnEl, {
       left: 960,
       bottom: STAGE_H - (BOARD.y + BOARD.h) + 118,
@@ -219,8 +235,9 @@ export class Hud {
 
   // Textos del HUD que no pasan por update(); se re-aplican al cambiar idioma.
   private applyStaticTexts(): void {
-    this.menuBtn.textContent = t('hud.menu')
+    this.menuBtn.innerHTML = `${ICONS.menu}<span>${t('hud.menu')}</span>`
     this.wallLabel.textContent = t('hud.tiles-left')
+    for (const p of this.portraits.values()) p.oyaEl.textContent = t('hud.dealer')
     this.musicBar.applyTexts()
     for (const seat of SEATS) {
       const p = this.portraits.get(seat)!
@@ -231,19 +248,46 @@ export class Hud {
     }
   }
 
-  // Overlay de ajustes de mesa, abierto desde el botón MENÚ del panel del jugador.
+  // Overlay de ajustes de mesa, abierto desde el botón MENÚ del marco.
   // Se reconstruye entero al cambiar de idioma (los textos se traducen aquí).
+  // Estructura: título + X de cierre, secciones AJUSTES (cyclers) y AUDIO
+  // (sliders) en grid de dos columnas, y pie con ABANDONAR PARTIDA (dos pasos).
   private buildMenuOverlay(): HTMLElement {
     const { stage, settings } = this
     const ov = document.createElement('div')
     ov.className = 'tm-overlay tm-menu-ov is-hidden'
     const card = document.createElement('div')
     card.className = 'tm-overlay__card'
-    card.innerHTML = `<div class="tm-overlay__title" style="font-size:44px">${t('hud.menu-title')}</div>`
+
+    const title = document.createElement('div')
+    title.className = 'tm-menu-ov__title'
+    title.textContent = t('hud.menu-title')
+    card.appendChild(title)
+
+    const closeBtn = document.createElement('button')
+    closeBtn.className = 'tm-menu-ov__close'
+    closeBtn.innerHTML = ICONS.x
+    closeBtn.title = t('hud.close')
+    closeBtn.setAttribute('aria-label', t('hud.close'))
+    closeBtn.addEventListener('click', () => {
+      playUiClick()
+      ov.classList.add('is-hidden')
+      resetFooter() // al reabrir, el pie vuelve al estado inicial
+    })
+    card.appendChild(closeBtn)
+
+    const section = (key: MsgKey): void => {
+      const sec = document.createElement('div')
+      sec.className = 'tm-menu-ov__sec'
+      sec.textContent = t(key)
+      card.appendChild(sec)
+    }
 
     const cycler = (caption: string, opts: ReadonlyArray<[string, MsgKey]>, cur: string, pick: (v: string) => void): HTMLElement => {
-      const row = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%')
-      const cap = el('span', 'font-family:var(--serif);font-size:16px;color:var(--cream)')
+      const row = document.createElement('div')
+      row.className = 'tm-menu-ov__row'
+      const cap = document.createElement('span')
+      cap.className = 'tm-menu-ov__label'
       cap.textContent = caption
       const btn = document.createElement('button')
       btn.className = 'tm-btn tm-btn--muted'
@@ -259,6 +303,7 @@ export class Hud {
       return row
     }
 
+    section('hud.section-settings')
     card.appendChild(cycler(t('hud.language'), LANGUAGES, settings.language, (v) => {
       const lang = v as Language
       settings.language = lang
@@ -283,11 +328,13 @@ export class Hud {
       saveSettings(settings)
     }))
 
+    section('hud.section-audio')
     for (const [ch, key] of VOLUMES) {
-      const row = el('label', 'display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%')
+      const row = document.createElement('label')
+      row.className = 'tm-menu-ov__row'
       row.innerHTML =
-        `<span style="font-family:var(--serif);font-size:16px;color:var(--cream)">${t(key)}</span>` +
-        `<input type="range" min="0" max="100" value="${Math.round(settings.volumes[ch] * 100)}" style="flex:1;accent-color:var(--gold)">`
+        `<span class="tm-menu-ov__label">${t(key)}</span>` +
+        `<input type="range" min="0" max="100" value="${Math.round(settings.volumes[ch] * 100)}">`
       const input = row.querySelector<HTMLInputElement>('input')!
       input.addEventListener('input', () => {
         const v = Number(input.value) / 100
@@ -298,17 +345,34 @@ export class Hud {
       card.appendChild(row)
     }
 
-    const actions = el('div', 'display:flex;gap:10px;margin-top:8px')
-    const close = document.createElement('button')
-    close.className = 'tm-btn tm-btn--primary'
-    close.textContent = t('hud.close')
-    close.addEventListener('click', () => { playUiClick(); ov.classList.add('is-hidden') })
-    const exit = document.createElement('button')
-    exit.className = 'tm-btn tm-btn--muted'
-    exit.textContent = t('hud.exit')
-    exit.addEventListener('click', () => { playUiClick(); this.musicBar.dispose(); this.onExit() })
-    actions.append(exit, close)
-    card.appendChild(actions)
+    // pie: ABANDONAR PARTIDA con confirmación en dos pasos (Sí/No)
+    const footer = document.createElement('div')
+    footer.className = 'tm-menu-ov__footer'
+    const resetFooter = (): void => {
+      footer.innerHTML = ''
+      const exit = document.createElement('button')
+      exit.className = 'tm-btn tm-btn--danger'
+      exit.textContent = t('hud.exit')
+      exit.addEventListener('click', () => { playUiClick(); askConfirm() })
+      footer.appendChild(exit)
+    }
+    const askConfirm = (): void => {
+      footer.innerHTML = ''
+      const q = document.createElement('span')
+      q.className = 'tm-menu-ov__confirm'
+      q.textContent = t('hud.exit-confirm')
+      const yes = document.createElement('button')
+      yes.className = 'tm-btn tm-btn--danger'
+      yes.textContent = t('hud.yes')
+      yes.addEventListener('click', () => { playUiClick(); this.musicBar.dispose(); this.onExit() })
+      const no = document.createElement('button')
+      no.className = 'tm-btn tm-btn--muted'
+      no.textContent = t('hud.no')
+      no.addEventListener('click', () => { playUiClick(); resetFooter() })
+      footer.append(q, yes, no)
+    }
+    resetFooter()
+    card.appendChild(footer)
 
     ov.appendChild(card)
     stage.appendChild(ov)
@@ -320,11 +384,15 @@ export class Hud {
     for (const seat of SEATS) {
       const p = this.portraits.get(seat)!
       const st = s.seats[seat]!
-      p.placeEl.textContent = t(PLACE_KEYS[order.indexOf(seat)]!)
+      // ordinal "1ro/1st/1位": dígito grande + sufijo en superíndice
+      const placeText = t(PLACE_KEYS[order.indexOf(seat)]!)
+      const m = /^(\d+)(.*)$/.exec(placeText)
+      p.placeEl.innerHTML = m ? `${m[1]}<sup>${m[2]}</sup>` : placeText
       p.score.textContent = st.points.toLocaleString('en-US')
       const wind = seatWind(seat, s.dealer)
       p.windBadge.textContent = t(`wind.${windName(wind)}`)
       p.windBadge.style.background = windColor(wind)
+      p.panel.classList.toggle('is-dealer', seat === s.dealer)
       p.panel.classList.toggle('is-turn', s.phase !== 'ended' && s.turn === seat)
       p.riichiTag.classList.toggle('is-on', st.riichi > 0)
     }
