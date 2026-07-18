@@ -24,6 +24,23 @@ export const GAME_TRACKS: readonly string[] = [
 
 export const musicUrl = (track: string): string => `music/${track}.m4a`
 
+/**
+ * Títulos legibles de cada tema (nombres propios en inglés; no pasan por i18n).
+ * El reproductor in-game los muestra; el test de assets exige que cubran
+ * exactamente MENU_TRACK + GAME_TRACKS.
+ */
+export const MUSIC_TITLES: Readonly<Record<string, string>> = {
+  'invitation-to-the-glass-hall': 'Invitation to the Glass Hall',
+  'aristocratic-hunger': 'Aristocratic Hunger',
+  'bathroom-decadence': 'Bathroom Decadence',
+  'bathroom-wonder': 'Bathroom Wonder',
+  'ceremonial-silence': 'Ceremonial Silence',
+  'clockwork-silence': 'Clockwork Silence',
+  'clockwork-waltz': 'Clockwork Waltz',
+  'the-royal-shuffle': 'The Royal Shuffle',
+  'tiled-room-echoes': 'Tiled Room Echoes',
+}
+
 // --- sfx (click de ficha) ----------------------------------------------------
 
 /** Las 7 notas del click; el subset que suena depende del tema de mesa. */

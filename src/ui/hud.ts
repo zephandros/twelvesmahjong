@@ -15,6 +15,7 @@ import {
   type Language, type Settings, type TableTheme, type TileBack, type VolumeChannel,
 } from './settings'
 import { setVolume, playUiClick } from './audio/audio'
+import { createMusicBar, type MusicBar } from './music-bar'
 import { t, yakuLabel, setLocale, detectLocale } from './i18n'
 import type { MsgKey } from './i18n-strings.generated'
 
@@ -96,6 +97,7 @@ export class Hud {
   private readonly turnEl: HTMLElement
   private readonly overlay: HTMLElement
   private readonly menuBtn: HTMLElement
+  private readonly musicBar: MusicBar
   private menuOverlay: HTMLElement
   private readonly stage: HTMLElement
   private readonly settings: Settings
@@ -201,6 +203,9 @@ export class Hud {
     })
     stage.appendChild(this.turnEl)
 
+    // --- reproductor de música (banda inferior, alineado al panel br) ---
+    this.musicBar = createMusicBar(stage, settings)
+
     // --- overlay de menú (idioma / tema / dorso / volúmenes) ---
     this.menuOverlay = this.buildMenuOverlay()
 
@@ -216,6 +221,7 @@ export class Hud {
   private applyStaticTexts(): void {
     this.menuBtn.textContent = t('hud.menu')
     this.wallLabel.textContent = t('hud.tiles-left')
+    this.musicBar.applyTexts()
     for (const seat of SEATS) {
       const p = this.portraits.get(seat)!
       const name = charName(this.chars[seat]!)
@@ -300,7 +306,7 @@ export class Hud {
     const exit = document.createElement('button')
     exit.className = 'tm-btn tm-btn--muted'
     exit.textContent = t('hud.exit')
-    exit.addEventListener('click', () => { playUiClick(); this.onExit() })
+    exit.addEventListener('click', () => { playUiClick(); this.musicBar.dispose(); this.onExit() })
     actions.append(exit, close)
     card.appendChild(actions)
 
@@ -422,7 +428,11 @@ export class Hud {
       `</div></div>`
     this.overlay.classList.remove('is-hidden')
     this.overlay.querySelector('[data-act="rematch"]')!.addEventListener('click', onRematch, { once: true })
-    this.overlay.querySelector('[data-act="chars"]')!.addEventListener('click', onCharacters, { once: true })
+    this.overlay.querySelector('[data-act="chars"]')!.addEventListener(
+      'click',
+      () => { this.musicBar.dispose(); onCharacters() }, // el stage muere: baja del oyente
+      { once: true },
+    )
   }
 
   hideOverlay(): void {

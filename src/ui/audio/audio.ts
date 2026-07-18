@@ -43,6 +43,13 @@ interface MusicPlayer {
 }
 let players: [MusicPlayer, MusicPlayer] | null = null
 let active = 0
+let musicPaused = false
+
+// Oyentes del reproductor: se avisa al cambiar pista, pausa o mute.
+const musicListeners = new Set<() => void>()
+function notifyMusic(): void {
+  for (const cb of musicListeners) cb()
+}
 
 // --- inicialización ----------------------------------------------------------
 
@@ -92,7 +99,7 @@ function makePlayer(): MusicPlayer {
 function applyVolumes(): void {
   if (!ctx) return
   master.gain.value = settings.volumes.master
-  musicGain.gain.value = settings.volumes.music
+  musicGain.gain.value = settings.musicMuted ? 0 : settings.volumes.music
   sfxGain.gain.value = settings.volumes.sfx
   voicesGain.gain.value = settings.volumes.voices
 }
@@ -143,10 +150,12 @@ export function playMusic(
     pendingStinger = opts?.stinger
       ? { fn: opts.stinger, afterMs: opts.stingerAfterMs ?? 0 }
       : null
+    notifyMusic()
     return
   }
   const fadeMs = opts?.crossfadeMs ?? MUSIC_FADE_MS
   currentTrack = track
+  musicPaused = false
 
   const outgoing = players[active]!
   active = 1 - active
@@ -167,14 +176,58 @@ export function playMusic(
     .catch(() => {
       /* autoplay rechazado: quedará a la espera del próximo gesto */
     })
+  notifyMusic()
 }
 
 export function stopMusic(fadeMs = 800): void {
   currentTrack = null
   pendingMusic = null
   pendingStinger = null
+  musicPaused = false
   clearStinger()
   if (players) for (const p of players) fadeOut(p, fadeMs)
+  notifyMusic()
+}
+
+/** Pista que suena (o encolada pre-gesto), para el reproductor in-game. */
+export function getCurrentTrack(): string | null {
+  return currentTrack ?? pendingMusic
+}
+
+/**
+ * Pausa/reanuda la pista actual (congela el HTMLAudioElement activo; el punto
+ * de reproducción se conserva). Un playMusic posterior — p. ej. siguiente /
+ * anterior — arranca sonando. Devuelve el nuevo estado de pausa.
+ */
+export function toggleMusicPause(): boolean {
+  if (players && currentTrack) {
+    const el = players[active]!.el
+    if (musicPaused) void el.play()
+    else el.pause()
+    musicPaused = !musicPaused
+    notifyMusic()
+  }
+  return musicPaused
+}
+
+export function isMusicPaused(): boolean {
+  return musicPaused
+}
+
+/** Mute del canal de música sin pisar settings.volumes.music. */
+export function setMusicMuted(muted: boolean): void {
+  settings.musicMuted = muted
+  applyVolumes()
+  notifyMusic()
+}
+
+/**
+ * Suscribe un oyente a los cambios del reproductor (pista/pausa/mute).
+ * Devuelve la función de baja.
+ */
+export function onMusicChange(cb: () => void): () => void {
+  musicListeners.add(cb)
+  return () => musicListeners.delete(cb)
 }
 
 function clearStinger(): void {

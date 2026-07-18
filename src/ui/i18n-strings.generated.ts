@@ -169,6 +169,12 @@ export const MESSAGES = {
   "char.pinocchio.name": { es: "Pinocho", en: "Pinocchio", ja: "ピノッキオ" },
   "char.pinocchio.epithet": { es: "Sin hilos", en: "No Strings", ja: "糸なし" },
   "a11y.discard": { es: "descartar {tile}", en: "discard {tile}", ja: "{tile}を切る" },
+  "music.play": { es: "Reproducir", en: "Play", ja: "再生" },
+  "music.pause": { es: "Pausa", en: "Pause", ja: "一時停止" },
+  "music.prev": { es: "Tema anterior", en: "Previous track", ja: "前の曲" },
+  "music.next": { es: "Tema siguiente", en: "Next track", ja: "次の曲" },
+  "music.mute": { es: "Silenciar música", en: "Mute music", ja: "ミュート" },
+  "music.unmute": { es: "Activar música", en: "Unmute music", ja: "ミュート解除" },
 } as const
 
 export type MsgKey = keyof typeof MESSAGES

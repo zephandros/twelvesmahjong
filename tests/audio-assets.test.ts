@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  MENU_TRACK, GAME_TRACKS, musicUrl,
+  MENU_TRACK, GAME_TRACKS, musicUrl, MUSIC_TITLES,
   CLICK_NOTES, sfxClickUrl, type ClickNote,
   VOICED, voiceUrl, type CallKind, TITLE_VOICE_URL,
 } from '../src/ui/audio/catalog'
@@ -21,6 +21,14 @@ describe('assets de audio (public/{music,sfx,voices})', () => {
   it('existe cada tema de música (menú + 8 de partida)', () => {
     for (const track of [MENU_TRACK, ...GAME_TRACKS]) {
       expect(has(musicUrl(track)), `falta ${musicUrl(track)}`).toBe(true)
+    }
+  })
+
+  it('MUSIC_TITLES cubre exactamente los temas del catálogo', () => {
+    const tracks = [MENU_TRACK, ...GAME_TRACKS].sort()
+    expect(Object.keys(MUSIC_TITLES).sort()).toEqual(tracks)
+    for (const title of Object.values(MUSIC_TITLES)) {
+      expect(title.length).toBeGreaterThan(0)
     }
   })
 

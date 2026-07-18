@@ -12,6 +12,8 @@ export type Language = Locale | 'auto'
 
 export interface Settings {
   volumes: Record<VolumeChannel, number> // 0..1
+  /** Mute del canal de música (reproductor in-game); no toca volumes.music. */
+  musicMuted: boolean
   tableTheme: TableTheme
   tileBack: TileBack
   language: Language
@@ -19,6 +21,7 @@ export interface Settings {
 
 export const DEFAULTS: Settings = {
   volumes: { master: 0.8, music: 0.6, sfx: 0.9, voices: 1 },
+  musicMuted: false,
   tableTheme: 'green',
   tileBack: 'amber',
   language: 'auto',
@@ -46,6 +49,7 @@ export function loadSettings(): Settings {
         sfx: clamp01(v.sfx) ?? DEFAULTS.volumes.sfx,
         voices: clamp01(v.voices) ?? DEFAULTS.volumes.voices,
       },
+      musicMuted: typeof p.musicMuted === 'boolean' ? p.musicMuted : DEFAULTS.musicMuted,
       tableTheme: THEMES.includes(p.tableTheme as TableTheme)
         ? (p.tableTheme as TableTheme)
         : DEFAULTS.tableTheme,

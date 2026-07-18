@@ -165,3 +165,9 @@ char.defarge.epithet||La tejedora|The Knitter|編み手
 char.pinocchio.name||Pinocho|Pinocchio|ピノッキオ
 char.pinocchio.epithet||Sin hilos|No Strings|糸なし
 a11y.discard|aria-label de ficha clicable; {tile} = notación canónica|descartar {tile}|discard {tile}|{tile}を切る
+music.play|Tooltip del reproductor in-game: reanudar la música|Reproducir|Play|再生
+music.pause|Tooltip del reproductor in-game: pausar la música|Pausa|Pause|一時停止
+music.prev|Tooltip del reproductor in-game: tema anterior|Tema anterior|Previous track|前の曲
+music.next|Tooltip del reproductor in-game: tema siguiente|Tema siguiente|Next track|次の曲
+music.mute|Tooltip del reproductor in-game: silenciar la música|Silenciar música|Mute music|ミュート
+music.unmute|Tooltip del reproductor in-game: quitar el silencio|Activar música|Unmute music|ミュート解除
