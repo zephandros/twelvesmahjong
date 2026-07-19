@@ -10,7 +10,7 @@ import { SEATS, relSeat, cornerOf, seatWind, windColor, windName, type Corner } 
 import { uraIndicators } from '../core/wall'
 import { BOARD, STAGE_H, STAGE_W, place } from './layout'
 import { createTileView, type TileView } from './tile-view'
-import { charName, thumbUrl, type Character } from './characters'
+import { charName, thumbUrl, HYDE_THUMB, type Character } from './characters'
 import {
   saveSettings, setVolumeSetting,
   type Language, type Settings, type TableTheme, type TileBack, type VolumeChannel,
@@ -92,6 +92,7 @@ export class Hud {
 
   private readonly portraits = new Map<Seat, {
     panel: HTMLElement
+    imgEl: HTMLImageElement
     placeEl: HTMLElement
     score: HTMLElement
     windBadge: HTMLElement
@@ -164,6 +165,7 @@ export class Hud {
 
       this.portraits.set(seat, {
         panel,
+        imgEl: panel.querySelector<HTMLImageElement>('.tm-panel__img')!,
         placeEl: panel.querySelector('.tm-panel__place')!,
         score: panel.querySelector('.tm-panel__score')!,
         windBadge: panel.querySelector('.tm-panel__wind')!,
@@ -424,6 +426,12 @@ export class Hud {
       p.panel.classList.toggle('is-dealer', seat === s.dealer)
       p.panel.classList.toggle('is-turn', s.phase !== 'ended' && s.turn === seat)
       p.riichiTag.classList.toggle('is-on', st.riichi > 0)
+      // Jekyll se transforma en Hyde mientras su riichi está vivo
+      const c = this.chars[seat]!
+      if (c.id === 'jekyll') {
+        const src = st.riichi > 0 ? HYDE_THUMB : thumbUrl(c)
+        if (p.imgEl.getAttribute('src') !== src) p.imgEl.setAttribute('src', src)
+      }
     }
 
     this.kyokuJp.textContent = t('hud.round', { n: KYOKU_KANJI[info.kyoku] ?? '一' })

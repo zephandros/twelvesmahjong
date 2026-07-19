@@ -1,6 +1,9 @@
-# Hornea los retratos de raw/portraits a public/portraits/:
-#   {id}.jpg   (720 px de ancho, pantalla de victoria)
-#   {id}-t.jpg (264 px de ancho, retratos de esquina y selección)
+# Hornea los retratos de raw/portraits a public/portraits/. Cada personaje trae
+# tres artes por aspecto ({base}_9_16 / _1_1 / _3_4.png) que salen como:
+#   {id}.jpg      (9:16, 720 px de ancho, pantalla de victoria)
+#   {id}-t.jpg    (9:16, 264 px de ancho, paneles de esquina del tablero)
+#   {id}-sq.jpg   (1:1,  320 px, tarjetas de la rejilla de selección)
+#   {id}-seat.jpg (3:4,  480 px, marcos de asiento de la selección)
 # Los PNG originales (~1.4 MB c/u) son demasiado pesados para la PWA.
 # Reproducible: powershell -File scripts/bake-portraits.ps1
 
@@ -10,21 +13,22 @@ $src = Join-Path $PSScriptRoot '..\raw\portraits'
 $dst = Join-Path $PSScriptRoot '..\public\portraits'
 New-Item -ItemType Directory -Force $dst | Out-Null
 
-# id => patrón del nombre de archivo (se toma la PRIMERA variante que case;
-# para cambiar de variante, poner aquí el nombre completo del archivo)
+# id => base del nombre de archivo en raw/portraits (roster 2026-07-19); a cada
+# base se le añade el sufijo de aspecto (_9_16/_1_1/_3_4). La UI recorta con
+# object-fit: cover, aquí solo se reescala por ancho.
 $roster = [ordered]@{
-  alice     = '*Alice_Liddell*'
-  bartleby  = '*Bartleby*'
-  cyrano    = '*Cyrano*'
-  scheherazade = '*Scheherazade*'
-  dorian    = '*Dorian_Gray*'
-  jekyll    = '*Dr._Jekyll*'
-  dracula   = '*Dracula*'
-  hamlet    = '*Hamlet*'
-  huck      = '*Huckleberry_Finn*'
-  celestina = '*La_Celestina*'
-  defarge   = '*Madame_Defarge*'
-  pinocchio = '*Pinocchio*'
+  alice     = 'alice_portrait'
+  irene     = 'irene_portrait'
+  scheherazade = 'scheherezade_portrait'
+  dorian    = 'dorian_portrait'
+  jekyll    = 'jekyll_portrait'
+  dracula   = 'dracula_portrait'
+  macbeth   = 'macbeth_portrait'
+  huck      = 'huckleberry_portrait'
+  celestina = 'celestina_portrait'
+  defarge   = 'defarge_portrait'
+  pinocchio = 'pinocchio_portrait'
+  ahab      = 'ahab_portrait'
 }
 
 function Resize-Jpeg([string]$inPath, [string]$outPath, [int]$targetW, [int]$quality) {
@@ -47,12 +51,32 @@ function Resize-Jpeg([string]$inPath, [string]$outPath, [int]$targetW, [int]$qua
   } finally { $img.Dispose() }
 }
 
-foreach ($id in $roster.Keys) {
-  $file = Get-ChildItem (Join-Path $src $roster[$id]) | Sort-Object Name | Select-Object -First 1
-  if (-not $file) { Write-Warning "sin retrato para $id"; continue }
-  Resize-Jpeg $file.FullName (Join-Path $dst "$id.jpg") 720 85
-  Resize-Jpeg $file.FullName (Join-Path $dst "$id-t.jpg") 264 80
-  $big = (Get-Item (Join-Path $dst "$id.jpg")).Length
-  $thumb = (Get-Item (Join-Path $dst "$id-t.jpg")).Length
-  Write-Output ("{0,-10} {1,7:n0} B + {2,6:n0} B  <- {3}" -f $id, $big, $thumb, $file.Name)
+# variante de aspecto => lista de salidas (sufijo del jpg, ancho, calidad).
+# La coma inicial evita que PowerShell aplane las listas de un solo elemento.
+$variants = [ordered]@{
+  '9_16' = @(('', 720, 85), ('-t', 264, 80))
+  '1_1'  = , ('-sq', 320, 80)
+  '3_4'  = , ('-seat', 480, 80)
 }
+
+function Bake([string]$id, [string]$inPath, [object[]]$outs) {
+  $sizes = foreach ($o in $outs) {
+    $suffix, $w, $q = $o
+    $outPath = Join-Path $dst "$id$suffix.jpg"
+    Resize-Jpeg $inPath $outPath $w $q
+    '{0,7:n0} B' -f (Get-Item $outPath).Length
+  }
+  Write-Output ("{0,-14} {1}  <- {2}" -f $id, ($sizes -join ' + '), (Split-Path $inPath -Leaf))
+}
+
+foreach ($id in $roster.Keys) {
+  foreach ($aspect in $variants.Keys) {
+    $file = Join-Path $src "$($roster[$id])_$aspect.png"
+    if (-not (Test-Path $file)) { Write-Warning "sin retrato ${aspect} para $id"; continue }
+    Bake $id $file $variants[$aspect]
+  }
+}
+
+# hyde no es un personaje: es el arte alterno de Jekyll durante su riichi.
+# Solo existe en 9:16 (paneles del tablero y pantalla de victoria).
+Bake 'hyde' (Join-Path $src 'jekyll_hyde_portrait.png') $variants['9_16']

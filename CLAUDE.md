@@ -14,8 +14,11 @@ El plan de integración de assets (`raw/`) vive en
 Los personajes pertenecen a **Twelves**, universo de creación propia del usuario.
 El mundo se llama **Kovalet**; sus 12 figuras centrales son **los 12 Movimientos**,
 representados por los 12 personajes jugables (slugs canónicos en
-`src/ui/characters.ts`: alice, bartleby, cyrano, scheherazade, dorian, jekyll,
-dracula, hamlet, huck, celestina, defarge, pinocchio).
+`src/ui/characters.ts`, roster 2026-07-19: alice, irene, scheherazade, dorian,
+jekyll, dracula, macbeth, huck, celestina, defarge, pinocchio, ahab; salieron
+bartleby, cyrano y hamlet). Jekyll tiene un arte alterno **hyde**
+(`public/portraits/hyde*.jpg`, no es CharacterId): mientras su riichi está vivo,
+el panel y la pantalla de victoria muestran a Mr. Hyde.
 
 ## Git
 
@@ -154,7 +157,7 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | `raw/font/` | Insumos de fuentes: `_kosugi-full.ttf` (lo baja fetch-fonts.mjs) + `Murencho/` (Murecho, **obsoleta** desde el cambio a Lexend/Belanosima/Kosugi) | Hecho |
 | `raw/icons/` | 9 SVG Lucide (menu, x, arrow-big-left, play/pause/skip-\*/volume-\*) para botones de UI | Hecho (assets:icons) |
 | `raw/music/` | 9 temas × 2 (normal + `_Alt`), mp3 | Pendiente (fase A3) |
-| `raw/portraits/` | PNG originales de retratos (fuente del bake; **Dante fuera, Scheherazade dentro**) | Horneados en `public/portraits/` |
+| `raw/portraits/` | PNG originales de retratos, 3 aspectos por personaje (`{base}_9_16` tablero/victoria · `_1_1` rejilla de selección · `_3_4` asientos de selección; + `jekyll_hyde_portrait.png` solo 9:16; los `*_cut_in.png` de alice/irene/scheherezade quedan sin uso aún) | Horneados en `public/portraits/` |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
 | `raw/tiles/` | 37 SVGs solo-glifo (man/pin/so 1-9, honor 1-7, aka ×3), viewBox `0 0 139.764 200` | Pendiente (fase A1; ver trampa 2) |
 | `raw/voices/` | Voces por llamada (chi/pon/kan/riichi/ron/tsumo), naming inconsistente, elenco incompleto | Pendiente (fase A3) |
@@ -206,11 +209,13 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   entra suena el clip de portada (`voices/title.m4a`: la VA de Alice —Sameno— dice
   "Mahjong Twelves"). Los otros 8 temas suenan en partida (elección con `Math.random`,
   jamás con el RNG semillado del core).
-- **Voces** (los **12** personajes tienen voz; los raw se nombran por seiyuu, no por
+- **Voces** (**9** personajes con voz; los raw se nombran por seiyuu, no por
   personaje): **Sameno → Alice**, **Hadou → Dorian**, **Henry → Jekyll**,
-  **Takumi → Drácula**, **Hideki → Hamlet**, **Yukari → Celestina**, **Peter → Cyrano**,
-  **Shizuka → Scheherazade**, **Koichi Yashiro → Bartleby**, **Aya → Defarge**,
-  **Reiji Kudo → Huck**, **Toa Seo → Pinocho**. Solo la voz principal se usa; las
+  **Takumi → Drácula**, **Yukari → Celestina**, **Shizuka → Scheherazade**,
+  **Aya → Defarge**, **Reiji Kudo → Huck**, **Toa Seo → Pinocho**. Irene, Macbeth
+  y Capitán Ahab (roster 2026-07-19) aún no tienen VA; Hideki (Hamlet), Peter
+  (Cyrano) y Koichi Yashiro (Bartleby) quedaron sin mapear al salir sus
+  personajes del roster. Solo la voz principal se usa; las
   variantes `_Alt` (si las hay) se procesan pero quedan sin usar. El clip `Sameno_Alice`
   sigue **sin usar** (prototipo de "di tu nombre al elegir personaje", pendiente); el
   pipeline lo salta vía `IGNORE` con aviso. Al asignar/cambiar un actor: mapearlo en

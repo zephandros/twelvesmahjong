@@ -117,16 +117,16 @@ function buildSfx(out) {
 
 // actor (primer token del filename) → slug canónico de personaje.
 // Los raw nombran cada clip por su seiyuu, no por el personaje (tabla del usuario).
+// hideki (Hamlet), peter (Cyrano) y koichi (Bartleby) salieron con el cambio de
+// roster 2026-07-19: sus clips quedan en raw/voices sin mapear (se saltan con
+// aviso). irene/macbeth/ahab aún no tienen VA asignada.
 const ACTORS = {
   sameno: 'alice',       // Sameno
   hadou: 'dorian',       // Hadou
   henry: 'jekyll',       // Henry (voz masculina → Jekyll)
   takumi: 'dracula',     // Takumi (voz masculina → Drácula)
-  hideki: 'hamlet',      // Hideki
   yukari: 'celestina',   // Yukari
-  peter: 'cyrano',       // Peter
   shizuka: 'scheherazade', // Shizuka
-  koichi: 'bartleby',    // Koichi Yashiro
   aya: 'defarge',        // Aya
   reiji: 'huck',         // Reiji Kudo
   toa: 'pinocchio',      // Toa Seo

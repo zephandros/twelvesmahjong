@@ -210,10 +210,8 @@ wind.west|Decorativo — igual en los 3 idiomas|西|西|西
 wind.north|Decorativo — igual en los 3 idiomas|北|北|北
 char.alice.name||Alice|Alice|アリス
 char.alice.epithet||Wonderland|Wonderland|不思議の国
-char.bartleby.name||Bartleby|Bartleby|バートルビー
-char.bartleby.epithet||El escribiente|The Scrivener|代書人
-char.cyrano.name||Cyrano|Cyrano|シラノ
-char.cyrano.epithet||Bergerac|Bergerac|ベルジュラック
+char.irene.name||Irene Adler|Irene Adler|アイリーン
+char.irene.epithet||La Mujer|The Woman|あの女
 char.scheherazade.name||Scheherazade|Scheherazade|シェヘラザード
 char.scheherazade.epithet||Mil y una noches|One Thousand and One Nights|千夜一夜
 char.dorian.name||Dorian|Dorian|ドリアン
@@ -222,8 +220,8 @@ char.jekyll.name||Jekyll|Jekyll|ジキル
 char.jekyll.epithet||Dos caras|Two Faces|二つの顔
 char.dracula.name||Drácula|Dracula|ドラキュラ
 char.dracula.epithet||Nosferatu|Nosferatu|ノスフェラトゥ
-char.hamlet.name||Hamlet|Hamlet|ハムレット
-char.hamlet.epithet||Dinamarca|Denmark|デンマーク
+char.macbeth.name||Macbeth|Macbeth|マクベス
+char.macbeth.epithet||Escocia|Scotland|スコットランド
 char.huck.name||Huck|Huck|ハック
 char.huck.epithet||El Mississippi|The Mississippi|ミシシッピ
 char.celestina.name||Celestina|Celestina|セレスティーナ
@@ -232,6 +230,8 @@ char.defarge.name||Mme. Defarge|Mme. Defarge|ドファルジュ夫人
 char.defarge.epithet||La tejedora|The Knitter|編み手
 char.pinocchio.name||Pinocho|Pinocchio|ピノッキオ
 char.pinocchio.epithet||Sin hilos|No Strings|糸なし
+char.ahab.name||Capitán Ahab|Captain Ahab|エイハブ船長
+char.ahab.epithet||La ballena blanca|The White Whale|白鯨
 a11y.discard|aria-label de ficha clicable; {tile} = notación canónica|descartar {tile}|discard {tile}|{tile}を切る
 music.play|Tooltip del reproductor in-game: reanudar la música|Reproducir|Play|再生
 music.pause|Tooltip del reproductor in-game: pausar la música|Pausa|Pause|一時停止

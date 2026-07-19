@@ -3,7 +3,7 @@
 // lo asigna al hueco activo y avanza; ALEATORIO rellena lo que falte; INICIAR
 // arranca con el roster completo. Vive en el escenario 1920×1080 escalado.
 
-import { CHARACTERS, charName, thumbUrl, type Character, type Roster } from './characters'
+import { CHARACTERS, charName, squareUrl, seatUrl, type Character, type Roster } from './characters'
 import { ICONS } from './icons.generated'
 import { playUiClick } from './audio/audio'
 import { createScaledStage } from './layout'
@@ -112,7 +112,7 @@ export function renderSelect(
     const el = document.createElement('button')
     el.className = 'tm-char'
     el.innerHTML =
-      `<img src="${thumbUrl(c)}" alt="${charName(c)}">` +
+      `<img src="${squareUrl(c)}" alt="${charName(c)}">` +
       `<span>${charName(c)}</span>`
     el.addEventListener('click', () => {
       if (picked.some((p) => p?.id === c.id)) return
@@ -156,7 +156,7 @@ export function renderSelect(
         // nombre embebido en el marco (abajo-derecha, sobre degradado)
         frame.innerHTML =
           `<span class="tm-slot__wind">${windGlyph(wind)}</span>` +
-          `<img src="${thumbUrl(p)}" alt="${charName(p)}">` +
+          `<img src="${seatUrl(p)}" alt="${charName(p)}">` +
           `<span class="tm-slot__name">${charName(p)}</span>`
       } else {
         frame.innerHTML =

@@ -32,5 +32,7 @@ GLYPHS = (
     'ち'             # 待ち
     # glosario de yaku (glossary.* + yaku.*.desc)
     '覧状況で宣、点。巡目後以内分最引加されが配第組と外両面使わず揃作だ含む集めもう枚ご算見ら'
+    # roster 2026-07-19: Irene (あの女), Ahab (エイハブ船長 / 白鯨)
+    '女船長鯨'
 
 )

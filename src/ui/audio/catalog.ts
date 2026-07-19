@@ -72,13 +72,14 @@ export const ALERT_URL = 'sfx/bell-02.m4a'
 export type CallKind = 'chi' | 'pon' | 'kan' | 'riichi' | 'ron' | 'tsumo'
 
 /**
- * Personajes con voz grabada. Los 12 del roster tienen VA (decisión de usuario;
- * el mapeo actor→personaje vive en el pipeline, build-audio.mjs). Solo la voz
- * principal se usa; las variantes _alt, si existieran, se publican pero no se usan.
+ * Personajes con voz grabada (el mapeo actor→personaje vive en el pipeline,
+ * build-audio.mjs). irene, macbeth y ahab (roster 2026-07-19) aún no tienen VA:
+ * quedan mudos hasta que lleguen sus voces. Solo la voz principal se usa; las
+ * variantes _alt, si existieran, se publican pero no se usan.
  */
 export const VOICED: ReadonlySet<CharacterId> = new Set<CharacterId>([
-  'alice', 'bartleby', 'cyrano', 'scheherazade', 'dorian', 'jekyll',
-  'dracula', 'hamlet', 'huck', 'celestina', 'defarge', 'pinocchio',
+  'alice', 'scheherazade', 'dorian', 'jekyll', 'dracula',
+  'huck', 'celestina', 'defarge', 'pinocchio',
 ])
 
 export const voiceUrl = (slug: CharacterId, call: CallKind): string =>

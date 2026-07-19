@@ -7,7 +7,7 @@ import type { HandState } from '../core/state'
 import type { Seat } from '../core/seat'
 import { uraIndicators } from '../core/wall'
 import { createTileView, type TileView } from './tile-view'
-import { portraitUrl, charName, charEpithet, type Character } from './characters'
+import { portraitUrl, charName, charEpithet, HYDE_PORTRAIT, type Character } from './characters'
 import { meldLayout, type MeldSlot } from './meld-layout'
 import { t, yakuLabel, getLocale } from './i18n'
 
@@ -48,10 +48,14 @@ export function showWinScreen(
   // el ganador riichi ya los tiene como píldora "Ura Dora {n}" entre los yaku
   const showUra = human !== undefined && winner !== human && s.seats[human]!.riichi > 0
   const winnerName = displayName(char)
+  // Jekyll ganando desde riichi sigue transformado: el arte de victoria es Hyde
+  const artUrl = char.id === 'jekyll' && s.seats[winner]!.riichi > 0
+    ? HYDE_PORTRAIT
+    : portraitUrl(char)
 
   el.innerHTML = `
     <div class="tm-win__rays"></div>
-    <div class="tm-win__art"><img src="${portraitUrl(char)}" alt="${charName(char)}"></div>
+    <div class="tm-win__art"><img src="${artUrl}" alt="${charName(char)}"></div>
     <div class="tm-win__body">
       <div class="tm-win__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>
       <div class="tm-win__kanji">${kanji}</div>
