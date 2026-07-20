@@ -31,10 +31,11 @@ export const CHARACTERS: readonly Character[] = [
   { id: 'pinocchio' },
 ]
 
-/** Nombre mostrado, en el locale activo. */
-export const charName = (c: Character): string => t(`char.${c.id}.name`)
+/** Nombre mostrado, en el locale activo. Con `alt`, el de la forma alterna. */
+export const charName = (c: Character, alt?: AltForm): string => t(`char.${alt?.id ?? c.id}.name`)
 /** Epíteto corto para la barra de nombre de la pantalla de victoria. */
-export const charEpithet = (c: Character): string => t(`char.${c.id}.epithet`)
+export const charEpithet = (c: Character, alt?: AltForm): string =>
+  t(`char.${alt?.id ?? c.id}.epithet`)
 
 // Cada personaje tiene cuatro horneados por contexto (bake-portraits.ps1):
 /** 9:16 grande — arte de la pantalla de victoria. */
@@ -46,11 +47,30 @@ export const squareUrl = (c: Character): string => `portraits/${c.id}-sq.jpg`
 /** 3:4 — marcos de asiento de la selección. */
 export const seatUrl = (c: Character): string => `portraits/${c.id}-seat.jpg`
 
-// Retrato alterno de Jekyll: mientras su riichi está vivo se muestra Mr. Hyde
-// (decisión de usuario). No es un CharacterId — solo un arte alternativo que
-// hornea bake-portraits.ps1 junto al resto.
-export const HYDE_PORTRAIT = 'portraits/hyde.jpg'
-export const HYDE_THUMB = 'portraits/hyde-t.jpg'
+// --- formas alternas ---
+// Jekyll se transforma en Mr. Hyde mientras su riichi está vivo: cambian el arte
+// (9:16 y miniatura, horneados por bake-portraits.ps1) y los textos (char.hyde.*).
+// Un AltId NO es un CharacterId: no entra en el roster ni en la selección, y por
+// eso solo existen los dos horneados que usan el panel y la pantalla de victoria.
+
+/** Slug de una forma alterna (claves i18n char.<id>.name/.epithet). */
+export type AltId = 'hyde'
+
+export interface AltForm {
+  readonly id: AltId
+  readonly portrait: string
+  readonly thumb: string
+}
+
+const ALT_FORMS: Partial<Record<CharacterId, AltForm>> = {
+  jekyll: { id: 'hyde', portrait: 'portraits/hyde.jpg', thumb: 'portraits/hyde-t.jpg' },
+}
+
+/** ¿Este personaje tiene forma alterna? (evita trabajo por frame en el HUD) */
+export const hasAltForm = (c: Character): boolean => ALT_FORMS[c.id] !== undefined
+/** Forma alterna activa, o undefined si muestra su forma base. */
+export const altForm = (c: Character, riichi: number): AltForm | undefined =>
+  riichi > 0 ? ALT_FORMS[c.id] : undefined
 
 /** Roster de una partida: personaje por asiento (0 = humano). */
 export type Roster = readonly [Character, Character, Character, Character]

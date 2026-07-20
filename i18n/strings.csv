@@ -213,8 +213,10 @@ char.alice.name||Alice|Alice|アリス
 char.alice.epithet||La curiosidad sin límites|The Boundless Curiosity|無限の好奇心
 char.dorian.name||Dorian|Dorian|ドリアン
 char.dorian.epithet||La preservación eterna|The Eternal Preservation|永遠の保存
-char.jekyll.name||Jekyll|Jekyll|ジキル
+char.jekyll.name||Dr. Jekyll|Dr. Jekyll|ジキル博士
 char.jekyll.epithet||La dualidad fracturada|The Fractured Duality|砕けた二面性
+char.hyde.name|Forma alterna de Jekyll: no es un personaje del roster|Mr. Hyde|Mr. Hyde|ハイド氏
+char.hyde.epithet|Forma alterna de Jekyll: no es un personaje del roster|La sombra desatada|The Unleashed Shadow|解き放たれた影
 char.celestina.name||Celestina|Celestina|セレスティーナ
 char.celestina.epithet||El vínculo simbiótico|The Symbiotic Link|共生の絆
 char.dracula.name||Drácula|Dracula|ドラキュラ

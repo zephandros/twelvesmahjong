@@ -37,5 +37,7 @@ GLYPHS = (
     # epítetos de los 12 Movimientos (char.<id>.epithet, columna ja)
     '無限好奇心永遠保存砕二面性共生絆君臨渇非情野盲目執念報復反響鮮烈抗絶対漂流物語超越自律覚'
     'のけたするきなめ'  # hiragana de los epítetos
+    # forma alterna de Jekyll: ジキル博士 · ハイド氏 · 解き放たれた影
+    '博氏放影'
 
 )

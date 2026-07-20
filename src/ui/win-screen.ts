@@ -7,7 +7,9 @@ import type { HandState } from '../core/state'
 import type { Seat } from '../core/seat'
 import { uraIndicators } from '../core/wall'
 import { createTileView, type TileView } from './tile-view'
-import { portraitUrl, charName, charEpithet, HYDE_PORTRAIT, type Character } from './characters'
+import {
+  portraitUrl, charName, charEpithet, altForm, type AltForm, type Character,
+} from './characters'
 import { meldLayout, type MeldSlot } from './meld-layout'
 import { t, yakuLabel, getLocale } from './i18n'
 

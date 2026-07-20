@@ -9,7 +9,7 @@ import type { YakuId } from '../core/yaku'
 import type { Limit } from '../core/score'
 import type { AbortReason } from '../core/state'
 import type { WindName } from '../core/seat'
-import type { CharacterId } from './characters'
+import type { AltId, CharacterId } from './characters'
 
 export type Locale = 'es' | 'en' | 'ja'
 export const LOCALES: readonly Locale[] = ['es', 'en', 'ja']
@@ -29,6 +29,8 @@ export type DerivedKeyCheck = AssertKeys<
   | `wind.${WindName}`
   | `char.${CharacterId}.name`
   | `char.${CharacterId}.epithet`
+  | `char.${AltId}.name`
+  | `char.${AltId}.epithet`
 >
 
 let locale: Locale = 'es'
