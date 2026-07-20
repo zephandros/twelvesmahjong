@@ -973,6 +973,7 @@ html, body {
 /* --- menú principal (portada) ------------------------------------------------ */
 /* Diseño fijo dentro del stage 1920×1080; el letterbox lo escala todo. */
 .tm-menu {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
@@ -1033,60 +1034,69 @@ html, body {
   text-transform: uppercase;
   color: #8a7f66;
 }
+/* Botones del menú apilados verticalmente y del mismo ancho. JUGAR conserva su
+   estilo (primary, grande); ajustes/glosario en muted, tamaño normalizado. */
+.tm-menu__actions {
+  position: relative; /* ancla el prompt del gate, que ocupa esta misma caja */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: 560px;
+}
+.tm-menu__actions .tm-btn { width: 100%; }
 .tm-menu__play {
   font-family: var(--ui);
   font-size: 54px;
   letter-spacing: 0.08em;
-  padding: 20px 64px;
+  padding: 18px 0;
 }
-.tm-menu__actions { display: flex; align-items: center; gap: 24px; }
-.tm-menu__settings-btn { font-size: 38px; padding: 18px 44px; }
-.tm-audio-ov .tm-overlay__card {
-  width: 720px;
-  gap: 28px;
-  padding: 34px 44px;
-}
-.tm-audio-ov .tm-overlay__title { font-size: 72px; }
-.tm-audio-ov .tm-btn {
-  font-size: 40px;
-  padding: 14px 40px;
-}
-.tm-audio-ov__sliders {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.tm-audio-ov__slider {
-  display: grid;
-  grid-template-columns: 120px 1fr 56px;
-  align-items: center;
-  gap: 22px;
-}
-.tm-audio-ov__slider-label {
+.tm-menu__settings-btn,
+.tm-menu__glossary-btn {
   font-family: var(--ui);
-  font-size: 26px;
-  color: var(--cream);
-}
-.tm-audio-ov__slider input[type='range'] {
-  width: 100%;
-  height: 22px;
-  accent-color: var(--gold);
-  cursor: pointer;
-}
-.tm-audio-ov__slider-val {
-  font-family: var(--ui);
-  font-size: 26px;
-  color: var(--gold);
-  text-align: right;
+  font-size: 34px;
+  letter-spacing: 0.08em;
+  padding: 14px 0;
 }
 .tm-menu__credits {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: var(--ui);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: #6f6650;
   text-align: center;
   max-width: 900px;
+}
+
+/* Gate "toca para continuar" (portada): en la primera visita el menú monta con
+   .is-locked → los botones se ocultan con visibility (conservan su espacio) y el
+   prompt se superpone ocupando EXACTAMENTE la misma caja que los 3 botones, así el
+   título y los créditos no se mueven. El primer toque revela los botones y arranca
+   la música + narración (ver menu.ts). */
+.tm-menu.is-locked { cursor: pointer; }
+.tm-menu.is-locked .tm-menu__actions .tm-btn { visibility: hidden; }
+.tm-menu:not(.is-locked) .tm-menu__gate-prompt { display: none; }
+.tm-menu__gate-prompt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--ui);
+  font-size: 44px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold-lt);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  animation: tm-gate-pulse 1.8s ease-in-out infinite;
+}
+@keyframes tm-gate-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
 /* --- pantalla de victoria (1B) ----------------------------------------------- */

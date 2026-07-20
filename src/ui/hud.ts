@@ -573,7 +573,7 @@ export class Hud {
       `<div class="tm-overlay__sub">${t('hud.tonpuusen-complete')}</div>` +
       `<div class="tm-deltas">${rows}</div>` +
       `<div style="display:flex;gap:10px;margin-top:8px">` +
-      `<button class="tm-btn tm-btn--muted" data-act="chars">${t('hud.characters')}</button>` +
+      `<button class="tm-btn tm-btn--muted" data-act="chars">${t('hud.to-menu')}</button>` +
       `<button class="tm-btn tm-btn--primary" data-act="rematch">${t('hud.rematch')}</button>` +
       `</div></div>`
     this.overlay.classList.remove('is-hidden')

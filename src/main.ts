@@ -47,7 +47,7 @@ if (debug === 'board') {
         app,
         (roster) => {
           app.innerHTML = ''
-          startGame(app, roster, toSelect) // salir de partida → re-elegir personajes
+          startGame(app, roster, toMenu) // salir de partida → volver a la portada
         },
         toMenu, // volver al menú desde la selección
       )

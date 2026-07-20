@@ -15,7 +15,7 @@
 //    Los raw mezclan Alice_Voice_Chii / Alice_Alt_Voice_Chi /
 //    Celestina_Voice_Alt_Kan / Henry_Chi / Takumi_Chii. Actor = primer token
 //    vía tabla; "Alt" en cualquier posición → variante; call = último token
-//    normalizado (Chii→chi). Takumi→dracula, Henry→jekyll (decisión de usuario).
+//    normalizado (Chii→chi). Takumi→dracula, Henry→ahab, Koichi→jekyll (tabla ACTORS).
 
 import { spawnSync } from 'node:child_process'
 import { readdirSync, mkdirSync, existsSync, renameSync, rmSync } from 'node:fs'
@@ -117,18 +117,22 @@ function buildSfx(out) {
 
 // actor (primer token del filename) → slug canónico de personaje.
 // Los raw nombran cada clip por su seiyuu, no por el personaje (tabla del usuario).
-// hideki (Hamlet), peter (Cyrano) y koichi (Bartleby) salieron con el cambio de
-// roster 2026-07-19: sus clips quedan en raw/voices sin mapear (se saltan con
-// aviso). irene/macbeth/ahab aún no tienen VA asignada.
+// Roster 2026-07-19: los 12 personajes tienen VA. koichi (Koichi Yashiro) pasó de
+// Bartleby a Jekyll; henry pasó de Jekyll a Ahab; sawaro (Macbeth) y chiichan
+// (Irene) son nuevos. hideki (Hamlet), peter (Cyrano) y actores sueltos (haru,
+// sakura) quedan en raw/voices sin mapear (se saltan con aviso).
 const ACTORS = {
   sameno: 'alice',       // Sameno
   hadou: 'dorian',       // Hadou
-  henry: 'jekyll',       // Henry (voz masculina → Jekyll)
-  takumi: 'dracula',     // Takumi (voz masculina → Drácula)
+  koichi: 'jekyll',      // Koichi Yashiro (antes Bartleby → ahora Jekyll)
   yukari: 'celestina',   // Yukari
-  shizuka: 'scheherazade', // Shizuka
+  takumi: 'dracula',     // Takumi (voz masculina → Drácula)
+  sawaro: 'macbeth',     // Sawaro
+  henry: 'ahab',         // Henry (voz masculina; antes Jekyll → ahora Ahab)
   aya: 'defarge',        // Aya
+  chiichan: 'irene',     // Chiichan
   reiji: 'huck',         // Reiji Kudo
+  shizuka: 'scheherazade', // Shizuka
   toa: 'pinocchio',      // Toa Seo
 }
 // Clips especiales que NO son voces de llamada (por nombre exacto de archivo,

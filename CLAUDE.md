@@ -13,9 +13,9 @@ El plan de integración de assets (`raw/`) vive en
 
 Los personajes pertenecen a **Twelves**, universo de creación propia del usuario.
 El mundo se llama **Kovalet**; sus 12 figuras centrales son **los 12 Movimientos**,
-representados por los 12 personajes jugables (slugs canónicos en
-`src/ui/characters.ts`, roster 2026-07-19: alice, irene, scheherazade, dorian,
-jekyll, dracula, macbeth, huck, celestina, defarge, pinocchio, ahab; salieron
+representados por los 12 personajes jugables (slugs canónicos y **orden canónico**
+en `src/ui/characters.ts`, roster 2026-07-19: alice, dorian, jekyll, celestina,
+dracula, macbeth, ahab, defarge, irene, huck, scheherazade, pinocchio; salieron
 bartleby, cyrano y hamlet). Jekyll tiene un arte alterno **hyde**
 (`public/portraits/hyde*.jpg`, no es CharacterId): mientras su riichi está vivo,
 el panel y la pantalla de victoria muestran a Mr. Hyde.
@@ -31,7 +31,7 @@ Autor: `zephandro <twelvesrpg@gmail.com>` (config `--local`). **`raw/` está en
 - **TypeScript + Vite**, sin framework de UI. La UI es DOM + CSS transforms.
 - **PWA** (`vite-plugin-pwa`): service worker + manifest → instalable y offline.
   Precache ~3.2 MB (código, fuentes, fichas SVG, retratos, sfx, voces); la **música**
-  (~62 MB, 18 temas) queda **fuera del precache** y va por `runtimeCaching`
+  (~102 MB, 19 temas + variantes `-alt` = 28 archivos) queda **fuera del precache** y va por `runtimeCaching`
   (CacheFirst + rangeRequests, cache `tm-music`). **Auditoría offline (A7): pasa** —
   con el servidor parado la partida es 100% jugable; lo único que falta offline es la
   música aún no escuchada (se cachea al primer play). Presupuesto de precache <15 MB.
@@ -156,7 +156,7 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | `raw/code/` | Nuevo diseño del tablero "Antique Parlour" (mockup dc.html, pantallas 1A/1B, temas de mesa y dorsos) | Pendiente (fase A6) |
 | `raw/font/` | Insumos de fuentes: `_kosugi-full.ttf` (lo baja fetch-fonts.mjs) + `Murencho/` (Murecho, **obsoleta** desde el cambio a Lexend/Belanosima/Kosugi) | Hecho |
 | `raw/icons/` | 9 SVG Lucide (menu, x, arrow-big-left, play/pause/skip-\*/volume-\*) para botones de UI | Hecho (assets:icons) |
-| `raw/music/` | 9 temas × 2 (normal + `_Alt`), mp3 | Pendiente (fase A3) |
+| `raw/music/` | 19 temas mp3: 9 con variante `_Alt` + 10 nuevos sin `_Alt` (incl. Curious Decisions, tema de la selección) | Horneados en `public/music/` (assets:audio) |
 | `raw/portraits/` | PNG originales de retratos, 3 aspectos por personaje (`{base}_9_16` tablero/victoria · `_1_1` rejilla de selección · `_3_4` asientos de selección; + `jekyll_hyde_portrait.png` solo 9:16; los `*_cut_in.png` de alice/irene/scheherezade quedan sin uso aún) | Horneados en `public/portraits/` |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
 | `raw/tiles/` | 37 SVGs solo-glifo (man/pin/so 1-9, honor 1-7, aka ×3), viewBox `0 0 139.764 200` | Pendiente (fase A1; ver trampa 2) |
@@ -204,18 +204,35 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
 ## Decisiones de assets (2026-07-12)
 
 - **Título**: el juego se llama **Mahjong Twelves** (麻雀トウェルブス).
-- **Menú principal**: pantalla de portada (título, partida libre, sliders de volumen).
-  Su canción exclusiva es **Invitation to the Glass Hall**; a los **1.5 s** de que
-  entra suena el clip de portada (`voices/title.m4a`: la VA de Alice —Sameno— dice
-  "Mahjong Twelves"). Los otros 8 temas suenan en partida (elección con `Math.random`,
-  jamás con el RNG semillado del core).
-- **Voces** (**9** personajes con voz; los raw se nombran por seiyuu, no por
-  personaje): **Sameno → Alice**, **Hadou → Dorian**, **Henry → Jekyll**,
-  **Takumi → Drácula**, **Yukari → Celestina**, **Shizuka → Scheherazade**,
-  **Aya → Defarge**, **Reiji Kudo → Huck**, **Toa Seo → Pinocho**. Irene, Macbeth
-  y Capitán Ahab (roster 2026-07-19) aún no tienen VA; Hideki (Hamlet), Peter
-  (Cyrano) y Koichi Yashiro (Bartleby) quedaron sin mapear al salir sus
-  personajes del roster. Solo la voz principal se usa; las
+- **Menú principal**: pantalla de portada con el título y tres botones **apilados en
+  vertical y del mismo ancho** (jugar / ajustes / glosario; JUGAR conserva su estilo
+  primary). El botón AJUSTES abre un modal **idéntico al menú in-game del tablero**
+  (`.tm-menu-ov`: idioma, tema de mesa, dorso, esperas + 4 sliders de volumen), pero
+  **sin la opción de salir**; cierra con la equis. Los cyclers de tema/dorso escriben
+  en `stage.dataset.table/back` (sin vista previa en la portada, no hay mesa/fichas).
+  **Gate "Toca para continuar"** (`menu.tap-start`, texto **en lugar de los botones**):
+  en la **primera visita** de la sesión la portada monta bloqueada (`.tm-menu.is-locked`
+  oculta los botones y muestra el prompt); hasta el primer toque (o Enter/Espacio) no
+  suena nada. Al tocar aparecen los botones y arranca su canción exclusiva **Invitation
+  to the Glass Hall** (`MENU_TRACK`) y, a **1.0 s**, el clip de portada
+  (`voices/title.m4a`: la VA de Alice —Sameno— dice "Mahjong Twelves"). **Al volver a la
+  portada** (desde selección o partida) **no hay gate**: los botones ya están y
+  `MENU_TRACK` suena de inmediato (crossfade desde el tema de la mesa). El flag de módulo
+  `started` en `menu.ts` distingue primera visita de retorno. La **selección de
+  personaje** tiene su propio tema exclusivo, **Curious Decisions** (`SELECT_TRACK`,
+  fuera de `GAME_TRACKS` como el del menú). Los **17 temas** restantes suenan en partida
+  (elección con `Math.random`, jamás con el RNG semillado del core). **Salir de una
+  partida** (botón de abandono del menú in-game o botón de la pantalla de resultados,
+  reetiquetado a **MENÚ** / `hud.to-menu`) vuelve a la **portada**, no a la selección de
+  personaje (`main.ts`: 3.er arg de `startGame` = `toMenu`).
+- **Voces** (**los 12** personajes tienen voz; los raw se nombran por seiyuu, no por
+  personaje): **Sameno → Alice**, **Hadou → Dorian**, **Koichi Yashiro → Jekyll**,
+  **Yukari → Celestina**, **Takumi → Drácula**, **Sawaro → Macbeth**,
+  **Henry → Ahab**, **Aya → Defarge**, **Chiichan → Irene**, **Reiji Kudo → Huck**,
+  **Shizuka → Scheherazade**, **Toa Seo → Pinocho** (roster 2026-07-19: Koichi Yashiro
+  pasó de Bartleby a Jekyll, Henry de Jekyll a Ahab; Sawaro e Chiichan son nuevos).
+  Hideki (Hamlet), Peter (Cyrano) y actores sueltos (Haru, Sakura) quedan sin mapear
+  (se saltan con aviso). Solo la voz principal se usa; las
   variantes `_Alt` (si las hay) se procesan pero quedan sin usar. El clip `Sameno_Alice`
   sigue **sin usar** (prototipo de "di tu nombre al elegir personaje", pendiente); el
   pipeline lo salta vía `IGNORE` con aviso. Al asignar/cambiar un actor: mapearlo en

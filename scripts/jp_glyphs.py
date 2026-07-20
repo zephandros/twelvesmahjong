@@ -34,5 +34,8 @@ GLYPHS = (
     '覧状況で宣、点。巡目後以内分最引加されが配第組と外両面使わず揃作だ含む集めもう枚ご算見ら'
     # roster 2026-07-19: Irene (あの女), Ahab (エイハブ船長 / 白鯨)
     '女船長鯨'
+    # epítetos de los 12 Movimientos (char.<id>.epithet, columna ja)
+    '無限好奇心永遠保存砕二面性共生絆君臨渇非情野盲目執念報復反響鮮烈抗絶対漂流物語超越自律覚'
+    'のけたするきなめ'  # hiragana de los epítetos
 
 )

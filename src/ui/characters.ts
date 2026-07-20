@@ -8,26 +8,27 @@ import { t } from './i18n'
 
 /** Slug canónico de personaje (id de CHARACTERS). */
 export type CharacterId =
-  | 'alice' | 'irene' | 'scheherazade' | 'dorian' | 'jekyll' | 'dracula'
-  | 'macbeth' | 'huck' | 'celestina' | 'defarge' | 'pinocchio' | 'ahab'
+  | 'alice' | 'dorian' | 'jekyll' | 'celestina' | 'dracula' | 'macbeth'
+  | 'ahab' | 'defarge' | 'irene' | 'huck' | 'scheherazade' | 'pinocchio'
 
 export interface Character {
   readonly id: CharacterId
 }
 
+// Orden canónico del roster (2026-07-19): alimenta la rejilla de selección.
 export const CHARACTERS: readonly Character[] = [
   { id: 'alice' },
-  { id: 'irene' },
-  { id: 'scheherazade' },
   { id: 'dorian' },
   { id: 'jekyll' },
+  { id: 'celestina' },
   { id: 'dracula' },
   { id: 'macbeth' },
-  { id: 'huck' },
-  { id: 'celestina' },
-  { id: 'defarge' },
-  { id: 'pinocchio' },
   { id: 'ahab' },
+  { id: 'defarge' },
+  { id: 'irene' },
+  { id: 'huck' },
+  { id: 'scheherazade' },
+  { id: 'pinocchio' },
 ]
 
 /** Nombre mostrado, en el locale activo. */

@@ -5,7 +5,8 @@
 
 import { CHARACTERS, charName, squareUrl, seatUrl, type Character, type Roster } from './characters'
 import { ICONS } from './icons.generated'
-import { playUiClick } from './audio/audio'
+import { playUiClick, playMusic } from './audio/audio'
+import { SELECT_TRACK } from './audio/catalog'
 import { createScaledStage } from './layout'
 import { t } from './i18n'
 import {
@@ -29,6 +30,8 @@ export function renderSelect(
   onBack?: () => void,
 ): void {
   root.innerHTML = ''
+  // tema exclusivo de la selección (crossfade desde la música que venga sonando)
+  playMusic(SELECT_TRACK)
   const stage = createScaledStage(root)
   const wrap = document.createElement('div')
   wrap.className = 'tm-select'
