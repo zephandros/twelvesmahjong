@@ -42,29 +42,30 @@ export function showWinScreen(
   const limit = sc.limit ? ` · ${t(`limit.${sc.limit}`)}` : ''
   const hanfu = sc.yakuman > 0 ? t('hud.yakuman') : `${t('hud.han-fu', { han: sc.han, fu: sc.fu })}${limit}`
   // en ja el nombre va en katakana: el uppercase del look Antique solo aplica al latín
-  const displayName = (c: Character): string =>
-    getLocale() === 'ja' ? charName(c) : charName(c).toUpperCase()
+  const displayName = (c: Character, alt?: AltForm): string =>
+    getLocale() === 'ja' ? charName(c, alt) : charName(c, alt).toUpperCase()
+  // Jekyll ganando o descartando en riichi sigue transformado: nombre + arte de Hyde
+  const winnerAlt = altForm(char, s.seats[winner]!.riichi)
   const fromLine =
-    end.type === 'ron' ? `<span class="tm-win__from">← ${displayName(chars[end.from]!)}</span>` : ''
+    end.type === 'ron'
+      ? `<span class="tm-win__from">← ${displayName(chars[end.from]!, altForm(chars[end.from]!, s.seats[end.from]!.riichi))}</span>`
+      : ''
   // el humano en riichi que perdió la mano ve los ura que le habrían tocado;
   // el ganador riichi ya los tiene como píldora "Ura Dora {n}" entre los yaku
   const showUra = human !== undefined && winner !== human && s.seats[human]!.riichi > 0
-  const winnerName = displayName(char)
-  // Jekyll ganando desde riichi sigue transformado: el arte de victoria es Hyde
-  const artUrl = char.id === 'jekyll' && s.seats[winner]!.riichi > 0
-    ? HYDE_PORTRAIT
-    : portraitUrl(char)
+  const winnerName = displayName(char, winnerAlt)
+  const artUrl = winnerAlt?.portrait ?? portraitUrl(char)
 
   el.innerHTML = `
     <div class="tm-win__rays"></div>
-    <div class="tm-win__art"><img src="${artUrl}" alt="${charName(char)}"></div>
+    <div class="tm-win__art"><img src="${artUrl}" alt="${charName(char, winnerAlt)}"></div>
     <div class="tm-win__body">
       <div class="tm-win__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>
       <div class="tm-win__kanji">${kanji}</div>
       <div class="tm-win__title">${title}</div>
       <div class="tm-win__name">
         <div class="tm-win__name-line"><b>${winnerName}</b>${fromLine}</div>
-        <span class="tm-win__epithet">${charEpithet(char)}</span>
+        <span class="tm-win__epithet">${charEpithet(char, winnerAlt)}</span>
       </div>
       <div class="tm-yaku-list tm-win__yaku">${yakuPills}</div>
       <div class="tm-win__score"><span>${hanfu}</span><b>+${sc.total.toLocaleString('en-US')}</b></div>

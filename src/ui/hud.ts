@@ -10,7 +10,7 @@ import { SEATS, relSeat, cornerOf, seatWind, windColor, windName, type Corner } 
 import { uraIndicators } from '../core/wall'
 import { BOARD, STAGE_H, STAGE_W, place } from './layout'
 import { createTileView, type TileView } from './tile-view'
-import { charName, thumbUrl, HYDE_THUMB, type Character } from './characters'
+import { charName, thumbUrl, hasAltForm, altForm, type AltForm, type Character } from './characters'
 import {
   saveSettings, setVolumeSetting,
   type Language, type Settings, type TableTheme, type TileBack, type VolumeChannel,
@@ -262,11 +262,19 @@ export class Hud {
     this.musicBar.applyTexts()
     for (const seat of SEATS) {
       const p = this.portraits.get(seat)!
-      const name = charName(this.chars[seat]!)
-      p.nameEl.textContent = seat === this.human ? `${name} · ${t('hud.you')}` : name
+      this.setPanelName(seat)
       p.riichiTag.textContent = t('hud.riichi')
-      p.panel.querySelector('.tm-panel__img')!.setAttribute('alt', name)
     }
+  }
+
+  // Nombre + alt del retrato de un panel; con `alt` pinta la forma alterna
+  // (Mr. Hyde). Idempotente: se llama tanto al cambiar idioma como en cada
+  // update() para seguir al riichi.
+  private setPanelName(seat: Seat, alt?: AltForm): void {
+    const p = this.portraits.get(seat)!
+    const name = charName(this.chars[seat]!, alt)
+    p.nameEl.textContent = seat === this.human ? `${name} · ${t('hud.you')}` : name
+    p.panel.querySelector('.tm-panel__img')!.setAttribute('alt', name)
   }
 
   // Overlay de ajustes de mesa, abierto desde el botón MENÚ del marco.
@@ -426,11 +434,13 @@ export class Hud {
       p.panel.classList.toggle('is-dealer', seat === s.dealer)
       p.panel.classList.toggle('is-turn', s.phase !== 'ended' && s.turn === seat)
       p.riichiTag.classList.toggle('is-on', st.riichi > 0)
-      // Jekyll se transforma en Hyde mientras su riichi está vivo
+      // Jekyll se transforma en Hyde (arte + nombre) mientras su riichi está vivo
       const c = this.chars[seat]!
-      if (c.id === 'jekyll') {
-        const src = st.riichi > 0 ? HYDE_THUMB : thumbUrl(c)
+      if (hasAltForm(c)) {
+        const alt = altForm(c, st.riichi)
+        const src = alt?.thumb ?? thumbUrl(c)
         if (p.imgEl.getAttribute('src') !== src) p.imgEl.setAttribute('src', src)
+        this.setPanelName(seat, alt)
       }
     }
 
