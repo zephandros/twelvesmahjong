@@ -3,11 +3,161 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0c0f0d" />
-    <title>Mahjong Twelves</title>
+
+    <!-- SEO. Origen canónico: https://twelvesmahjong.com (apex, sin www).
+         Si el dominio cambia, hay que tocarlo AQUÍ, en public/robots.txt,
+         public/sitemap.xml y tests/seo-assets.test.ts (el test lo verifica). -->
+    <title>Mahjong Twelves · Riichi mahjong japonés gratis online</title>
+    <meta
+      name="description"
+      content="Riichi mahjong japonés para un jugador, gratis y sin conexión: tonpuusen, aka dora, yaku y fu completos, rivales con IA y los 12 personajes de Twelves."
+    />
+    <link rel="canonical" href="https://twelvesmahjong.com/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="author" content="Arenacun Software" />
+    <meta name="application-name" content="Mahjong Twelves" />
+    <meta name="theme-color" content="#0a0805" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Open Graph (WhatsApp, Discord, Facebook…). og:image debe ser absoluta. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mahjong Twelves" />
+    <meta property="og:title" content="Mahjong Twelves · Riichi mahjong japonés gratis online" />
+    <meta
+      property="og:description"
+      content="Riichi mahjong japonés para un jugador, gratis y sin conexión: tonpuusen, aka dora, yaku y fu completos, rivales con IA y los 12 personajes de Twelves."
+    />
+    <meta property="og:url" content="https://twelvesmahjong.com/" />
+    <meta property="og:image" content="https://twelvesmahjong.com/og/cover.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Logotipo de Mahjong Twelves en letras doradas sobre fondo oscuro, con el título japonés トゥウェルブズ・マージャン"
+    />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mahjong Twelves · Riichi mahjong japonés gratis online" />
+    <meta
+      name="twitter:description"
+      content="Riichi mahjong japonés para un jugador, gratis y sin conexión: tonpuusen, aka dora, yaku y fu completos, rivales con IA y los 12 personajes de Twelves."
+    />
+    <meta name="twitter:image" content="https://twelvesmahjong.com/og/cover.jpg" />
+
+    <!-- Iconos (pipeline: npm run assets:logo). Rutas relativas, como el resto
+         de assets del juego, para no atarse a la raíz del dominio. -->
+    <link rel="icon" href="./favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png" />
+
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Mahjong Twelves" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Mahjong Twelves",
+        "alternateName": ["麻雀トウェルブス", "トゥウェルブズ・マージャン"],
+        "url": "https://twelvesmahjong.com/",
+        "image": "https://twelvesmahjong.com/og/cover.jpg",
+        "description": "Riichi mahjong japonés para un jugador: partida libre tonpuusen con aka dora, yaku y fu completos, rivales controlados por IA y los 12 personajes de Twelves. Gratis, sin registro, instalable y jugable sin conexión.",
+        "inLanguage": ["es", "en", "ja"],
+        "genre": ["Mahjong", "Riichi", "Juego de mesa"],
+        "gamePlatform": "Navegador web",
+        "playMode": "SinglePlayer",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (navegador web con soporte PWA)",
+        "author": { "@type": "Organization", "name": "Arenacun Software" },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    </script>
+
+    <!-- Portada de arranque: es lo único que ve un rastreador que no ejecute JS,
+         y hace de pantalla de carga mientras se resuelven los imports dinámicos.
+         main.ts la borra (app.innerHTML = '') antes de pintar el menú.
+         El CSS va EN LÍNEA a propósito: styles.css lo inyecta el bundle, así que
+         en dev el bloque se vería sin estilo. font-family del sistema para que
+         el japonés no dependa del subset de Kosugi (jp_glyphs.py). -->
+    <style>
+      #app .tm-boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+        padding: 2rem 1.25rem;
+        overflow: auto;
+        text-align: center;
+        background: #0a0805;
+        color: #c8bfa4;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      #app .tm-boot img { width: 116px; height: 116px; border-radius: 20px; }
+      #app .tm-boot h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 4.2vw, 2.4rem);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: #e7c56a;
+      }
+      #app .tm-boot h1 span {
+        display: block;
+        font-size: 0.5em;
+        letter-spacing: 0.16em;
+        color: #8a7f66;
+      }
+      #app .tm-boot p { margin: 0; max-width: 62ch; font-size: 0.92rem; line-height: 1.6; }
+      #app .tm-boot p[lang] { font-size: 0.8rem; color: #8a7f66; }
+      /* El juego es landscape: en móvil la altura es el recurso escaso. */
+      @media (max-height: 560px) {
+        #app .tm-boot { gap: 0.35rem; padding: 0.75rem; }
+        #app .tm-boot img { width: 72px; height: 72px; border-radius: 14px; }
+        #app .tm-boot p { font-size: 0.8rem; line-height: 1.45; }
+        #app .tm-boot p[lang] { font-size: 0.72rem; }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="tm-boot">
+        <img
+          src="./icons/icon-192.png"
+          width="116"
+          height="116"
+          alt="Emblema de Mahjong Twelves: tres fichas de mahjong doradas con el kanji 十二 (doce)"
+        />
+        <h1>Mahjong Twelves<span lang="ja">トゥウェルブズ・マージャン</span></h1>
+        <p>
+          Riichi mahjong japonés para un jugador, directo en el navegador y gratis. Partida libre
+          tonpuusen (ronda de Este) con aka dora, yaku y fu completos, rivales controlados por IA y
+          los 12 personajes de Twelves. Se instala como aplicación y se juega sin conexión.
+        </p>
+        <p lang="en">
+          Free single-player riichi mahjong in your browser: East-only games, red fives, full yaku
+          and fu scoring, AI opponents and a cast of twelve. Installable and playable offline.
+        </p>
+        <p lang="ja">
+          ブラウザで遊べる無料の一人用リーチ麻雀。東風戦、赤ドラ、役と符の計算、AI対戦、12人のキャラクター。インストールすればオフラインでも遊べます。
+        </p>
+        <noscript>
+          <p>Mahjong Twelves necesita JavaScript. Actívalo para jugar.</p>
+        </noscript>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

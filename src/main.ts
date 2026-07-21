@@ -26,6 +26,10 @@ window.addEventListener('keydown', onGesture)
 
 const debug = new URLSearchParams(location.search).get('debug')
 
+// El bloque .tm-boot de index.html (portada rastreable + pantalla de carga) lo
+// borra toMenu() en el flujo normal; las páginas de depuración lo quitan aquí.
+if (debug) app.innerHTML = ''
+
 if (debug === 'board') {
   void import('./debug/board').then(({ renderDebugBoard }) => renderDebugBoard(app))
 } else if (debug === 'tiles') {

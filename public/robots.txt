@@ -1,0 +1,8 @@
+# Mahjong Twelves — https://twelvesmahjong.com
+# Las páginas de depuración (?debug=tiles|board) no son contenido del juego.
+
+User-agent: *
+Allow: /
+Disallow: /*?debug=
+
+Sitemap: https://twelvesmahjong.com/sitemap.xml

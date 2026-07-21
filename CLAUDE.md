@@ -22,9 +22,11 @@ el panel y la pantalla de victoria muestran a Mr. Hyde.
 
 ## Git
 
-Repo **local, sin remoto** por ahora (se conectará a GitHub más adelante).
+Remoto: `origin git@github-zephandros:zephandros/twelvesmahjong.git` (rama `main`).
 Autor: `zephandro <twelvesrpg@gmail.com>` (config `--local`). **`raw/` está en
 `.gitignore`** — pesa ~110 MB y tiene respaldo externo; no debe entrar al repo.
+El juego está **publicado en https://twelvesmahjong.com** (Cloudflare; `dist/` va
+al host, no al repo).
 
 ## Stack
 
@@ -157,6 +159,7 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | `raw/code/` | Nuevo diseño del tablero "Antique Parlour" (mockup dc.html, pantallas 1A/1B, temas de mesa y dorsos) | Pendiente (fase A6) |
 | `raw/font/` | Insumos de fuentes: `_kosugi-full.ttf` (lo baja fetch-fonts.mjs) + `Murencho/` (Murecho, **obsoleta** desde el cambio a Lexend/Belanosima/Kosugi) | Hecho |
 | `raw/icons/` | 9 SVG Lucide (menu, x, arrow-big-left, play/pause/skip-\*/volume-\*) para botones de UI | Hecho (assets:icons) |
+| `raw/logo/` | Logo de marca: `favicon.ico` + `favicon-16/32.png`, `logo-192/512.png` (emblema de fichas con 十二), `banner-classic-1600x670.png` (logotipo, insumo de la imagen social) y `banner-emblem-1200x300.png` (sin uso) | Hecho (assets:logo) |
 | `raw/music/` | 31 temas mp3 (roster 2026-07-21: se retiró el lote inicial de 8 con variante `_Alt` y entraron 20 nuevos). **Es la fuente de verdad**: el pipeline poda de `public/music/` todo lo que no esté aquí | Horneados en `public/music/` (assets:audio) |
 | `raw/portraits/` | PNG originales de retratos, 3 aspectos por personaje (`{base}_9_16` tablero/victoria · `_1_1` rejilla de selección · `_3_4` asientos de selección; + `jekyll_hyde_portrait.png` solo 9:16; los `*_cut_in.png` de alice/irene/scheherezade quedan sin uso aún) | Horneados en `public/portraits/` |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
@@ -205,6 +208,14 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   lee de `raw/portraits/` (fuente real; `../Resources/Portraits` quedó obsoleta) →
   `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px). La tabla `$roster`
   mapea slug→patrón de archivo; al cambiar el roster, actualizarla.
+- **Logo de marca** — `npm run assets:logo` (`scripts/bake-logo.ps1`, PowerShell +
+  System.Drawing como el de retratos; Windows-only) lee `raw/logo/` →
+  `public/favicon.ico`, `public/icons/{favicon-16,favicon-32,icon-192,icon-512,
+  icon-maskable-512,apple-touch-icon-180}.png` y `public/og/cover.jpg` (1200×630).
+  El **maskable** se genera aparte: el emblema al **72 %** sobre un degradado que
+  replica su propio fondo (`#0F0B07`→`#0B0805`), para que la ficha frontal caiga
+  dentro de la zona segura del 80 % que recortan los lanzadores Android. La imagen
+  social sale del banner escalado por alto y **recortado** al centro (2.39:1 → 1.91:1).
 
 ## Decisiones de assets (2026-07-12)
 
@@ -278,6 +289,34 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   insignia de viento (`hud.dealer` en i18n). Pantalla de victoria (1B): mismo diseño,
   reescalada a 1920×1080 (`.tm-win` = caja 1280×720 centrada ×1.5). Único fleco:
   `?debug=board` con coordenadas viejas (página de depuración, no afecta al juego).
+
+## SEO y metadatos (2026-07-21)
+
+**Origen canónico: `https://twelvesmahjong.com`** (apex, **sin `www`** — ese host no
+tiene registro DNS). Aparece en cuatro sitios y `tests/seo-assets.test.ts` verifica que
+no se desincronicen: `index.html` (canonical + `og:*`), `public/robots.txt` (línea
+`Sitemap:`), `public/sitemap.xml` (`<loc>`) y la constante `ORIGIN` del propio test.
+Cambiar de dominio = tocar esos cuatro.
+
+- **`index.html`** lleva title/description, canonical, Open Graph + Twitter card
+  (`og:image` **absoluta** a `/og/cover.jpg`: los rastreadores sociales no resuelven
+  rutas relativas), iconos, metas de PWA iOS y un **JSON-LD `VideoGame`**. Sin
+  `aggregateRating`: no hay reseñas y fabricarlas es motivo de penalización.
+- **Bloque `.tm-boot`** dentro de `#app`: el único texto que ve un rastreador que no
+  ejecute JS (párrafos en es/en/ja + `<noscript>`), y de paso pantalla de carga con
+  marca. **`main.ts` lo borra solo** — `toMenu()` hace `app.innerHTML = ''`; las ramas
+  `?debug=` lo limpian explícitamente. Su CSS va **en línea** en el `<head>` (styles.css
+  lo inyecta el bundle, así que en dev llegaría tarde) y usa `system-ui`, para que el
+  japonés no dependa del subset de Kosugi.
+- **`public/404.html`**: página autónoma con `noindex` y rutas **absolutas** (el host la
+  sirve para cualquier ruta). Su sola existencia hace que Cloudflare Pages devuelva un
+  404 real en vez de `index.html` con 200 (soft-404). Ojo: con el SW instalado el
+  `navigateFallback` sigue sirviendo `index.html` — el 404 es para rastreadores y
+  primeras visitas.
+- **Precache**: `og/**` y `404.html` van en `globIgnores` (nadie los mira offline).
+
+Pendiente del lado del hosting (no es código): CNAME `www` → apex con redirección en
+Cloudflare, verificación en Search Console / Bing y envío del sitemap.
 
 ## Alcance v1
 

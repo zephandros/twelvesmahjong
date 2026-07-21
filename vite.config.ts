@@ -8,13 +8,22 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
+        id: './',
         name: 'Mahjong Twelves',
-        short_name: 'Mahjong',
-        description: 'Mahjong Twelves — single-player offline riichi mahjong',
-        theme_color: '#0c0f0d',
-        background_color: '#0c0f0d',
+        short_name: 'Twelves',
+        description:
+          'Riichi mahjong japonés para un jugador: tonpuusen, aka dora, yaku y fu completos, ' +
+          'rivales con IA y los 12 personajes de Twelves. Gratis y jugable sin conexión.',
+        lang: 'es',
+        dir: 'ltr',
+        categories: ['games', 'entertainment'],
+        theme_color: '#0a0805',
+        background_color: '#0a0805',
         display: 'standalone',
         orientation: 'landscape',
+        // Mismos nombres de archivo que los iconos marcador que sustituyen (los
+        // hornea scripts/bake-logo.ps1): las instalaciones ya existentes cogen
+        // el logo nuevo al actualizarse el service worker.
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -36,6 +45,10 @@ export default defineConfig({
           'sfx/**/*.m4a',
           'voices/**/*.m4a',
         ],
+        // La imagen social (og/cover.jpg) solo la piden los rastreadores, y la
+        // 404 nunca la ve un usuario con el SW instalado (navigateFallback
+        // sirve index.html): ninguna de las dos pinta nada offline.
+        globIgnores: ['og/**', '404.html'],
         runtimeCaching: [
           {
             // Música: CacheFirst con rangeRequests (HTMLAudioElement pide rangos).

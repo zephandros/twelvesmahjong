@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, follow" />
+    <meta name="theme-color" content="#0a0805" />
+    <meta name="color-scheme" content="dark" />
+    <title>Página no encontrada · Mahjong Twelves</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <!-- Página autónoma: sin el bundle del juego y con rutas absolutas, porque
+         el host la sirve para cualquier ruta inexistente (a cualquier
+         profundidad). Su sola existencia hace que Cloudflare Pages devuelva un
+         404 real en lugar de index.html con 200 (soft-404). -->
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+        padding: 2rem 1.25rem;
+        text-align: center;
+        background: #0a0805;
+        color: #c8bfa4;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      img { width: 104px; height: 104px; border-radius: 18px; }
+      h1 { margin: 0; font-size: 1.6rem; font-weight: 600; color: #e7c56a; letter-spacing: 0.05em; }
+      p { margin: 0; font-size: 0.95rem; }
+      p[lang] { font-size: 0.85rem; color: #8a7f66; }
+      a {
+        margin-top: 0.6rem;
+        padding: 0.6rem 1.6rem;
+        border: 1px solid #e7c56a;
+        border-radius: 999px;
+        color: #e7c56a;
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+      }
+      a:hover { background: #e7c56a; color: #1a130a; }
+    </style>
+  </head>
+  <body>
+    <img
+      src="/icons/icon-192.png"
+      width="104"
+      height="104"
+      alt="Emblema de Mahjong Twelves: tres fichas de mahjong doradas con el kanji 十二 (doce)"
+    />
+    <h1>404</h1>
+    <p>Esta página no existe. La mesa está en la portada.</p>
+    <p lang="en">This page doesn’t exist. The table is back at the home page.</p>
+    <a href="/">IR A LA PORTADA</a>
+  </body>
+</html>
