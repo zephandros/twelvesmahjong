@@ -31,8 +31,9 @@ Autor: `zephandro <twelvesrpg@gmail.com>` (config `--local`). **`raw/` está en
 - **TypeScript + Vite**, sin framework de UI. La UI es DOM + CSS transforms.
 - **PWA** (`vite-plugin-pwa`): service worker + manifest → instalable y offline.
   Precache ~3.2 MB (código, fuentes, fichas SVG, retratos, sfx, voces); la **música**
-  (~102 MB, 19 temas + variantes `-alt` = 28 archivos) queda **fuera del precache** y va por `runtimeCaching`
-  (CacheFirst + rangeRequests, cache `tm-music`). **Auditoría offline (A7): pasa** —
+  (~109 MB, 31 temas) queda **fuera del precache** y va por `runtimeCaching`
+  (CacheFirst + rangeRequests, cache `tm-music`; `maxEntries` con holgura sobre el nº de
+  temas — si se queda corto, el LRU desaloja temas ya oídos y se pierde el offline). **Auditoría offline (A7): pasa** —
   con el servidor parado la partida es 100% jugable; lo único que falta offline es la
   música aún no escuchada (se cachea al primer play). Presupuesto de precache <15 MB.
 - **vitest** para tests. El núcleo se testea sin DOM.
@@ -156,7 +157,7 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | `raw/code/` | Nuevo diseño del tablero "Antique Parlour" (mockup dc.html, pantallas 1A/1B, temas de mesa y dorsos) | Pendiente (fase A6) |
 | `raw/font/` | Insumos de fuentes: `_kosugi-full.ttf` (lo baja fetch-fonts.mjs) + `Murencho/` (Murecho, **obsoleta** desde el cambio a Lexend/Belanosima/Kosugi) | Hecho |
 | `raw/icons/` | 9 SVG Lucide (menu, x, arrow-big-left, play/pause/skip-\*/volume-\*) para botones de UI | Hecho (assets:icons) |
-| `raw/music/` | 19 temas mp3: 9 con variante `_Alt` + 10 nuevos sin `_Alt` (incl. Curious Decisions, tema de la selección) | Horneados en `public/music/` (assets:audio) |
+| `raw/music/` | 31 temas mp3 (roster 2026-07-21: se retiró el lote inicial de 8 con variante `_Alt` y entraron 20 nuevos). **Es la fuente de verdad**: el pipeline poda de `public/music/` todo lo que no esté aquí | Horneados en `public/music/` (assets:audio) |
 | `raw/portraits/` | PNG originales de retratos, 3 aspectos por personaje (`{base}_9_16` tablero/victoria · `_1_1` rejilla de selección · `_3_4` asientos de selección; + `jekyll_hyde_portrait.png` solo 9:16; los `*_cut_in.png` de alice/irene/scheherezade quedan sin uso aún) | Horneados en `public/portraits/` |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
 | `raw/tiles/` | 37 SVGs solo-glifo (man/pin/so 1-9, honor 1-7, aka ×3), viewBox `0 0 139.764 200` | Pendiente (fase A1; ver trampa 2) |
@@ -178,8 +179,12 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   PATH: `winget install Gyan.FFmpeg`, luego reabrir la shell para refrescar el PATH).
   Todo a AAC-LC `.m4a` con loudnorm (`-vn` descarta la carátula embebida de los mp3);
   idempotente (escribe a temporal y renombra al éxito; `--force` regenera) →
-  `public/music/{slug-kebab}.m4a` (+ `-alt`), `public/sfx/tile-click-{nota}.m4a`,
-  `public/voices/{slug}_{call}.m4a` (+ `{slug}_alt_{call}.m4a`). Las voces se renombran
+  `public/music/{slug-kebab}.m4a`, `public/sfx/tile-click-{nota}.m4a`,
+  `public/voices/{slug}_{call}.m4a` (+ `{slug}_alt_{call}.m4a`). En **música** el kebab
+  se come los apóstrofos (`Geppetto's Workshop` → `geppettos-workshop`), las variantes
+  `_Alt` **no se hornean** (el catálogo no las usa) y **se podan los huérfanos**: dar de
+  baja un tema = sacar su mp3 de `raw/music/` (o moverlo a un subdirectorio, que
+  `readdirSync` no es recursivo) + quitarlo del catálogo, y relanzar. Las voces se renombran
   con un parser tolerante + **tabla de actores** (Takumi→dracula, Henry→jekyll); el
   script **falla si algún personaje con voz no tiene las 6 llamadas**. Al añadir voces
   de un personaje nuevo: se dejan en `raw/voices/`, se añade el actor a `ACTORS` del
@@ -220,8 +225,10 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   `MENU_TRACK` suena de inmediato (crossfade desde el tema de la mesa). El flag de módulo
   `started` en `menu.ts` distingue primera visita de retorno. La **selección de
   personaje** tiene su propio tema exclusivo, **Curious Decisions** (`SELECT_TRACK`,
-  fuera de `GAME_TRACKS` como el del menú). Los **17 temas** restantes suenan en partida
-  (elección con `Math.random`, jamás con el RNG semillado del core). **Salir de una
+  fuera de `GAME_TRACKS` como el del menú). Los **29 temas** restantes suenan en partida
+  (elección con `Math.random`, jamás con el RNG semillado del core), todos en el mismo
+  pool: aunque varios títulos evoquen a un personaje concreto, **no hay temas por
+  personaje** (decisión 2026-07-21). **Salir de una
   partida** (botón de abandono del menú in-game o botón de la pantalla de resultados,
   reetiquetado a **MENÚ** / `hud.to-menu`) vuelve a la **portada**, no a la selección de
   personaje (`main.ts`: 3.er arg de `startGame` = `toMenu`).

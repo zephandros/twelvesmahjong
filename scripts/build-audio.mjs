@@ -6,10 +6,17 @@
 //
 // Idempotente: salta lo ya generado salvo --force. Uso: npm run assets:audio
 //
+// La música PODA: raw/music es la fuente de verdad, así que todo .m4a de
+// public/music sin mp3 detrás se borra. Dar de baja un tema = sacar su mp3 de
+// raw/music (o moverlo a un subdirectorio, que readdirSync no es recursivo) y
+// relanzar. sfx y voces no se podan (sus nombres no vienen del raw 1:1).
+//
 // Renombrado canónico (la traducción de nombres externos vive AQUÍ, borde del
 // sistema — regla de oro de CLAUDE.md):
 //  - música:  "Invitation to the Glass Hall.mp3" → invitation-to-the-glass-hall.m4a
-//             "..._Alt.mp3"                       → ...-alt.m4a
+//             "Geppetto's Workshop.mp3"          → geppettos-workshop.m4a
+//             "..._Alt.mp3"                      → se salta (las variantes alt no
+//                                                  se usan en el juego)
 //  - sfx:     tile_click_a2.wav                    → tile-click-a2.m4a (nota intacta)
 //  - voces:   parser tolerante + TABLA DE ACTORES  → {slug}_{call}.m4a (+ _alt_)
 //    Los raw mezclan Alice_Voice_Chii / Alice_Alt_Voice_Chi /
@@ -18,7 +25,7 @@
 //    normalizado (Chii→chi). Takumi→dracula, Henry→ahab, Koichi→jekyll (tabla ACTORS).
 
 import { spawnSync } from 'node:child_process'
-import { readdirSync, mkdirSync, existsSync, renameSync, rmSync } from 'node:fs'
+import { readdirSync, mkdirSync, existsSync, renameSync, rmSync, unlinkSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -76,18 +83,39 @@ const SFX = ['-c:a', 'aac', '-b:a', '96k', '-ac', '1',
 
 // --- helpers de nombre -------------------------------------------------------
 
-const kebab = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+// Los apóstrofos se comen en vez de volverse guion: "Geppetto's Workshop" →
+// geppettos-workshop, no geppetto-s-workshop.
+const kebab = (s) => s.toLowerCase().replace(/['’]/g, '')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 // --- música ------------------------------------------------------------------
 
 function buildMusic(out) {
   console.log('música:')
   mkdirSync(out, { recursive: true })
+  const expected = new Set()
+  let alts = 0
   for (const file of readdirSync(join(RAW, 'music')).filter((f) => f.endsWith('.mp3'))) {
     const stem = file.replace(/\.mp3$/, '')
-    const alt = /_Alt$/i.test(stem)
-    const base = kebab(stem.replace(/_Alt$/i, ''))
-    encode(join(RAW, 'music', file), join(out, `${base}${alt ? '-alt' : ''}.m4a`), MUSIC)
+    // Las variantes _Alt no las usa el catálogo: no se hornean (el mp3 sigue en raw).
+    if (/_Alt$/i.test(stem)) {
+      alts++
+      continue
+    }
+    const name = `${kebab(stem)}.m4a`
+    expected.add(name)
+    encode(join(RAW, 'music', file), join(out, name), MUSIC)
+  }
+  if (alts) console.log(`  · ${alts} variante(s) _Alt saltada(s) (sin uso en el juego)`)
+  prune(out, expected)
+}
+
+/** Borra de `dir` todo .m4a que no esté en `expected` (raw manda). */
+function prune(dir, expected) {
+  for (const file of readdirSync(dir).filter((f) => f.endsWith('.m4a'))) {
+    if (expected.has(file)) continue
+    unlinkSync(join(dir, file))
+    console.log(`  ✗ ${file} (huérfano, borrado)`)
   }
 }
 

@@ -29,7 +29,7 @@ export default defineConfig({
       workbox: {
         // Precache lo ligero que la app necesita 100% offline tras la primera
         // carga: código, fuentes, fichas SVG, retratos, y el audio pequeño
-        // (sfx ~50 KB y voces ~50 KB c/u). La MÚSICA (18 temas, ~40 MB) NO se
+        // (sfx ~50 KB y voces ~50 KB c/u). La MÚSICA (31 temas, ~130 MB) NO se
         // precachea: se cachea bajo demanda (runtimeCaching, abajo).
         globPatterns: [
           '**/*.{js,css,html,woff2,svg,png,webp,jpg}',
@@ -45,7 +45,10 @@ export default defineConfig({
             options: {
               cacheName: 'tm-music',
               rangeRequests: true,
-              expiration: { maxEntries: 24 },
+              // Con holgura sobre el nº de temas del catálogo: si maxEntries se
+              // queda corto, el LRU desaloja temas ya escuchados y se pierde el
+              // offline. Subirlo al ampliar el catálogo.
+              expiration: { maxEntries: 48 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
