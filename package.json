@@ -16,7 +16,8 @@
     "assets:icons": "node scripts/build-icons.mjs",
     "assets:fonts": "node scripts/fetch-fonts.mjs && python scripts/subset-jp.py",
     "assets:audio": "node scripts/build-audio.mjs",
-    "assets:logo": "powershell -NoProfile -File scripts/bake-logo.ps1"
+    "assets:logo": "powershell -NoProfile -File scripts/bake-logo.ps1",
+    "assets:portraits": "powershell -NoProfile -File scripts/bake-portraits.ps1"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

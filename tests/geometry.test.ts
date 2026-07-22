@@ -11,6 +11,7 @@ const opts = {
   clickable: new Set<number>(),
   highlight: new Set<number>(),
   dim: new Set<number>(),
+  flash: new Set<number>(),
 }
 
 const id = (label: string, copy = 0): TileId => ((parseTile(label) << 2) | copy)
@@ -84,6 +85,15 @@ describe('geometry: colocación de fichas', () => {
         expect(p.get(id)!.face).toBe('front')
       }
     }
+  })
+
+  it('marca flash solo en las fichas pedidas', () => {
+    const s = initHand(42, 0)
+    const target = s.seats[0]!.hand[0]!
+    const other = s.seats[0]!.hand[1]!
+    const p = computePlacements(s, { ...opts, flash: new Set([target]) })
+    expect(p.get(target)!.flash).toBe(true)
+    expect(p.get(other)!.flash).toBe(false)
   })
 
   it('gira la ficha llamada del pon y la coloca en el extremo del origen', () => {

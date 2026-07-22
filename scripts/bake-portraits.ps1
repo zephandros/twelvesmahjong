@@ -80,3 +80,38 @@ foreach ($id in $roster.Keys) {
 # hyde no es un personaje: es el arte alterno de Jekyll durante su riichi.
 # Solo existe en 9:16 (paneles del tablero y pantalla de victoria).
 Bake 'hyde' (Join-Path $src 'jekyll_hyde_portrait.png') $variants['9_16']
+
+# --- viñetas de cut-in (2:1, una por expresión) --------------------------------
+# Se acepta el SLUG canónico o la base de $roster sin `_portrait`, porque los dos
+# nombres conviven en raw/ (`alice_cut_*` pero `scheherezade_cut_*`, con la z del
+# resto de sus archivos). Probar ambas evita renombrados y sorpresas con huck.
+# El arte llega por tandas, así que faltar NO es un error: cut-in.ts cae al
+# retrato 9:16 para quien no la tenga (ver HAS_CUT_IN). Se listan las que faltan
+# al final para que se vea el avance de un vistazo.
+$cutExprs = @('fierce', 'sharp')
+$cutIds = @($roster.Keys) + 'hyde'
+$cutDone = 0
+$cutMissing = @()
+
+foreach ($id in $cutIds) {
+  # bases candidatas: el slug y, si difiere, la de $roster sin `_portrait`
+  $bases = @($id)
+  if ($roster.Contains($id)) {
+    $alt = $roster[$id] -replace '_portrait$', ''
+    if ($alt -ne $id) { $bases += $alt }
+  }
+  foreach ($expr in $cutExprs) {
+    $file = $bases | ForEach-Object { Join-Path $src "${_}_cut_${expr}.png" } |
+      Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $file) { $cutMissing += "$id/$expr"; continue }
+    Bake $id $file @(, ("-cut-$expr", 760, 82))
+    $cutDone++
+  }
+}
+
+$cutTotal = $cutIds.Count * $cutExprs.Count
+Write-Output ''
+Write-Output ("cut-ins: {0}/{1} horneados" -f $cutDone, $cutTotal)
+if ($cutMissing.Count -gt 0) {
+  Write-Output ("  faltan: {0}" -f ($cutMissing -join ', '))
+}

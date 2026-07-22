@@ -34,6 +34,8 @@ export interface Placement {
   highlight: boolean
   /** Atenuada (no elegible durante una elección del jugador). */
   dim: boolean
+  /** Destello transitorio: la señala durante un beat (ficha de riichi, ganadora). */
+  flash: boolean
 }
 
 export interface GeometryOpts {
@@ -42,6 +44,7 @@ export interface GeometryOpts {
   clickable: ReadonlySet<TileId>
   highlight: ReadonlySet<TileId>
   dim: ReadonlySet<TileId>
+  flash: ReadonlySet<TileId>
 }
 
 const CX = 960
@@ -56,7 +59,8 @@ const DORA = { w: 26, h: 34 } // indicadores en el centro
 
 const hidden = (): Placement => ({
   cx: CX, cy: CY, w: DISC.w, h: DISC.h, rot: 0,
-  face: 'back', z: 1, visible: false, clickable: false, highlight: false, dim: false,
+  face: 'back', z: 1, visible: false,
+  clickable: false, highlight: false, dim: false, flash: false,
 })
 
 export function computePlacements(
@@ -74,6 +78,7 @@ export function computePlacements(
       clickable: o.clickable.has(id),
       highlight: o.highlight.has(id),
       dim: o.dim.has(id),
+      flash: o.flash.has(id),
     })
   }
 

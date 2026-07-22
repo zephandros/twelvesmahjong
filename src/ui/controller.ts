@@ -20,7 +20,8 @@ import { TileLayer } from './tile-layer'
 import { Hud, type ButtonDef } from './hud'
 import { computePlacements } from './geometry'
 import { showWinScreen } from './win-screen'
-import type { Roster, CharacterId } from './characters'
+import { createCutIn, type CutIn } from './cut-in'
+import { altForm, type Roster, type CharacterId } from './characters'
 import { loadSettings } from './settings'
 import { t } from './i18n'
 import { initAudio, playMusic, playSfx, playVoice, playAlert } from './audio/audio'
@@ -49,6 +50,41 @@ const DELAY = {
   botTurn: 420,
   botReaction: 260,
   autoTsumogiri: 650, // humano en riichi sin decisión real
+  handEnd: 900, // agotamiento/aborto → tarjeta de fin de mano
+}
+
+// Ritmo de los beats de llamada (ms). El motor queda congelado mientras corren:
+// es lo que da tiempo a leer qué acaba de pasar. Todo el afinado del ritmo se
+// hace aquí.
+const BEAT = {
+  /** Panel de chi/pon/kan/riichi. */
+  call: 750,
+  /** Destello de la ficha declarada, ya sin panel. */
+  riichiFlash: 550,
+  /** Panel de ron/tsumo. */
+  win: 900,
+  /** Destape de la mano ganadora + ficha ganadora, antes de la pantalla. */
+  reveal: 1400,
+}
+
+const NO_TILES: ReadonlySet<TileId> = new Set()
+
+/**
+ * Un beat: panel de cut-in, y opcionalmente un segundo tiempo de destape con el
+ * panel ya retirado (que es cuando la mesa se puede leer). Un clic lo salta
+ * entero.
+ */
+interface Beat {
+  /** Al empezar: cut-in y voz. */
+  start(): void
+  /** Duración del panel. */
+  panel: number
+  /** Al retirar el panel: destellos sobre la mesa. */
+  hold?(): void
+  /** Duración del destape. 0 = el beat acaba con el panel. */
+  after: number
+  /** Al acabar, o al saltarse. */
+  done(): void
 }
 
 export function startGame(
@@ -59,8 +95,14 @@ export function startGame(
   const settings = loadSettings()
   const stage = createStage(root)
   const layer = new TileLayer(stage, createTileView(46), onTileClick)
+  // salir de la partida: hay que matar timers y listeners antes de soltar el DOM
+  const leave = (): void => {
+    teardown()
+    onCharacters()
+  }
   // onLanguageChange = render: re-pinta los textos dinámicos del HUD al vuelo
-  const hud = new Hud(stage, HUMAN, roster, settings, onButton, onCharacters, render)
+  const hud = new Hud(stage, HUMAN, roster, settings, onButton, leave, render)
+  const cutIn: CutIn = createCutIn(stage, HUMAN, () => skipBeat())
 
   initAudio(settings) // mismo objeto que el Hud: cambiar el tema afecta al click
   // pista de partida al azar (Math.random, NUNCA el RNG semillado del core)
@@ -72,6 +114,12 @@ export function startGame(
   let chiPicker = false
   let lastDecisionPending = false
   let timer: ReturnType<typeof setTimeout> | null = null
+  // Fichas destelleando durante el beat en curso (ficha de riichi, ganadora).
+  let flash: ReadonlySet<TileId> = NO_TILES
+  // Beat en curso: su función de cierre. Mientras no sea null, el juego está
+  // congelado (scheduleStep se corta) y un clic o una tecla lo salta.
+  let endBeat: (() => void) | null = null
+  let beatTimer: ReturnType<typeof setTimeout> | null = null
 
   // --- render ------------------------------------------------------------------
 
@@ -121,6 +169,7 @@ export function startGame(
         clickable,
         highlight,
         dim,
+        flash,
       }),
     )
     // tira de esperas: sobre la mano de 13 (sin la robada) = "tus esperas tras
@@ -137,6 +186,7 @@ export function startGame(
         : null,
       furiten: showWaits && seatFuriten(s, HUMAN),
     })
+    cutIn.refresh() // el rótulo visible sigue al cambio de idioma en caliente
     const pending = humanDecisionPending(s)
     if (pending && !lastDecisionPending) playAlert()
     lastDecisionPending = pending
@@ -248,23 +298,150 @@ export function startGame(
       console.error('acción rechazada', action, err)
       return
     }
-    emitSound(action, actor)
+    if (CLICKS.has(action.type)) playSfx('tile-click')
+
+    // La voz de la llamada ya no suena aquí: va dentro del beat, para que
+    // entre con el panel y no antes.
+    const beat = beatFor(action, actor)
+    if (beat) {
+      runBeat(beat)
+      return
+    }
     render()
     scheduleStep()
   }
 
-  function emitSound(action: Action, actor: Seat): void {
-    const voice = VOICE_FOR[action.type]
-    if (voice) playVoice(roster[actor]!.id as CharacterId, voice)
-    if (CLICKS.has(action.type)) playSfx('tile-click')
+  // --- beats de llamada -----------------------------------------------------------
+
+  /** Cut-in + voz del personaje de un asiento. La viñeta sale en SU esquina. */
+  function announce(seat: Seat, call: CallKind): void {
+    const c = roster[seat]!
+    playVoice(c.id as CharacterId, call)
+    cutIn.show(seat, c, call, altForm(c, game.hand.seats[seat]!.riichi))
+  }
+
+  function beatFor(action: Action, actor: Seat): Beat | null {
+    const s = game.hand
+    const end = s.end
+
+    // Victoria: manda el estado ya reducido, no la acción. Así el ganador sale
+    // de `end.winner` — que con atamahane puede NO ser quien acaba de actuar, y
+    // en un ron resuelto por el `pass` de un tercero tampoco lo es.
+    if (end && (end.type === 'tsumo' || end.type === 'ron')) {
+      const { winner, winTile } = end
+      const call: CallKind = end.type === 'tsumo' ? 'tsumo' : 'ron'
+      return {
+        start: () => announce(winner, call),
+        panel: BEAT.win,
+        // revealAll ya está activo (phase === 'ended'): al retirar el panel la
+        // mesa queda destapada y sólo hay que señalar la ficha ganadora. En ron
+        // sigue en el pond del que descartó (executeCall no la retira nunca en
+        // ron); en tsumo es la robada, ya separada por el hueco de la mano.
+        hold: () => { flash = new Set([winTile]) },
+        after: BEAT.reveal,
+        done: showEnd,
+      }
+    }
+
+    // Un ron que aún no cierra la mano (faltan respuestas de otros asientos) no
+    // se anuncia: lo hará el beat de victoria, que además sabe quién ganó de
+    // verdad tras el atamahane.
+    if (action.type === 'ron') return null
+
+    const call = VOICE_FOR[action.type]
+    if (!call) return null
+
+    if (action.type === 'riichi') {
+      // Por TileId, nunca por índice del pond: riichiIndex no se fija hasta que
+      // el descarte se resuelve (y si le hacen ron, no llega a fijarse).
+      const tile = action.tile
+      return {
+        start: () => announce(actor, 'riichi'),
+        panel: BEAT.call,
+        hold: () => { flash = new Set([tile]) },
+        after: BEAT.riichiFlash,
+        done: scheduleStep,
+      }
+    }
+
+    return {
+      start: () => announce(actor, call),
+      panel: BEAT.call,
+      after: 0,
+      done: scheduleStep,
+    }
+  }
+
+  function runBeat(b: Beat): void {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+    // La identidad de `finish` hace de testigo: si arranca otro beat, los
+    // temporizadores del viejo se encuentran `endBeat` cambiado y se callan.
+    const finish = (): void => {
+      if (endBeat !== finish) return
+      endBeat = null
+      if (beatTimer !== null) {
+        clearTimeout(beatTimer)
+        beatTimer = null
+      }
+      cutIn.hide()
+      flash = NO_TILES
+      render()
+      b.done()
+    }
+    endBeat = finish
+
+    b.start()
+    render()
+    beatTimer = setTimeout(() => {
+      if (endBeat !== finish) return
+      cutIn.dismissPanel()
+      b.hold?.()
+      render()
+      if (b.after > 0) {
+        beatTimer = setTimeout(finish, b.after)
+      } else {
+        beatTimer = null
+        finish()
+      }
+    }, b.panel)
+  }
+
+  /** Un clic o una tecla cortan el beat entero y siguen. */
+  function skipBeat(): void {
+    endBeat?.()
+  }
+
+  function onKeySkip(ev: KeyboardEvent): void {
+    if (endBeat === null) return
+    if (ev.key !== 'Enter' && ev.key !== ' ' && ev.key !== 'Escape') return
+    ev.preventDefault()
+    skipBeat()
+  }
+
+  function teardown(): void {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+    if (beatTimer !== null) {
+      clearTimeout(beatTimer)
+      beatTimer = null
+    }
+    endBeat = null
+    window.removeEventListener('keydown', onKeySkip)
+    cutIn.destroy()
   }
 
   function scheduleStep(): void {
+    if (endBeat !== null) return // congelado mientras se explica la jugada
     if (timer !== null) clearTimeout(timer)
     const s = game.hand
 
     if (s.phase === 'ended') {
-      timer = setTimeout(showEnd, 900)
+      timer = setTimeout(showEnd, DELAY.handEnd)
       return
     }
     if (s.phase === 'draw') {
@@ -314,7 +491,7 @@ export function startGame(
             render()
             scheduleStep()
           },
-          onCharacters,
+          leave,
         )
         return
       }
@@ -390,6 +567,7 @@ export function startGame(
 
   // --- arranque -----------------------------------------------------------------
 
+  window.addEventListener('keydown', onKeySkip)
   render()
   scheduleStep()
 }

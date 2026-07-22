@@ -31,6 +31,12 @@ game.btn.chi|Botón de reacción|CHI|CHI|チー
 game.btn.back|Cierra el picker de chi|ATRÁS|BACK|戻る
 game.btn.pass|Deja pasar la llamada|PASAR|PASS|スルー
 game.btn.cancel|Cancela el modo riichi|CANCELAR|CANCEL|キャンセル
+cutin.chi|Rótulo del cut-in al cantar chi|CHI|CHI|チー
+cutin.pon|Rótulo del cut-in al cantar pon|PON|PON|ポン
+cutin.kan|Rótulo del cut-in al cantar kan (los tres tipos)|KAN|KAN|カン
+cutin.riichi|Rótulo del cut-in al declarar riichi|RIICHI|RIICHI|リーチ
+cutin.ron|Rótulo del cut-in al ganar por ron|RON|RON|ロン
+cutin.tsumo|Rótulo del cut-in al ganar por tsumo|TSUMO|TSUMO|ツモ
 hud.menu|Botón del marco de la mesa que abre el menú (lleva icono SVG)|MENÚ|MENU|メニュー
 hud.menu-title|Título del overlay de menú in-game|Menú|Menu|メニュー
 hud.table|Cycler de tema de mesa|Mesa|Table|テーブル

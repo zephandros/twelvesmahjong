@@ -161,7 +161,7 @@ Assets definitivos por procesar. `raw/` está en `.gitignore` (respaldo externo)
 | `raw/icons/` | 9 SVG Lucide (menu, x, arrow-big-left, play/pause/skip-\*/volume-\*) para botones de UI | Hecho (assets:icons) |
 | `raw/logo/` | Logo de marca: `favicon.ico` + `favicon-16/32.png`, `logo-192/512.png` (emblema de fichas con 十二), `banner-classic-1600x670.png` (logotipo, insumo de la imagen social) y `banner-emblem-1200x300.png` (sin uso) | Hecho (assets:logo) |
 | `raw/music/` | 31 temas mp3 (roster 2026-07-21: se retiró el lote inicial de 8 con variante `_Alt` y entraron 20 nuevos). **Es la fuente de verdad**: el pipeline poda de `public/music/` todo lo que no esté aquí | Horneados en `public/music/` (assets:audio) |
-| `raw/portraits/` | PNG originales de retratos, 3 aspectos por personaje (`{base}_9_16` tablero/victoria · `_1_1` rejilla de selección · `_3_4` asientos de selección; + `jekyll_hyde_portrait.png` solo 9:16; los `*_cut_in.png` de alice/irene/scheherezade quedan sin uso aún) | Horneados en `public/portraits/` |
+| `raw/portraits/` | PNG originales de retratos, 3 aspectos por personaje (`{base}_9_16` tablero/victoria · `_1_1` rejilla de selección · `_3_4` asientos de selección; + `jekyll_hyde_portrait.png` solo 9:16; los `*_cut_in.png` de alice/irene/scheherezade son del enfoque antiguo de cuerpo completo y **no se usan**; + `{slug}_cut_{fierce,sharp}.png` 2:1 de los cut-ins, y `alice_cut_calm.png` que quedó sin uso al descartarse `calm`) | Horneados en `public/portraits/`; de los cut-ins solo **alice** (2/26) |
 | `raw/sound_effects/` | `tile_click_{a2..g2}.wav` — 7 notas musicales del click de ficha | Pendiente (fase A3) |
 | `raw/tiles/` | 37 SVGs solo-glifo (man/pin/so 1-9, honor 1-7, aka ×3), viewBox `0 0 139.764 200` | Pendiente (fase A1; ver trampa 2) |
 | `raw/voices/` | Voces por llamada (chi/pon/kan/riichi/ron/tsumo), naming inconsistente, elenco incompleto | Pendiente (fase A3) |
@@ -204,10 +204,11 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   `src/ui/icons.generated.ts` (**commiteado**; `ICONS`/`IconName` tipados). Se
   inyectan inline vía innerHTML: heredan el color del botón y no tocan el
   precache. Añadir un icono = soltar el SVG en `raw/icons/` y relanzar.
-- **Retratos** — `scripts/bake-portraits.ps1` (PowerShell + System.Drawing, ya existente)
-  lee de `raw/portraits/` (fuente real; `../Resources/Portraits` quedó obsoleta) →
-  `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px). La tabla `$roster`
-  mapea slug→patrón de archivo; al cambiar el roster, actualizarla.
+- **Retratos** — `npm run assets:portraits` (`scripts/bake-portraits.ps1`, PowerShell +
+  System.Drawing) lee de `raw/portraits/` (fuente real; `../Resources/Portraits` quedó
+  obsoleta) → `public/portraits/{slug}.jpg` (720px) + `{slug}-t.jpg` (264px) `-sq` `-seat`,
+  y las viñetas de cut-in `{slug}-cut-{expr}.jpg` (760px, ver sección de cut-ins). La
+  tabla `$roster` mapea slug→patrón de archivo; al cambiar el roster, actualizarla.
 - **Logo de marca** — `npm run assets:logo` (`scripts/bake-logo.ps1`, PowerShell +
   System.Drawing como el de retratos; Windows-only) lee `raw/logo/` →
   `public/favicon.ico`, `public/icons/{favicon-16,favicon-32,icon-192,icon-512,
@@ -289,6 +290,91 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
   insignia de viento (`hud.dealer` en i18n). Pantalla de victoria (1B): mismo diseño,
   reescalada a 1920×1080 (`.tm-win` = caja 1280×720 centrada ×1.5). Único fleco:
   `?debug=board` con coordenadas viejas (página de depuración, no afecta al juego).
+
+## Cut-ins y ritmo de las llamadas (2026-07-21)
+
+Las llamadas ya no se anuncian solo con voz: cada canto abre un **beat** que
+**congela el motor** mientras se explica la jugada. El gate vive en
+`ui/controller.ts` (`runBeat`/`beatFor`; `scheduleStep()` corta en seco si hay beat
+vivo) y las duraciones están en la tabla **`BEAT`**, junto a `DELAY` — es el único
+sitio donde se afina el ritmo. Un clic o Enter/Espacio/Escape **salta** el beat
+entero; mientras corre, un overlay a pantalla completa atrapa el puntero (además de
+permitir el salto, evita descartar una ficha sin querer).
+
+| Canto | Beat |
+|---|---|
+| chi · pon · kan | viñeta 750 ms |
+| riichi | viñeta 750 ms → **destello** de la ficha declarada 550 ms |
+| ron · tsumo | viñeta 900 ms → **destape** de la mesa + destello de la ganadora 1400 ms → pantalla de victoria |
+
+Detalles que ya salen del motor: en **ron** la ficha ganadora sigue en el pond del
+que descartó (`executeCall` solo la retira en pon/chi/kan), y en **tsumo** la robada
+ya se dibuja separada por el hueco. El destello va por `TileId` y **nunca** por
+índice del pond: `riichiIndex` no se fija hasta que el descarte se resuelve. La
+victoria se anuncia desde `end.winner`, no desde quien actuó (atamahane, y el ron que
+resuelve el `pass` de un tercero). En un **chankan** salen los dos cantos, カン y
+luego ロン: son dos cantos distintos, no un duplicado.
+
+El destello es una bandera `flash` más en `Placement` (`ui/geometry.ts`), propagada a
+`is-flash` en `ui/tile-layer.ts` como `highlight`/`dim`.
+
+### La viñeta (`ui/cut-in.ts`)
+
+Viñeta de cómic **480×240 (2:1)** anclada a la **esquina del asiento que canta**. La
+esquina sale de `cornerOf(relSeat(seat, human))` — `core/seat.ts`, único punto de
+verdad (trampa 1); aquí no se razona sobre orientación. La forma es un **trapecio en
+SVG**, no `clip-path`: un mismo `<path>` hace de recorte y de trazo dorado (con
+`border` sobre CSS el borde se engorda de forma desigual en la diagonal, y `polygon()`
+no redondea esquinas). Una forma base + dos banderas (`flipX`/`flipY`) dan las cuatro
+variantes, con el corte apuntando siempre al centro de la mesa. Constantes con nombre
+arriba del módulo: `W`/`H`, `SLANT` (0.34), `RADIUS`, `CUTIN_POS`, `ENTER_DX`.
+
+**El rótulo es HTML sobre el SVG, así que el trapecio NO lo recorta**: el inset de
+56 px es lo que mantiene su esquina superior dentro de la diagonal. Bajarlo (o subir
+la fuente) saca el texto del marco. Textos en `cutin.<call>` del CSV.
+
+### Arte de los cut-ins — **por tandas** (20/26; faltan celestina, huck y pinocchio)
+
+Enfoque acordado (2026-07-21, tras descartar el cuerpo completo sobre blanco al estilo
+Saki Portable, que Midjourney no da bien): **viñeta 2:1 con el rostro en otra
+expresión**, al estilo Mahjong Soul. **2 expresiones por personaje** (había una tercera,
+`calm`, descartada el mismo día: para chi/pon/kan la cara tensa funciona mejor que una
+neutra):
+
+| Expresión | Cantos |
+|---|---|
+| `sharp` — tensa | `chi`, `pon`, `kan`, `riichi` |
+| `fierce` — triunfal | `ron`, `tsumo` |
+
+- **Nomenclatura**: `raw/portraits/{base}_cut_{expr}.png`, donde `{base}` puede ser el
+  **slug canónico** (`alice_cut_sharp.png`) **o** la base de `$roster` sin `_portrait`
+  (`scheherezade_cut_sharp.png`, con la z del resto de sus archivos). El script prueba
+  las dos, así que vale cualquiera — y con `huck` valdrán tanto `huck_` como
+  `huckleberry_`. Origen 2:1; 1536×768 va sobrado.
+- Son **13, no 12**: `hyde` tiene arte propio (`hyde_cut_{expr}.png`) o el cut-in
+  contradice al panel de esquina, que ya lo saca con el riichi vivo. → **26 piezas**.
+- `npm run assets:portraits` (`bake-portraits.ps1`) → `public/portraits/{id}-cut-{expr}.jpg`
+  a 760 px (~55 KB c/u; 26 ≈ 1,4 MB, al precache solos). **Faltar no es error**: el
+  script las salta e imprime al final cuántas van y cuáles faltan. Ojo: **no poda
+  huérfanos** (a diferencia del pipeline de audio), así que si se retira una expresión
+  hay que borrar su `.jpg` de `public/portraits/` a mano.
+- **`HAS_CUT_IN` en `ui/cut-in.ts` es el interruptor**: quien esté ahí usa su viñeta de
+  expresión; quien no, cae al retrato 9:16 (`{id}.jpg`, recortado desde arriba). Añadir
+  un personaje = soltar sus 3 PNG, relanzar el horneado y meter el id en el set.
+  `tests/cutin-assets.test.ts` ata el set al disco: declarar a alguien sin hornear
+  rompe el test en vez de dar una imagen rota en mitad de un cut-in.
+- Los `*_cut_in.png` que quedan en `raw/portraits/` (alice, irene, scheherezade) son
+  del enfoque antiguo de cuerpo completo: **no sirven**.
+- **Orientación: TODAS las viñetas se dibujan mirando a la IZQUIERDA.** En las esquinas
+  izquierdas (`bl` = el jugador, `tl` = su kami) eso dejaría al personaje mirando fuera
+  de la mesa, así que `cut-in.ts` **las espeja** ahí (`transform` sobre la `<image>`, no
+  sobre el `<g>`, para no espejar el recorte ni el velo). Consecuencia para el arte: **no
+  metas texto, insignias ni nada asimétrico legible** en la viñeta — se verá del revés
+  la mitad de las veces. El retrato 9:16 de reserva NO se espeja: su encuadre no se
+  dibujó con esta regla.
+- Encuadre: el trapecio se come el **34 % de un lado** en diagonal y el rótulo ocupa
+  una esquina inferior (inset de 56 px) → la cara conviene centrada-alta, nunca pegada
+  a los bordes.
 
 ## SEO y metadatos (2026-07-21)
 

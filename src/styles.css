@@ -232,6 +232,94 @@ html, body {
 .tm-tile.is-clickable:hover { filter: brightness(1.12); outline: 2px solid var(--gold); outline-offset: 1px; }
 .tm-tile.is-highlight { box-shadow: 0 0 12px rgba(231, 197, 106, 0.75), 0 2px 3px rgba(0, 0, 0, 0.35); }
 .tm-tile.is-dim { opacity: 0.4; filter: saturate(0.4) brightness(0.7); }
+/* Destello de beat: señala la ficha de riichi / la ganadora mientras se explica
+   la jugada. Va después de is-dim para ganarle si coincidieran. */
+.tm-tile.is-flash {
+  opacity: 1;
+  filter: none;
+  z-index: 60;
+  animation: tm-tile-flash 0.5s ease-in-out infinite alternate;
+}
+@keyframes tm-tile-flash {
+  from { box-shadow: 0 0 10px 2px rgba(231, 197, 106, 0.6), 0 2px 3px rgba(0, 0, 0, 0.35); }
+  to { box-shadow: 0 0 26px 8px rgba(255, 245, 210, 0.95), 0 2px 3px rgba(0, 0, 0, 0.35); }
+}
+/* Un parpadeo repetido es justo lo que pide movimiento reducido: se conserva el
+   resalte (la información) y se quita la pulsación. */
+@media (prefers-reduced-motion: reduce) {
+  .tm-tile.is-flash {
+    animation: none;
+    box-shadow: 0 0 26px 8px rgba(255, 245, 210, 0.95), 0 2px 3px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* --- cut-in de llamada (viñeta de esquina) ------------------------------------ */
+/* Atrapador a pantalla completa. Sin is-on no existe para el puntero, así que
+   fuera de un beat no estorba a las fichas. */
+.tm-cutin-ov {
+  position: absolute;
+  inset: 0;
+  z-index: 65;
+  pointer-events: none;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+.tm-cutin-ov.is-on { pointer-events: auto; }
+.tm-cutin-ov.is-lit { background: rgba(6, 4, 2, 0.55); }
+
+/* La forma (trapecio + borde dorado) la dibuja el SVG de dentro: aquí no hay
+   border ni border-radius, sólo la caja, la sombra y la entrada. --cutin-dx la
+   fija cut-in.ts según la esquina, para que llegue desde su propio lado. */
+.tm-cutin {
+  --cutin-dx: 40px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(var(--cutin-dx)) scale(0.96);
+  transition: opacity 0.18s ease, transform 0.26s cubic-bezier(0.22, 0.9, 0.3, 1), visibility 0.18s;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.72));
+}
+.tm-cutin.is-in {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+}
+.tm-cutin__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.tm-cutin__edge {
+  stroke: var(--gold);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+/* El rótulo es HTML sobre el SVG, así que NO lo recorta el trapecio: el inset de
+   56px es el que mantiene su esquina superior dentro de la diagonal en las
+   variantes con el corte arriba (a la altura del texto la diagonal ya ha comido
+   ~48px). Subir la fuente o bajar el inset lo saca del marco. */
+.tm-cutin__label {
+  position: absolute;
+  bottom: 16px;
+  left: 56px;
+  font-family: var(--title);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--cream);
+  text-shadow: 0 0 18px rgba(231, 197, 106, 0.55), 0 3px 8px rgba(0, 0, 0, 0.85);
+}
+/* El rótulo va en la esquina inferior que la diagonal NO se come. */
+.tm-cutin.is-label-right .tm-cutin__label {
+  left: auto;
+  right: 56px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-cutin { transition: opacity 0.18s ease, visibility 0.18s; transform: none; }
+  .tm-cutin.is-in { transform: none; }
+}
 
 /* --- paneles de personaje (tarjetas flotantes en las esquinas) ---------------- */
 .tm-panel {
