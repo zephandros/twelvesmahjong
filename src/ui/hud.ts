@@ -8,6 +8,7 @@ import type { Tile34, TileId } from '../core/tile'
 import type { Seat } from '../core/seat'
 import { SEATS, relSeat, cornerOf, seatWind, windColor, windName, type Corner } from '../core/seat'
 import { uraIndicators } from '../core/wall'
+import { finalResults } from '../core/results'
 import { BOARD, STAGE_H, STAGE_W, place } from './layout'
 import { createTileView, type TileView } from './tile-view'
 import { charName, thumbUrl, hasAltForm, altForm, type AltForm, type Character } from './characters'
@@ -18,7 +19,7 @@ import {
 import { setVolume, playUiClick } from './audio/audio'
 import { createMusicBar, type MusicBar } from './music-bar'
 import { openGlossary } from './glossary'
-import { t, yakuLabel, setLocale, detectLocale } from './i18n'
+import { t, yakuLabel, roundLabels, setLocale, detectLocale } from './i18n'
 import type { MsgKey } from './i18n-strings.generated'
 import { ICONS } from './icons.generated'
 
@@ -41,7 +42,6 @@ export interface HudInfo {
   furiten: boolean
 }
 
-const KYOKU_KANJI = ['一', '二', '三', '四']
 const PLACE_KEYS = ['hud.place.1', 'hud.place.2', 'hud.place.3', 'hud.place.4'] as const
 
 const PANEL_MARGIN = 24
@@ -444,8 +444,9 @@ export class Hud {
       }
     }
 
-    this.kyokuJp.textContent = t('hud.round', { n: KYOKU_KANJI[info.kyoku] ?? '一' })
-    this.kyokuEn.textContent = t('hud.east-n', { n: info.kyoku + 1 })
+    const round = roundLabels(info.kyoku)
+    this.kyokuJp.textContent = round.kanji
+    this.kyokuEn.textContent = round.latin
     this.wallCount.textContent = String(s.wall.live.length)
     this.honbaEl.innerHTML =
       `<span style="width:9px;height:9px;border-radius:50%;background:#d94f4f"></span>${s.honba}`
@@ -531,10 +532,15 @@ export class Hud {
         `<div class="tm-score-line"><span>${hanfu}</span><b>+${sc.total.toLocaleString('en-US')}</b></div>`
     } else if (end.type === 'exhaustive') {
       title = t('end.ryuukyoku')
-      subtitle = t('end.exhaustive-draw')
+      subtitle = end.nagashi.length > 0 ? t('end.nagashi') : t('end.exhaustive-draw')
+      // con nagashi la fila útil es quién lo consiguió, no el tenpai de cada uno
       body =
         '<div class="tm-yaku-list">' +
-        SEATS.map((x) => `<span class="tm-yaku-pill ${end.tenpai[x] ? '' : 'is-muted'}">${names(x)}: ${end.tenpai[x] ? t('end.tenpai') : t('end.noten')}</span>`).join('') +
+        SEATS.map((x) =>
+          end.nagashi.includes(x)
+            ? `<span class="tm-yaku-pill">${names(x)}: ${t('end.nagashi-short')}</span>`
+            : `<span class="tm-yaku-pill ${end.tenpai[x] ? '' : 'is-muted'}">${names(x)}: ${end.tenpai[x] ? t('end.tenpai') : t('end.noten')}</span>`,
+        ).join('') +
         '</div>'
     } else {
       title = t('end.tochuu')
@@ -553,7 +559,7 @@ export class Hud {
 
     this.overlay.innerHTML =
       `<div class="tm-overlay__card">` +
-      `<div class="tm-overlay__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>` +
+      `<div class="tm-overlay__kyoku">${roundLabels(kyoku).kanji} · ${s.honba} ${t('hud.honba')}</div>` +
       `<div class="tm-overlay__title">${title}</div>` +
       `<div class="tm-overlay__sub">${subtitle}</div>` +
       body +
@@ -571,16 +577,18 @@ export class Hud {
 
   showGameEnd(s: HandState, onRematch: () => void, onCharacters: () => void): void {
     const names = (seat: Seat) => charName(this.chars[seat]!)
-    const order = [...SEATS].sort((a, b) => s.seats[b]!.points - s.seats[a]!.points || a - b)
-    const rows = order
-      .map((seat, i) =>
-        `<div class="tm-delta ${seat === this.human ? 'is-plus' : ''}">` +
-        `<span>${t(PLACE_KEYS[i]!)} · ${names(seat)}</span><b>${s.seats[seat]!.points.toLocaleString('en-US')}</b></div>`)
+    // puntos de mesa a la izquierda, resultado con uma/oka a la derecha
+    const rows = finalResults(s.seats.map((st) => st.points), s.rules)
+      .map((r) =>
+        `<div class="tm-delta ${r.total > 0 ? 'is-plus' : r.total < 0 ? 'is-minus' : ''}${r.seat === this.human ? ' is-you' : ''}">` +
+        `<span>${t(PLACE_KEYS[r.place - 1]!)} · ${names(r.seat)}</span>` +
+        `<i>${r.points.toLocaleString('en-US')}</i>` +
+        `<b>${r.total > 0 ? '+' : ''}${r.total.toFixed(1)}</b></div>`)
       .join('')
     this.overlay.innerHTML =
       `<div class="tm-overlay__card">` +
       `<div class="tm-overlay__title">${t('hud.game-over')}</div>` +
-      `<div class="tm-overlay__sub">${t('hud.tonpuusen-complete')}</div>` +
+      `<div class="tm-overlay__sub">${t(s.rules.length === 'hanchan' ? 'hud.hanchan-complete' : 'hud.tonpuusen-complete')}</div>` +
       `<div class="tm-deltas">${rows}</div>` +
       `<div style="display:flex;gap:10px;margin-top:8px">` +
       `<button class="tm-btn tm-btn--muted" data-act="chars">${t('hud.to-menu')}</button>` +

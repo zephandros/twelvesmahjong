@@ -9,6 +9,7 @@ import type { TileId } from '../src/core/tile'
 import { parseTile, TILEID_COUNT } from '../src/core/tile'
 import type { Seat } from '../src/core/seat'
 import type { Ability } from '../src/core/hooks'
+import type { RuleSet } from '../src/core/rules-config'
 import { initHand, type HandState } from '../src/core/state'
 
 const AKA_TYPES = new Set([4, 13, 22])
@@ -78,9 +79,13 @@ export function rig(spec: RigSpec): Ability {
 }
 
 /** Arranca una mano amañada (la habilidad de rig se cuelga del asiento 0). */
-export function start(spec: RigSpec, dealer: Seat = 0): { s: HandState; ab: { 0: Ability } } {
+export function start(
+  spec: RigSpec,
+  dealer: Seat = 0,
+  rules?: RuleSet,
+): { s: HandState; ab: { 0: Ability } } {
   const ab = { 0: rig(spec) }
-  return { s: initHand(1, dealer, ab), ab }
+  return { s: initHand(1, dealer, ab, rules ? { rules } : {}), ab }
 }
 
 // manos basura auditadas (sin honores, sin pinzu, nunca tenpai)

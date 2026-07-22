@@ -11,9 +11,8 @@ import {
   portraitUrl, charName, charEpithet, altForm, type AltForm, type Character,
 } from './characters'
 import { meldLayout, type MeldSlot } from './meld-layout'
-import { t, yakuLabel, getLocale } from './i18n'
+import { t, yakuLabel, roundLabels, getLocale } from './i18n'
 
-const KYOKU_KANJI = ['一', '二', '三', '四']
 
 export function showWinScreen(
   stage: HTMLElement,
@@ -60,7 +59,7 @@ export function showWinScreen(
     <div class="tm-win__rays"></div>
     <div class="tm-win__art"><img src="${artUrl}" alt="${charName(char, winnerAlt)}"></div>
     <div class="tm-win__body">
-      <div class="tm-win__kyoku">${t('hud.round', { n: KYOKU_KANJI[kyoku] ?? '一' })} · ${s.honba} ${t('hud.honba')}</div>
+      <div class="tm-win__kyoku">${roundLabels(kyoku).kanji} · ${s.honba} ${t('hud.honba')}</div>
       <div class="tm-win__kanji">${kanji}</div>
       <div class="tm-win__title">${title}</div>
       <div class="tm-win__name">

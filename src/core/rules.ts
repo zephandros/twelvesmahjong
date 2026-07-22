@@ -55,6 +55,7 @@ export function winContextFor(
     dealer: seat === s.dealer,
     honba: s.honba,
     riichiSticks: s.sticks,
+    rules: s.rules,
   }
 }
 

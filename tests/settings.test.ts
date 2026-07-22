@@ -3,6 +3,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { loadSettings, saveSettings, DEFAULTS } from '../src/ui/settings'
+import { DEFAULT_RULES, UMA_PRESETS } from '../src/core/rules-config'
 
 class MemStorage {
   private m = new Map<string, string>()
@@ -51,6 +52,21 @@ describe('settings', () => {
 
     localStorage.setItem('tm-settings-v1', '{ not json')
     expect(loadSettings()).toEqual(DEFAULTS)
+  })
+
+  it('reglamento: round-trip y saneado campo a campo', () => {
+    expect(loadSettings().rules).toEqual(DEFAULT_RULES)
+
+    const rules = { ...DEFAULT_RULES, length: 'hanchan' as const, aka: false, uma: UMA_PRESETS[3]! }
+    saveSettings({ ...DEFAULTS, rules })
+    expect(loadSettings().rules).toEqual(rules)
+
+    // valores imposibles (uma inventada, duración desconocida, tipos erróneos)
+    localStorage.setItem(
+      'tm-settings-v1',
+      JSON.stringify({ rules: { length: 'sanma', uma: [99, 0, 0, 0], aka: 'sí', startPoints: 12345 } }),
+    )
+    expect(loadSettings().rules).toEqual(DEFAULT_RULES)
   })
 
   it('idioma: default auto, round-trip y rechazo de valores inválidos', () => {

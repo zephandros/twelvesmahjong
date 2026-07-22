@@ -39,5 +39,8 @@ GLYPHS = (
     'のけたするきなめ'  # hiragana de los epítetos
     # forma alterna de Jekyll: ジキル博士 · ハイド氏 · 解き放たれた影
     '博氏放影'
-
+    # reglamento configurable (settings.rules.*) y fin de partida en hanchan
+    '半荘規則長初期棒供託'
+    '新消ョ成績喰飛び給原'  # navegación de la portada + cyclers de reglas
+    '記録均得銃率高'  # pantalla de estadísticas (stats.*)
 )

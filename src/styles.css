@@ -744,7 +744,56 @@ html, body {
 .tm-delta.is-plus b { color: #9fd98a; }
 .tm-delta.is-minus b { color: #e08a8a; }
 .tm-delta i { font-family: var(--title); font-weight: 300; font-style: normal; color: var(--muted2); min-width: 64px; text-align: right; }
+/* fila del jugador en la clasificación final (el color de `b` lo lleva el signo) */
+.tm-delta.is-you { background: rgba(231, 197, 106, 0.14); }
+.tm-delta.is-you span { color: var(--cream); }
 .tm-overlay__continue { margin-top: 8px; }
+
+/* --- estadísticas ------------------------------------------------------------- */
+.tm-stats {
+  width: 720px;
+  height: 900px;      /* alto fijo, como el glosario: el scroll va dentro */
+  align-items: stretch;
+  text-align: left;
+  position: relative;
+  gap: 8px;
+  padding: 24px 30px 26px;
+}
+.tm-stats > .tm-menu-ov__title { flex: 0 0 auto; text-align: center; }
+.tm-stats__body {
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tm-stats__body::-webkit-scrollbar { width: 8px; }
+.tm-stats__body::-webkit-scrollbar-thumb { background: rgba(231, 197, 106, 0.35); border-radius: 4px; }
+.tm-stats__body::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+.tm-stats__row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 2px;
+  font-family: var(--ui);
+  font-size: 17px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(231, 197, 106, 0.08);
+}
+.tm-stats__row span:first-child { flex: 1; }
+.tm-stats__row b { font-family: var(--title); font-weight: 300; color: var(--cream); }
+/* barra proporcional del reparto de puestos */
+.tm-stats__place .tm-stats__bar {
+  flex: 0 0 220px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.tm-stats__place .tm-stats__bar i { display: block; height: 100%; background: var(--gold); }
+.tm-stats__place b { min-width: 110px; text-align: right; }
+.tm-stats__yaku { display: flex; flex-direction: column; }
 
 /* --- glosario de yaku --------------------------------------------------------- */
 .tm-glossary {
@@ -1139,13 +1188,28 @@ html, body {
   letter-spacing: 0.08em;
   padding: 18px 0;
 }
-.tm-menu__settings-btn,
-.tm-menu__glossary-btn {
+/* botones secundarios de la portada (NUEVO JUEGO, OPCIONES) */
+.tm-menu__sub-btn {
   font-family: var(--ui);
   font-size: 34px;
   letter-spacing: 0.08em;
   padding: 14px 0;
 }
+/* NUEVO JUEGO esperando confirmación: descarta la partida guardada */
+.tm-menu__sub-btn.is-armed {
+  border-color: #d94f4f;
+  color: #e8b0b0;
+  font-size: 26px;
+}
+/* entradas del hub de OPCIONES: apiladas y del mismo ancho */
+.tm-menu-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 6px;
+}
+.tm-menu-hub .tm-btn { width: 100%; font-size: 22px; padding: 12px 0; }
 .tm-menu__credits {
   position: absolute;
   bottom: 40px;

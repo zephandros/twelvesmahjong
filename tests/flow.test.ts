@@ -2,9 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { parseTile, tile34Of } from '../src/core/tile'
 import type { Seat } from '../src/core/seat'
 import type { HandState } from '../src/core/state'
+import { initHand } from '../src/core/state'
+import type { WinScore } from '../src/core/score'
+import { DEFAULT_RULES, type RuleSet } from '../src/core/rules-config'
 import { reduce } from '../src/core/reducer'
 import { tsumoScore } from '../src/core/rules'
-import { newGame, advanceGame, ranking } from '../src/core/game'
+import { newGame, advanceGame, ranking, type GameState } from '../src/core/game'
 import { simulateFrom } from '../src/ai/sim'
 import { start, JUNK1, JUNK2, JUNK3, HERO } from './rig'
 
@@ -310,6 +313,77 @@ describe('escenario: kyuushu kyuuhai', () => {
     s = reduce(s, { type: 'draw' })
     s = reduce(s, { type: 'kyuushu' })
     expect(s.end).toEqual({ type: 'abort', reason: 'kyuushu', deltas: [0, 0, 0, 0] })
+  })
+})
+
+// --- duración, agari-yame y tobi ------------------------------------------------
+
+/** Mano terminada por tsumo del oya, con los puntos que se le pidan. */
+function endedHand(dealer: Seat, points: number[], rules: RuleSet): HandState {
+  const base = initHand(1, dealer, {}, { rules })
+  return {
+    ...base,
+    phase: 'ended',
+    seats: base.seats.map((st, i) => ({ ...st, points: points[i]! })),
+    end: {
+      type: 'tsumo',
+      winner: dealer,
+      winTile: 0,
+      score: { total: 0 } as WinScore,
+      deltas: [0, 0, 0, 0],
+    },
+  }
+}
+
+const gameAt = (kyoku: number, hand: HandState): GameState =>
+  ({ kyoku, hand, finished: false, nextSeed: () => 1 })
+
+describe('duración de partida y cierre', () => {
+  it('hanchan pasa a la ronda de Sur y termina tras S4', { timeout: 30000 }, () => {
+    const rules: RuleSet = { ...DEFAULT_RULES, length: 'hanchan', agariYame: false }
+    let g = newGame(3, {}, rules)
+    let hands = 0
+    let sawSouth = false
+    while (!g.finished) {
+      if (++hands > 60) throw new Error('partida sin terminar')
+      g = { ...g, hand: simulateFrom(g.hand, 700 + hands).final }
+      if (g.hand.roundWind === 28) sawSouth = true
+      g = advanceGame(g)
+    }
+    expect(sawSouth).toBe(true)
+    expect(g.kyoku).toBeGreaterThan(4)
+    expect(g.kyoku).toBeLessThanOrEqual(8)
+  })
+
+  it('agari-yame: el oya que gana la última mano yendo 1º cierra la partida', () => {
+    const rules = DEFAULT_RULES // tonpuusen, agariYame on
+    const hand = endedHand(3, [20000, 20000, 20000, 40000], rules)
+    expect(advanceGame(gameAt(3, hand)).finished).toBe(true)
+  })
+
+  it('sin agari-yame el oya de la última mano repite', () => {
+    const rules: RuleSet = { ...DEFAULT_RULES, agariYame: false }
+    const hand = endedHand(3, [20000, 20000, 20000, 40000], rules)
+    const next = advanceGame(gameAt(3, hand))
+    expect(next.finished).toBe(false)
+    expect(next.kyoku).toBe(3)
+    expect(next.hand.dealer).toBe(3)
+  })
+
+  it('el oya que gana la última mano sin ir 1º sigue jugando', () => {
+    const hand = endedHand(3, [50000, 20000, 20000, 10000], DEFAULT_RULES)
+    expect(advanceGame(gameAt(3, hand)).finished).toBe(false)
+  })
+
+  it('tobi: con la regla activada un asiento en negativo acaba la partida', () => {
+    const hand = endedHand(0, [130000, -10000, 20000, 20000], DEFAULT_RULES)
+    expect(advanceGame(gameAt(0, hand)).finished).toBe(true)
+  })
+
+  it('tobi desactivado deja seguir con puntos negativos', () => {
+    const rules: RuleSet = { ...DEFAULT_RULES, tobi: false }
+    const hand = endedHand(0, [130000, -10000, 20000, 20000], rules)
+    expect(advanceGame(gameAt(0, hand)).finished).toBe(false)
   })
 })
 

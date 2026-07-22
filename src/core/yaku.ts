@@ -3,7 +3,7 @@
 // interpretaciones y se queda con la mejor.
 //
 // Decisiones de regla (documentadas, estilo Tenhou salvo indicación):
-//  - kuitan permitido (tanyao abierto).
+//  - kuitan (tanyao abierto) según `ctx.rules`; por defecto permitido.
 //  - Yakuman siempre sencillos (sin dobles por suuankou tanki, kokushi 13
 //    lados ni junsei chuuren), pero yakuman distintos APILAN (p. ej.
 //    tsuuiisou + daisangen).
@@ -13,6 +13,7 @@ import type { Tile34 } from './tile'
 import { isDragon, isWind, isHonor, isTerminalOrHonor } from './tile'
 import type { WinContext, Decomposition, Block } from './win'
 import { allTile34s } from './win'
+import { DEFAULT_RULES } from './rules-config'
 
 /**
  * Id canónico de cada yaku (incluye los contadores de dora de score.ts). El
@@ -151,11 +152,12 @@ export function standardYaku(
     normal.push({ id: 'pinfu', han: 1 })
   }
 
-  // tanyao (kuitan permitido)
+  // tanyao (abierto solo con kuitan; chiitoi es siempre cerrado y no lo mira)
   const hasTerminalOrHonor = blocks.some((b) =>
     b.type === 'run' ? runHasTerminal(b.tile) : isTerminalOrHonor(b.tile),
   )
-  if (!hasTerminalOrHonor) normal.push({ id: 'tanyao', han: 1 })
+  const kuitan = (ctx.rules ?? DEFAULT_RULES).kuitan
+  if (!hasTerminalOrHonor && (menzen || kuitan)) normal.push({ id: 'tanyao', han: 1 })
 
   // iipeiko / ryanpeiko (solo menzen)
   if (menzen) {

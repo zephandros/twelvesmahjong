@@ -12,6 +12,8 @@ import { buildWall, deal } from './wall'
 import type { Meld } from './meld'
 import type { Abilities } from './hooks'
 import type { WinScore } from './score'
+import type { RuleSet } from './rules-config'
+import { DEFAULT_RULES } from './rules-config'
 import { makeRng } from './rng'
 
 export type Phase = 'draw' | 'discard' | 'reaction' | 'ended'
@@ -75,11 +77,18 @@ export type HandEnd =
       deltas: number[]
       chankan: boolean
     }
-  | { type: 'exhaustive'; tenpai: boolean[]; deltas: number[] }
+  /**
+   * Agotamiento del muro. `nagashi` = asientos con nagashi mangan; si hay
+   * alguno, sus pagos SUSTITUYEN a los de tenpai/noten (`tenpai` se sigue
+   * informando: el renchan del oya depende de él, no del nagashi).
+   */
+  | { type: 'exhaustive'; tenpai: boolean[]; nagashi: Seat[]; deltas: number[] }
   | { type: 'abort'; reason: AbortReason; deltas: number[] }
 
 export interface HandState {
   seed: number
+  /** Reglamento de la partida. Inmutable: se comparte, no se clona. */
+  rules: RuleSet
   dealer: Seat
   roundWind: Tile34
   honba: number
@@ -110,6 +119,7 @@ export interface HandOptions {
   honba?: number
   sticks?: number
   roundWind?: Tile34
+  rules?: RuleSet
 }
 
 export function initHand(
@@ -125,10 +135,12 @@ export function initHand(
     if (hook) tiles = hook(tiles, rng)
   }
   const { wall, hands } = deal(tiles)
-  const points = opts.points ?? [25000, 25000, 25000, 25000]
+  const rules = opts.rules ?? DEFAULT_RULES
+  const points = opts.points ?? [0, 1, 2, 3].map(() => rules.startPoints)
 
   return {
     seed,
+    rules,
     dealer,
     roundWind: opts.roundWind ?? 27,
     honba: opts.honba ?? 0,

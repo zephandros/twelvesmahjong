@@ -4,7 +4,7 @@
 // añade ?renderer=box a la URL. Sin tocar core/. Ver CLAUDE.md.
 
 import type { TileId } from '../core/tile'
-import { labelId, tile34Of, suitOf, isAka } from '../core/tile'
+import { label34, labelId, tile34Of, suitOf, isAka } from '../core/tile'
 
 /** Orientación de una ficha sobre la mesa. */
 export type TileFace =
@@ -31,10 +31,25 @@ export interface TileView {
 // centrado con `contain` dentro de la cara: la diferencia la absorbe el fit.
 export const TILE_RATIO = 0.72
 
+export interface TileViewOptions {
+  /** Con las rojas desactivadas por reglamento se pintan como cincos normales. */
+  aka?: boolean
+}
+
 /** Fábrica: SpriteRenderer salvo que la URL pida el fallback (?renderer=box). */
-export function createTileView(baseWidth: number): TileView {
+export function createTileView(baseWidth: number, opts: TileViewOptions = {}): TileView {
   const box = new URLSearchParams(location.search).get('renderer') === 'box'
-  return box ? new BoxRenderer(baseWidth) : new SpriteRenderer(baseWidth)
+  const aka = opts.aka ?? true
+  return box ? new BoxRenderer(baseWidth, aka) : new SpriteRenderer(baseWidth, aka)
+}
+
+/**
+ * Etiqueta con la que se pinta una ficha. Sin aka en el reglamento, la copia
+ * roja se dibuja como su cinco normal (el arte no debe prometer un dora que el
+ * motor no cuenta).
+ */
+function tileLabel(id: TileId, aka: boolean): string {
+  return aka ? labelId(id) : label34(tile34Of(id))
 }
 
 function sizedTile(face: TileFace, w: number): HTMLElement {
@@ -52,12 +67,12 @@ function sizedTile(face: TileFace, w: number): HTMLElement {
  * sobre custom props --tile-* de :root.
  */
 export class SpriteRenderer implements TileView {
-  constructor(readonly baseWidth: number) {}
+  constructor(readonly baseWidth: number, private readonly aka = true) {}
 
   create(face: TileFace, id?: TileId): HTMLElement {
     const el = sizedTile(face, this.baseWidth)
     if (id !== undefined) {
-      const label = labelId(id)
+      const label = tileLabel(id, this.aka)
       el.dataset.tile = label
       // URL absoluta contra el documento: WebKit resuelve url() en custom
       // properties contra el CSS (/assets/), no contra la página.
@@ -84,17 +99,20 @@ function inkFor(id: TileId): string {
  * La etiqueta existe siempre que haya `id` (CSS la oculta en back/side).
  */
 export class BoxRenderer implements TileView {
-  constructor(readonly baseWidth: number) {}
+  constructor(readonly baseWidth: number, private readonly aka = true) {}
 
   create(face: TileFace, id?: TileId): HTMLElement {
     const el = sizedTile(face, this.baseWidth)
     if (id !== undefined) {
+      const label = tileLabel(id, this.aka)
       const span = document.createElement('span')
       span.className = 'tm-tile__label'
-      span.textContent = labelId(id)
-      span.style.color = inkFor(id)
+      span.textContent = label
+      // sin aka, la tinta sale de una copia NO roja: `t << 2` sería justamente
+      // la copia aka de los cincos (ids 16/52/88), de ahí el `| 1`
+      span.style.color = inkFor(this.aka ? id : (tile34Of(id) << 2) | 1)
       el.appendChild(span)
-      el.dataset.tile = labelId(id)
+      el.dataset.tile = label
       this.layout(el, this.baseWidth)
     }
     return el

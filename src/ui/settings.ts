@@ -3,6 +3,8 @@
 // ficha). loadSettings nunca lanza: ante datos corruptos vuelve a DEFAULTS.
 
 import type { Locale } from './i18n'
+import type { MatchLength, RuleSet } from '../core/rules-config'
+import { DEFAULT_RULES, UMA_PRESETS } from '../core/rules-config'
 
 export type TableTheme = 'green' | 'red' | 'blue' | 'wood'
 export type TileBack = 'amber' | 'green' | 'red' | 'blue' | 'charcoal'
@@ -19,6 +21,8 @@ export interface Settings {
   language: Language
   /** Mostrar la tira de esperas/furiten del humano cuando está tenpai. */
   showWaits: boolean
+  /** Reglamento de la PRÓXIMA partida; una en curso conserva el suyo. */
+  rules: RuleSet
 }
 
 export const DEFAULTS: Settings = {
@@ -28,15 +32,52 @@ export const DEFAULTS: Settings = {
   tileBack: 'amber',
   language: 'auto',
   showWaits: true,
+  rules: DEFAULT_RULES,
 }
+
+/** Valores admitidos de los ajustes numéricos de reglas (los ofrece el cycler). */
+export const START_POINTS: readonly number[] = [25000, 30000]
 
 const KEY = 'tm-settings-v1'
 const THEMES: readonly TableTheme[] = ['green', 'red', 'blue', 'wood']
 const BACKS: readonly TileBack[] = ['amber', 'green', 'red', 'blue', 'charcoal']
 const LANGUAGES: readonly Language[] = ['auto', 'es', 'en', 'ja']
 
+const LENGTHS: readonly MatchLength[] = ['tonpuusen', 'hanchan']
+
 const clamp01 = (n: unknown): number | null =>
   typeof n === 'number' && Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : null
+
+const bool = (v: unknown, fallback: boolean): boolean =>
+  typeof v === 'boolean' ? v : fallback
+
+/**
+ * Reglamento guardado, campo a campo. Cualquier valor que no reconozca vuelve
+ * al de DEFAULT_RULES: un guardado de una versión con otras reglas no debe
+ * poder colar un reglamento imposible al núcleo.
+ */
+function readRules(raw: unknown): RuleSet {
+  const p = (raw ?? {}) as Partial<RuleSet>
+  const uma = UMA_PRESETS.find((u) => u.every((v, i) => v === p.uma?.[i]))
+  return {
+    length: LENGTHS.includes(p.length as MatchLength)
+      ? (p.length as MatchLength)
+      : DEFAULT_RULES.length,
+    startPoints: START_POINTS.includes(p.startPoints as number)
+      ? (p.startPoints as number)
+      : DEFAULT_RULES.startPoints,
+    returnPoints:
+      typeof p.returnPoints === 'number' && Number.isFinite(p.returnPoints)
+        ? p.returnPoints
+        : DEFAULT_RULES.returnPoints,
+    uma: uma ?? DEFAULT_RULES.uma,
+    aka: bool(p.aka, DEFAULT_RULES.aka),
+    kuitan: bool(p.kuitan, DEFAULT_RULES.kuitan),
+    nagashiMangan: bool(p.nagashiMangan, DEFAULT_RULES.nagashiMangan),
+    agariYame: bool(p.agariYame, DEFAULT_RULES.agariYame),
+    tobi: bool(p.tobi, DEFAULT_RULES.tobi),
+  }
+}
 
 /** Lee y valida los ajustes; rellena huecos con DEFAULTS. Nunca lanza. */
 export function loadSettings(): Settings {
@@ -63,6 +104,7 @@ export function loadSettings(): Settings {
         ? (p.language as Language)
         : DEFAULTS.language,
       showWaits: typeof p.showWaits === 'boolean' ? p.showWaits : DEFAULTS.showWaits,
+      rules: readRules(p.rules),
     }
   } catch {
     return structuredClone(DEFAULTS)

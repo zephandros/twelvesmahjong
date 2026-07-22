@@ -60,6 +60,11 @@ src/ui/     # DOM + CSS; un nodo por ficha, movido con transform
 **Un nodo DOM por ficha, persistente.** Nunca se recrea el DOM; mover una ficha es
 cambiar su `transform` y la transición CSS anima sola. Por eso no hace falta framework.
 
+**La promesa del determinismo ya está cobrada** (2026-07-22): `core/replay.ts` define
+`GameLog = { seed, rules, hands: Action[][] }` y `replay(log)` reconstruye la partida
+entera con `newGame` + `reduce` + `advanceGame`. De ahí sale el guardado
+(`ui/persist.ts`, clave `tm-save-v1`), y de ahí saldrán los replays.
+
 **Renderer de fichas detrás de una interfaz** (`ui/tile-view.ts`): hoy `BoxRenderer`
 (caja + etiqueta); cuando lleguen los assets, `SpriteRenderer`, sin tocar `core/`.
 **No se genera arte de fichas** — lo proporciona el usuario.
@@ -221,12 +226,21 @@ esta sección se refina con los flags exactos al materializarse cada script.)*
 ## Decisiones de assets (2026-07-12)
 
 - **Título**: el juego se llama **Mahjong Twelves** (麻雀トウェルブス).
-- **Menú principal**: pantalla de portada con el título y tres botones **apilados en
-  vertical y del mismo ancho** (jugar / ajustes / glosario; JUGAR conserva su estilo
-  primary). El botón AJUSTES abre un modal **idéntico al menú in-game del tablero**
-  (`.tm-menu-ov`: idioma, tema de mesa, dorso, esperas + 4 sliders de volumen), pero
-  **sin la opción de salir**; cierra con la equis. Los cyclers de tema/dorso escriben
+- **Menú principal** (reestructurado 2026-07-22): botones **apilados en vertical y del
+  mismo ancho**. Sin partida guardada, **JUGAR** (primary) + **OPCIONES**; con partida
+  guardada, **CONTINUAR** (primary) + **NUEVO JUEGO** + **OPCIONES**. NUEVO JUEGO
+  descarta el guardado y por eso **confirma en dos pasos sobre el propio botón**
+  (`.is-armed`; tocar fuera lo desarma). **OPCIONES** es un hub (`buildHubCard`) con
+  **AJUSTES · ESTADÍSTICAS · AYUDA**: cada pantalla se abre encima y al cerrarla el hub
+  sigue visible (el apilado sale del orden de inserción en el stage, no de z-index).
+  **AYUDA es el nuevo nombre del glosario** — mismo `ui/glossary.ts` (hoy solo la lista
+  de yaku), pensado para admitir tutoriales como secciones. AJUSTES abre un modal
+  **idéntico al menú in-game del tablero** (`.tm-menu-ov`: idioma, tema de mesa, dorso,
+  esperas + 4 sliders de volumen) pero **sin la opción de salir y CON la sección
+  REGLAS**; cierra con la equis. Los cyclers de tema/dorso escriben
   en `stage.dataset.table/back` (sin vista previa en la portada, no hay mesa/fichas).
+  El subtítulo de portada (`menu.tagline`) interpola la duración elegida y se repinta
+  al cambiarla.
   **Gate "Toca para continuar"** (`menu.tap-start`, texto **en lugar de los botones**):
   en la **primera visita** de la sesión la portada monta bloqueada (`.tm-menu.is-locked`
   oculta los botones y muestra el prompt); hasta el primer toque (o Enter/Espacio) no
@@ -404,7 +418,50 @@ Cambiar de dominio = tocar esos cuatro.
 Pendiente del lado del hosting (no es código): CNAME `www` → apex con redirección en
 Cloudflare, verificación en Search Console / Bing y envío del sitemap.
 
+## Reglamento configurable (2026-07-22)
+
+`core/rules-config.ts` define el **`RuleSet`** (objeto inmutable, serializable) y
+`DEFAULT_RULES`. Viaja **dentro de `HandState.rules`** y llega al `WinContext`; el
+núcleo no lee ajustes de ningún global, se los pasan.
+
+| Regla | Dónde se lee |
+|---|---|
+| `length` (tonpuusen/hanchan) | `game.ts`: `lastKyoku` · `roundWindOf` · `kyokuNumber` |
+| `agariYame` | `advanceGame`: el renchan de la última mano cierra si el oya va 1º |
+| `tobi` | `advanceGame`: fin por puntos negativos |
+| `startPoints` · `returnPoints` · `uma` | `initHand` y `core/results.ts` (`finalResults`) |
+| `aka` | `score.ts:doraHits` **y** `ui/tile-view.ts` (sin aka, el 5 rojo se pinta normal) |
+| `kuitan` | `yaku.ts`, en la única línea de tanyao |
+| `nagashiMangan` | `reducer.ts:endExhaustive` |
+
+- **`WinContext.rules` es OPCIONAL** para no romper los ~30 contextos a mano de
+  `score.test.ts`; los lectores hacen `ctx.rules ?? DEFAULT_RULES`. Por eso
+  `tests/rules-config.test.ts` incluye un caso **que pasa por el reducer**: un olvido
+  en `winContextFor` no daría error de tipos, solo ese test lo pilla.
+- **Nagashi mangan**: se detecta con `pond.length === discarded.length` (la ficha
+  llamada sale del pond visual pero NO del historial, `executeCall`). Sus pagos
+  **sustituyen** a los de tenpai/noten; el renchan del oya se sigue decidiendo por
+  tenpai. Va como campo `nagashi: Seat[]` dentro del `HandEnd` de tipo `exhaustive`.
+- **uma/oka en unidades de 1000**: `raw = (puntos − returnPoints)/1000`, oka completa
+  al 1º, empates por índice de asiento. Los palos de riichi que queden sobre la mesa se
+  pierden: la suma de totales puede quedar por debajo de la uma, y es correcto.
+- Las reglas se eligen **solo en la portada** (OPCIONES → AJUSTES); el menú in-game no
+  las muestra. Se persisten en `Settings.rules` con validación campo a campo. Cambiarlas
+  **no** invalida una partida guardada: el guardado lleva su propio `RuleSet`.
+
+## Guardado y estadísticas (2026-07-22)
+
+- **`ui/persist.ts`** (`tm-save-v1`): `{ v, log, roster, botSeed, savedAt }`. `apply()`
+  del controlador empuja al log **toda** acción aceptada —bots y `draw` automático
+  incluidos— y persiste; si alguna se escapara, el replay divergiría en silencio, y de
+  eso protege `tests/replay.test.ts` (round-trip contra `ai/sim.ts`).
+  **Cerrar la pestaña no borra nada**; sí lo hacen ABANDONAR, NUEVO JUEGO y el fin de
+  partida. `restoreGame` descarta y borra un guardado que no se pueda reproducir.
+- **`ui/stats.ts`** (`tm-stats-v1`): acumulador con funciones **puras**
+  (`recordAction` / `recordHand` / `recordGame`), enganchadas en `apply()` y `showEnd()`.
+  `ui/stats-screen.ts` las pinta clonando el patrón de `glossary.ts`.
+
 ## Alcance v1
 
-Partida libre (フリー対局): elegir personaje + 3 rivales, tonpuusen (ronda de Este),
+Partida libre (フリー対局): elegir personaje + 3 rivales, tonpuusen o hanchan,
 aka dora, yaku + fu completos, IA por ukeire, pantalla de tsumo/ron. Sin habilidades.

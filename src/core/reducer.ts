@@ -8,10 +8,12 @@
 //  - Los indicadores de dora de kan se revelan inmediatamente (los tres tipos).
 //  - Suukaikan: aborta cuando hay 4 kans de asientos distintos y el descarte
 //    posterior pasa sin ron. Suufon renda y suucha riichi: al pasar el 4º
-//    descarte/riichi. Sin nagashi mangan.
+//    descarte/riichi.
+//  - Nagashi mangan (según `rules.nagashiMangan`): sustituye los pagos de
+//    tenpai/noten, pero el renchan del oya sigue decidiéndose por tenpai.
 
 import type { TileId, Tile34 } from './tile'
-import { tile34Of } from './tile'
+import { tile34Of, isTerminalOrHonor } from './tile'
 import type { Seat } from './seat'
 import type { Action } from './actions'
 import type { HandState, HandEnd, ReactionResponse } from './state'
@@ -240,17 +242,51 @@ function endRon(
   return endHand(s, { type: 'ron', winner, from, winTile, score, deltas, chankan })
 }
 
+/**
+ * Nagashi mangan: todos los descartes propios son terminales/honores y ninguno
+ * fue llamado. La segunda condición se lee de `pond` vs `discarded`: la ficha
+ * llamada sale del pond visual y NO del historial (ver `executeCall`) — si el
+ * pond deja de podarse por otro motivo, esta comprobación deja de valer.
+ */
+function nagashiSeats(s: HandState): Seat[] {
+  if (!s.rules.nagashiMangan) return []
+  return ([0, 1, 2, 3] as const).filter((seat) => {
+    const st = s.seats[seat]!
+    return (
+      st.discarded.length > 0 &&
+      st.pond.length === st.discarded.length &&
+      st.discarded.every(isTerminalOrHonor)
+    )
+  })
+}
+
 function endExhaustive(s: HandState): HandState {
   const tenpai = ([0, 1, 2, 3] as const).map((seat) => isTenpai(s, seat))
-  const n = tenpai.filter(Boolean).length
+  const nagashi = nagashiSeats(s)
   const deltas = [0, 0, 0, 0]
-  if (n > 0 && n < 4) {
-    for (const seat of [0, 1, 2, 3] as const) {
-      deltas[seat] = tenpai[seat]! ? 3000 / n : -3000 / (4 - n)
+
+  if (nagashi.length > 0) {
+    // se cobra como un tsumo de mangan; varios simultáneos suman sus flujos y
+    // los pagos de tenpai/noten no se aplican
+    for (const winner of nagashi) {
+      const dealerWin = winner === s.dealer
+      for (const seat of [0, 1, 2, 3] as const) {
+        if (seat === winner) continue
+        const pays = dealerWin ? 4000 : seat === s.dealer ? 4000 : 2000
+        deltas[seat]! -= pays
+        deltas[winner]! += pays
+      }
+    }
+  } else {
+    const n = tenpai.filter(Boolean).length
+    if (n > 0 && n < 4) {
+      for (const seat of [0, 1, 2, 3] as const) {
+        deltas[seat] = tenpai[seat]! ? 3000 / n : -3000 / (4 - n)
+      }
     }
   }
   // los palos de riichi quedan sobre la mesa (los arrastra la siguiente mano)
-  return endHand(s, { type: 'exhaustive', tenpai, deltas })
+  return endHand(s, { type: 'exhaustive', tenpai, nagashi, deltas })
 }
 
 function endAbort(s: HandState, reason: 'kyuushu' | 'suufon' | 'suucha-riichi' | 'suukaikan'): HandState {

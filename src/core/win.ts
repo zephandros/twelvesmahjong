@@ -7,6 +7,7 @@ import type { Tile34, TileId } from './tile'
 import { tile34Of } from './tile'
 import type { Meld } from './meld'
 import { meldTile, isKan, isOpenMeld } from './meld'
+import type { RuleSet } from './rules-config'
 import { countsOf } from './shanten'
 
 export interface WinContext {
@@ -34,6 +35,11 @@ export interface WinContext {
   readonly honba: number
   /** Palos de riichi sobre la mesa (cada uno vale 1000 para el ganador). */
   readonly riichiSticks: number
+  /**
+   * Reglamento (aka, kuitan). Opcional: los tests construyen contextos a mano y
+   * `winContextFor` siempre lo rellena. Ausente = DEFAULT_RULES.
+   */
+  readonly rules?: RuleSet
 }
 
 export type Wait = 'ryanmen' | 'kanchan' | 'penchan' | 'shanpon' | 'tanki'

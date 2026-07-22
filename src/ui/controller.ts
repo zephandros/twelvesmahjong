@@ -8,6 +8,7 @@ import type { Action } from '../core/actions'
 import type { HandState } from '../core/state'
 import { reduce } from '../core/reducer'
 import { newGame, advanceGame, type GameState } from '../core/game'
+import { newLog, type GameLog } from '../core/replay'
 import {
   tsumoScore, riichiOptions, ankanOptions, shouminkanOptions, canKyuushu,
   seatWaits, isTenpai, seatFuriten, remainingFor,
@@ -23,6 +24,11 @@ import { showWinScreen } from './win-screen'
 import { createCutIn, type CutIn } from './cut-in'
 import { altForm, type Roster, type CharacterId } from './characters'
 import { loadSettings } from './settings'
+import { saveGame, clearSave } from './persist'
+import {
+  loadStats, saveStats, recordAction, recordHand, recordGame, type Stats,
+} from './stats'
+import { finalResults } from '../core/results'
 import { t } from './i18n'
 import { initAudio, playMusic, playSfx, playVoice, playAlert } from './audio/audio'
 import { GAME_TRACKS, type CallKind } from './audio/catalog'
@@ -87,17 +93,29 @@ interface Beat {
   done(): void
 }
 
+/** Partida reanudada desde el guardado (ver ui/persist.ts). */
+export interface Resume {
+  game: GameState
+  log: GameLog
+  botSeed: number
+}
+
 export function startGame(
   root: HTMLElement,
   roster: Roster,
   onCharacters: () => void,
+  resume?: Resume,
 ): void {
   const settings = loadSettings()
+  // una partida reanudada conserva SU reglamento, no el que haya en ajustes
+  const rules = resume?.log.rules ?? settings.rules
   const stage = createStage(root)
-  const layer = new TileLayer(stage, createTileView(46), onTileClick)
-  // salir de la partida: hay que matar timers y listeners antes de soltar el DOM
+  const layer = new TileLayer(stage, createTileView(46, { aka: rules.aka }), onTileClick)
+  // salir de la partida: hay que matar timers y listeners antes de soltar el DOM.
+  // Abandonar es explícito: el guardado se borra (cerrar la pestaña no lo hace).
   const leave = (): void => {
     teardown()
+    clearSave()
     onCharacters()
   }
   // onLanguageChange = render: re-pinta los textos dinámicos del HUD al vuelo
@@ -108,8 +126,20 @@ export function startGame(
   // pista de partida al azar (Math.random, NUNCA el RNG semillado del core)
   playMusic(GAME_TRACKS[Math.floor(Math.random() * GAME_TRACKS.length)]!)
 
-  let game: GameState = newGame(Date.now() >>> 0)
-  const botRng: Rng = makeRng((Date.now() ^ 0xc0ffee) >>> 0)
+  // Log de acciones: es el guardado. Se rellena en apply() y se persiste tras
+  // cada jugada; una partida = seed + reglamento + este log.
+  let log: GameLog = resume?.log ?? newLog(Date.now() >>> 0, rules)
+  let botSeed = resume?.botSeed ?? ((Date.now() ^ 0xc0ffee) >>> 0)
+  let game: GameState = resume?.game ?? newGame(log.seed, {}, rules)
+  let botRng: Rng = makeRng(botSeed)
+
+  const persist = (): void =>
+    saveGame({ log, roster: roster.map((c) => c.id), botSeed })
+
+  // Estadísticas: se leen y se reescriben en cada suma. Son pocas escrituras
+  // (una por acción del humano y una por mano) y así no hay estado que se
+  // desincronice con otra pestaña abierta.
+  const bumpStats = (f: (s: Stats) => Stats): void => saveStats(f(loadStats()))
   let riichiMode = false
   let chiPicker = false
   let lastDecisionPending = false
@@ -298,6 +328,11 @@ export function startGame(
       console.error('acción rechazada', action, err)
       return
     }
+    // el log solo recoge acciones ACEPTADAS (una rechazada rompería el replay);
+    // van todas, también las de los bots y el robo automático
+    log.hands[log.hands.length - 1]!.push(action)
+    persist()
+    if (actor === HUMAN) bumpStats((s) => recordAction(s, action))
     if (CLICKS.has(action.type)) playSfx('tile-click')
 
     // La voz de la llamada ya no suena aquí: va dentro del beat, para que
@@ -477,16 +512,24 @@ export function startGame(
 
   function showEnd(): void {
     const s = game.hand
+    bumpStats((st) => recordHand(st, s, HUMAN))
     const afterContinue = (): void => {
       hud.hideOverlay()
       game = advanceGame(game)
       if (game.finished) {
+        clearSave() // no hay nada que reanudar
+        const results = finalResults(game.hand.seats.map((st) => st.points), game.hand.rules)
+        bumpStats((st) => recordGame(st, results, HUMAN))
         hud.showGameEnd(
           game.hand,
           () => {
-            // rematch con el mismo roster
+            // rematch con el mismo roster y el mismo reglamento
             hud.hideOverlay()
-            game = newGame(Date.now() >>> 0)
+            log = newLog(Date.now() >>> 0, game.hand.rules)
+            botSeed = (Date.now() ^ 0xc0ffee) >>> 0
+            botRng = makeRng(botSeed)
+            game = newGame(log.seed, {}, log.rules)
+            persist()
             riichiMode = false
             render()
             scheduleStep()
@@ -495,6 +538,8 @@ export function startGame(
         )
         return
       }
+      log.hands.push([]) // la mano siguiente empieza su propio tramo del log
+      persist()
       riichiMode = false
       render()
       scheduleStep()

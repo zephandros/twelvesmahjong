@@ -39,11 +39,16 @@ if (debug === 'board') {
     import('./ui/menu'),
     import('./ui/select'),
     import('./ui/controller'),
-  ]).then(([{ renderMenu }, { renderSelect }, { startGame }]) => {
-    // Flujo: menú → selección de personaje → partida.
+    import('./ui/persist'),
+    import('./ui/characters'),
+  ]).then(([
+    { renderMenu }, { renderSelect }, { startGame }, persist, { CHARACTERS },
+  ]) => {
+    // Flujo: menú → selección de personaje → partida; con partida guardada,
+    // CONTINUAR salta la selección y reanuda desde el log.
     const toMenu = (): void => {
       app.innerHTML = ''
-      renderMenu(app, { onStart: toSelect })
+      renderMenu(app, { onStart: toSelect, onResume: toResume })
     }
     const toSelect = (): void => {
       app.innerHTML = ''
@@ -55,6 +60,28 @@ if (debug === 'board') {
         },
         toMenu, // volver al menú desde la selección
       )
+    }
+    const toResume = (): void => {
+      const saved = persist.loadSave()
+      const game = saved && persist.restoreGame(saved)
+      const found = saved?.roster.map((id) => CHARACTERS.find((c) => c.id === id))
+      const roster =
+        found?.length === 4 && found.every((c) => c !== undefined)
+          ? (found as unknown as Parameters<typeof startGame>[1])
+          : null
+      // guardado inservible (corrupto, o de un roster que ya no existe): se
+      // descarta y se empieza por la selección, sin dejar el botón muerto
+      if (!saved || !game || !roster) {
+        persist.clearSave()
+        toSelect()
+        return
+      }
+      app.innerHTML = ''
+      startGame(app, roster, toMenu, {
+        game,
+        log: saved.log,
+        botSeed: saved.botSeed,
+      })
     }
     toMenu()
   })

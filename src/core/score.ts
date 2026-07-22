@@ -17,6 +17,7 @@ import {
   isMenzen, situationalYaku, standardYaku, chiitoiYaku, kokushiYaku,
 } from './yaku'
 import { computeFu, CHIITOI_FU } from './fu'
+import { DEFAULT_RULES } from './rules-config'
 
 export type Limit =
   | 'mangan' | 'haneman' | 'baiman' | 'sanbaiman' | 'yakuman' | 'kazoe'
@@ -84,7 +85,9 @@ function doraHits(ctx: WinContext): YakuHit[] {
     if (ura > 0) hits.push({ id: 'ura', han: ura })
   }
 
-  const aka = allTileIds(ctx).filter(isAka).length
+  const aka = (ctx.rules ?? DEFAULT_RULES).aka
+    ? allTileIds(ctx).filter(isAka).length
+    : 0
   if (aka > 0) hits.push({ id: 'aka', han: aka })
 
   return hits
