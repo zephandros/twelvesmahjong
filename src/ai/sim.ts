@@ -3,20 +3,19 @@
 // fuerza entre políticas.
 
 import type { Action } from '../core/actions'
-import type { HandState, HandOptions, ReactionOffer } from '../core/state'
+import type { HandState, HandOptions } from '../core/state'
 import { initHand } from '../core/state'
 import { reduce } from '../core/reducer'
 import type { Abilities } from '../core/hooks'
-import { makeRng, type Rng } from '../core/rng'
+import { makeRng } from '../core/rng'
 import type { Seat } from '../core/seat'
-import { botTurnAction, botReaction } from './bot'
+import { makePolicy, type BotPolicy } from './bot'
+import { DEFAULT_PROFILE } from './profiles'
 
-export interface BotPolicy {
-  turn(state: HandState, rng: Rng): Action
-  reaction(state: HandState, offer: ReactionOffer, rng: Rng): Action
-}
+export type { BotPolicy }
 
-export const SMART_POLICY: BotPolicy = { turn: botTurnAction, reaction: botReaction }
+/** Política por defecto: el bot equilibrado experto (comportamiento histórico). */
+export const SMART_POLICY: BotPolicy = makePolicy(DEFAULT_PROFILE)
 
 /** Política por asiento; ausencia = SMART_POLICY. */
 export type Policies = Partial<Record<Seat, BotPolicy>>

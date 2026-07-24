@@ -14,7 +14,8 @@ import {
   seatWaits, isTenpai, seatFuriten, remainingFor,
 } from '../core/rules'
 import { makeRng, type Rng } from '../core/rng'
-import { botTurnAction, botReaction } from '../ai/bot'
+import { makePolicy, type BotPolicy } from '../ai/bot'
+import { DEFAULT_PROFILE } from '../ai/profiles'
 import { createStage } from './layout'
 import { createTileView } from './tile-view'
 import { TileLayer } from './tile-layer'
@@ -22,8 +23,8 @@ import { Hud, type ButtonDef } from './hud'
 import { computePlacements } from './geometry'
 import { showWinScreen } from './win-screen'
 import { createCutIn, type CutIn } from './cut-in'
-import { altForm, type Roster, type CharacterId } from './characters'
-import { loadSettings } from './settings'
+import { altForm, CHARACTER_STYLES, type Roster, type CharacterId } from './characters'
+import { loadSettings, skillFor, type Difficulty } from './settings'
 import { saveGame, clearSave } from './persist'
 import {
   loadStats, saveStats, recordAction, recordHand, recordGame, type Stats,
@@ -98,6 +99,14 @@ export interface Resume {
   game: GameState
   log: GameLog
   botSeed: number
+  difficulty: Difficulty
+}
+
+// Sales por asiento: cada bot deriva su propio RNG de `botSeed` para que el ruido
+// de su estilo sea independiente del de los demás (y reproducible: reanudar rearma
+// los mismos streams, igual que el contrato de botSeed). El replay no usa el RNG.
+const RNG_SALT: Record<Seat, number> = {
+  0: 0x00000000, 1: 0x1b873593, 2: 0xcc9e2d51, 3: 0x85ebca6b,
 }
 
 export function startGame(
@@ -131,10 +140,33 @@ export function startGame(
   let log: GameLog = resume?.log ?? newLog(Date.now() >>> 0, rules)
   let botSeed = resume?.botSeed ?? ((Date.now() ^ 0xc0ffee) >>> 0)
   let game: GameState = resume?.game ?? newGame(log.seed, {}, rules)
-  let botRng: Rng = makeRng(botSeed)
+
+  // Una partida reanudada conserva SU dificultad; una nueva toma la de ajustes.
+  const difficulty = resume?.difficulty ?? settings.difficulty
+  // Política por asiento: el ESTILO lo trae cada personaje (CHARACTER_STYLES), la
+  // HABILIDAD la fija la dificultad global. El asiento 0 es el humano (sin política).
+  const skill = skillFor(difficulty)
+  const policies: Partial<Record<Seat, BotPolicy>> = {}
+  for (const seat of [1, 2, 3] as const) {
+    policies[seat] = makePolicy({ style: CHARACTER_STYLES[roster[seat]!.id], skill })
+  }
+  const policyOf = (seat: Seat): BotPolicy =>
+    policies[seat] ?? makePolicy(DEFAULT_PROFILE)
+
+  // Un RNG por bot (ver RNG_SALT); se rearman al empezar y en cada rematch.
+  let botRngs: Record<Seat, Rng>
+  const seedBotRngs = (): void => {
+    botRngs = {
+      0: makeRng((botSeed ^ RNG_SALT[0]) >>> 0),
+      1: makeRng((botSeed ^ RNG_SALT[1]) >>> 0),
+      2: makeRng((botSeed ^ RNG_SALT[2]) >>> 0),
+      3: makeRng((botSeed ^ RNG_SALT[3]) >>> 0),
+    }
+  }
+  seedBotRngs()
 
   const persist = (): void =>
-    saveGame({ log, roster: roster.map((c) => c.id), botSeed })
+    saveGame({ log, roster: roster.map((c) => c.id), botSeed, difficulty })
 
   // Estadísticas: se leen y se reescriben en cada suma. Son pocas escrituras
   // (una por acción del humano y una por mano) y así no hay estado que se
@@ -485,7 +517,11 @@ export function startGame(
     }
     if (s.phase === 'discard') {
       if (s.turn !== HUMAN) {
-        timer = setTimeout(() => apply(botTurnAction(game.hand, botRng)), DELAY.botTurn)
+        const seat = s.turn
+        timer = setTimeout(
+          () => apply(policyOf(seat).turn(game.hand, botRngs[seat])),
+          DELAY.botTurn,
+        )
       } else if (s.seats[HUMAN]!.riichi > 0) {
         // en riichi: si no hay decisión real (tsumo/kan), tsumogiri automático
         if (!tsumoScore(s) && ankanOptions(s).length === 0) {
@@ -501,8 +537,9 @@ export function startGame(
     const r = s.reaction!
     const next = r.offers.find((o) => r.responses[o.seat] === null)
     if (next && next.seat !== HUMAN) {
+      const seat = next.seat
       timer = setTimeout(
-        () => apply(botReaction(game.hand, next, botRng)),
+        () => apply(policyOf(seat).reaction(game.hand, next, botRngs[seat])),
         DELAY.botReaction,
       )
     }
@@ -527,7 +564,7 @@ export function startGame(
             hud.hideOverlay()
             log = newLog(Date.now() >>> 0, game.hand.rules)
             botSeed = (Date.now() ^ 0xc0ffee) >>> 0
-            botRng = makeRng(botSeed)
+            seedBotRngs()
             game = newGame(log.seed, {}, log.rules)
             persist()
             riichiMode = false

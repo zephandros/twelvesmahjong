@@ -134,6 +134,38 @@ define puntos de intercepción (no-op en v1): `onBuildWall`, `beforeDraw`,
 `onCallOpportunity`, `onWin`. Son funciones puras de `(state, rng)` → no rompen
 determinismo ni replays. Añadir una habilidad = escribir un `Ability`, no refactorizar.
 
+## Estilos y dificultad de bots (2026-07-22)
+
+Los bots ya no juegan todos igual. **`src/ai/profiles.ts`** define DOS EJES ORTOGONALES
+—`StyleId` × `SkillId`— que `resolveBehavior(profile)` funde en un `BotBehavior` (los
+knobs que consulta `ai/bot.ts`: `useUkeire`, `defense` none/genbutsu/suji,
+`foldFromShanten`, `callPolicy` never/yakuhai/improve/greedy, `riichiPolicy`
+always/damaten, `noise`). Módulo puro, sin deps. **Regla de oro**:
+`resolveBehavior({style:'balanced',skill:'expert'})` = `DEFAULT_BEHAVIOR` reproduce
+EXACTAMENTE la política histórica → el bot por defecto no cambió y los tests viejos
+siguen verdes. `tests/profiles.test.ts` lo ata. Estilos: balanced, attacker, defender,
+speedster, purist, chaotic. Habilidades: novice (sin ukeire/defensa, con ruido) <
+intermediate (genbutsu) < expert (suji, sin ruido); la habilidad **capa** la capacidad
+que el estilo querría (novice nunca dobla, sea cual sea el estilo).
+
+- **`ai/bot.ts`**: `botTurnAction`/`botReaction(…, behavior = DEFAULT_BEHAVIOR)` (firmas
+  retrocompatibles) + `makePolicy(profile): BotPolicy`. `SMART_POLICY` (sim) = `makePolicy(
+  DEFAULT_PROFILE)`. El `noise` es lo ÚNICO que usa el `rng` del bot.
+- **Estilo ↔ personaje**: `CHARACTER_STYLES: Record<CharacterId, StyleId>` en
+  `ui/characters.ts` (config editable, exhaustiva en compilación). NO está atado por
+  lógica: el story mode dará a los minions/jefes su propio perfil sin pasar por esta tabla.
+- **Dificultad global**: `Settings.difficulty` ('easy'|'normal'|'hard', default normal;
+  `skillFor()` → SkillId). Cycler en la sección REGLAS del modal AJUSTES **solo en la
+  portada** (`menu.ts`; el menú in-game de `hud.ts` NO lo lleva), claves
+  `hud.rules.difficulty` + `settings.difficulty.*`. Nota: el default histórico equivalía a
+  `expert`; con `normal` los rivales por defecto son algo más blandos — "Difícil" recupera
+  la fuerza de siempre.
+- **Controlador**: una `BotPolicy` por asiento rival (estilo del personaje + habilidad de
+  la dificultad) y **un RNG por bot** (`makeRng(botSeed ^ SALT[seat])`) para que el ruido
+  de cada estilo sea independiente. La dificultad **viaja en el guardado** (`SavedGame.
+  difficulty`, lectura tolerante → 'normal') para que reanudar conserve la fuerza; el
+  replay no usa el RNG, así que **afinar los perfiles nunca rompe un guardado**.
+
 ## Layout
 
 Espacio de diseño fijo **1920×1080** (16:9), escalado con `min(vw/1920, vh/1080)` y

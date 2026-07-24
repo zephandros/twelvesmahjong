@@ -5,11 +5,32 @@
 // aquí solo quedan los ids canónicos.
 
 import { t } from './i18n'
+import type { StyleId } from '../ai/profiles'
 
 /** Slug canónico de personaje (id de CHARACTERS). */
 export type CharacterId =
   | 'alice' | 'dorian' | 'jekyll' | 'celestina' | 'dracula' | 'macbeth'
   | 'ahab' | 'defarge' | 'irene' | 'huck' | 'scheherazade' | 'pinocchio'
+
+// Estilo de juego de cada personaje (su "identidad" como bot). Es CONFIG, no lógica:
+// el reparto se edita aquí libremente. La habilidad NO va aquí —la fija la dificultad
+// global de los rivales (Settings.difficulty); el story mode dará a los minions/jefes
+// su propio perfil (estilo + habilidad) sin pasar por esta tabla. `Record` exhaustivo:
+// olvidar un personaje es error de tipos, sin test extra.
+export const CHARACTER_STYLES: Record<CharacterId, StyleId> = {
+  alice: 'balanced', // curiosa, sin sesgo
+  dorian: 'attacker', // vanidoso, empuja
+  jekyll: 'chaotic', // doble naturaleza (Hyde)
+  celestina: 'defender', // intrigante, cauta
+  dracula: 'attacker', // depredador
+  macbeth: 'chaotic', // ambición que se desboca
+  ahab: 'attacker', // persecución obsesiva
+  defarge: 'defender', // venganza paciente
+  irene: 'speedster', // aguda, eficiente
+  huck: 'speedster', // improvisador ágil
+  scheherazade: 'purist', // teje valor sin prisa (mano cerrada)
+  pinocchio: 'chaotic', // errático
+}
 
 export interface Character {
   readonly id: CharacterId

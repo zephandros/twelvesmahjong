@@ -79,4 +79,15 @@ describe('settings', () => {
     localStorage.setItem('tm-settings-v1', JSON.stringify({ language: 'fr' }))
     expect(loadSettings().language).toBe('auto')
   })
+
+  it('dificultad: default normal, round-trip y rechazo de valores inválidos', () => {
+    expect(DEFAULTS.difficulty).toBe('normal')
+    expect(loadSettings().difficulty).toBe('normal')
+
+    saveSettings({ ...DEFAULTS, difficulty: 'hard' as const })
+    expect(loadSettings().difficulty).toBe('hard')
+
+    localStorage.setItem('tm-settings-v1', JSON.stringify({ difficulty: 'insane' }))
+    expect(loadSettings().difficulty).toBe('normal')
+  })
 })

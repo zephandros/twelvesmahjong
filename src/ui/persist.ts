@@ -8,9 +8,12 @@ import type { GameLog } from '../core/replay'
 import { replay } from '../core/replay'
 import type { GameState } from '../core/game'
 import type { CharacterId } from './characters'
+import type { Difficulty } from './settings'
 
 const KEY = 'tm-save-v1'
 const VERSION = 1
+
+const DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard']
 
 export interface SavedGame {
   v: number
@@ -19,6 +22,8 @@ export interface SavedGame {
   roster: CharacterId[]
   /** Semilla del RNG de los bots, para que la partida siga igual de variada. */
   botSeed: number
+  /** Dificultad (habilidad de los rivales) con la que arrancó la partida. */
+  difficulty: Difficulty
   savedAt: number
 }
 
@@ -50,7 +55,11 @@ export function loadSave(): SavedGame | null {
     if (!p.log || typeof p.log.seed !== 'number' || !Array.isArray(p.log.hands)) return null
     if (!Array.isArray(p.roster) || p.roster.length !== 4) return null
     if (typeof p.botSeed !== 'number') return null
-    return p as SavedGame
+    // dificultad tolerante: un guardado previo a esta función no la trae → 'normal'
+    const difficulty = DIFFICULTIES.includes(p.difficulty as Difficulty)
+      ? (p.difficulty as Difficulty)
+      : 'normal'
+    return { ...(p as SavedGame), difficulty }
   } catch {
     return null
   }

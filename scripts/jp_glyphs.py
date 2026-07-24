@@ -42,5 +42,6 @@ GLYPHS = (
     # reglamento configurable (settings.rules.*) y fin de partida en hanchan
     '半荘規則長初期棒供託'
     '新消ョ成績喰飛び給原'  # navegación de la portada + cyclers de reglas
+    '難易度級'  # cycler de dificultad (難易度 · 初級/中級/上級; 初中上 ya arriba)
     '記録均得銃率高'  # pantalla de estadísticas (stats.*)
 )

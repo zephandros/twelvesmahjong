@@ -21,7 +21,7 @@
 
 import {
   loadSettings, saveSettings,
-  type Language, type VolumeChannel, type TableTheme, type TileBack,
+  type Language, type VolumeChannel, type TableTheme, type TileBack, type Difficulty,
 } from './settings'
 import { UMA_PRESETS, type MatchLength } from '../core/rules-config'
 import { hasSave, clearSave } from './persist'
@@ -56,6 +56,10 @@ const TOGGLE: ReadonlyArray<[string, MsgKey]> = [
 ]
 const LENGTHS: ReadonlyArray<[MatchLength, MsgKey]> = [
   ['tonpuusen', 'settings.length.tonpuusen'], ['hanchan', 'settings.length.hanchan'],
+]
+const DIFFICULTIES: ReadonlyArray<[Difficulty, MsgKey]> = [
+  ['easy', 'settings.difficulty.easy'], ['normal', 'settings.difficulty.normal'],
+  ['hard', 'settings.difficulty.hard'],
 ]
 // el valor del cycler es el ÍNDICE del preset en UMA_PRESETS (las tuplas no
 // se comparan por igualdad y el cycler trabaja con strings)
@@ -225,6 +229,11 @@ export function renderMenu(
     }
 
     card.appendChild(section('hud.section-rules'))
+    // dificultad de los rivales (habilidad; el estilo lo trae cada personaje).
+    // Se guarda en settings.difficulty, aparte de settings.rules.
+    rule('hud.rules.difficulty', DIFFICULTIES, settings.difficulty, (v) => {
+      settings.difficulty = v as Difficulty
+    })
     rule('hud.rules.length', LENGTHS, settings.rules.length, (v) => {
       settings.rules = { ...settings.rules, length: v as MatchLength }
       applyTexts() // el subtítulo de la portada anuncia la duración elegida

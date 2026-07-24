@@ -57,6 +57,7 @@ hud.no|Cancelar (menú in-game)|No|No|いいえ
 hud.section-settings|Subheader de sección del menú in-game|Ajustes|Settings|設定
 hud.section-audio|Subheader de sección del menú in-game|Audio|Audio|オーディオ
 hud.section-rules|Subheader de la sección de reglas (solo en la portada)|Reglas|Rules|規則
+hud.rules.difficulty|Cycler: dificultad de los rivales (portada)|Dificultad|Difficulty|難易度
 hud.rules.length|Cycler: duración de la partida|Duración|Length|対局の長さ
 hud.rules.aka|Cycler: cincos rojos|Dora rojo|Red fives|赤ドラ
 hud.rules.kuitan|Cycler: tanyao abierto|Tanyao abierto|Open tanyao|喰いタン
@@ -67,6 +68,9 @@ hud.rules.uma|Cycler: bonificación por puesto|Uma|Uma|ウマ
 hud.rules.start-points|Cycler: puntos iniciales|Puntos iniciales|Starting points|配給原点
 settings.length.tonpuusen|Duración: solo ronda de Este|TONPUUSEN|TONPUUSEN|東風戦
 settings.length.hanchan|Duración: Este + Sur|HANCHAN|HANCHAN|半荘戦
+settings.difficulty.easy|Dificultad: rivales flojos|FÁCIL|EASY|初級
+settings.difficulty.normal|Dificultad: rivales medios|NORMAL|NORMAL|中級
+settings.difficulty.hard|Dificultad: rivales fuertes|DIFÍCIL|HARD|上級
 settings.uma.none|Preset de uma: sin bonificación|SIN UMA|NONE|なし
 settings.uma.5-15|Preset de uma 15/5/-5/-15|15 / 5 / -5 / -15|15 / 5 / -5 / -15|15 / 5 / -5 / -15
 settings.uma.10-20|Preset de uma 20/10/-10/-20|20 / 10 / -10 / -20|20 / 10 / -10 / -20|20 / 10 / -10 / -20

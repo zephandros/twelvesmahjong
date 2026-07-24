@@ -1,17 +1,21 @@
 // IA de los bots (fase 6).
 //
-// Ataque: descarte que minimiza shanten con desempate por ukeire cerca de
-// tenpai (lejos, por "centralidad": suelta honores y extremos antes); riichi
-// siempre que la mano cerrada llega a tenpai, eligiendo el descarte que deja
-// más ukeire; ankan/shouminkan solo si no empeoran el shanten.
+// La política está PARAMETRIZADA por un `BotBehavior` (ai/profiles.ts): el bot por
+// defecto (DEFAULT_BEHAVIOR = estilo equilibrado × habilidad experta) reproduce la
+// política "seria" histórica; otros estilos/niveles varían las decisiones sin tocar
+// esta lógica. `makePolicy(profile)` empaqueta ambas decisiones en un `BotPolicy`.
 //
-// Llamadas: pon de yakuhai siempre que mejore; chi/pon adicionales solo con la
-// mano ya abierta y si mejoran el shanten; daiminkan nunca (regla simple).
+// Ataque: descarte que minimiza shanten con desempate por ukeire cerca de tenpai
+// (si `useUkeire`; lejos o sin ukeire, por "centralidad": suelta honores y extremos
+// antes); riichi al llegar a tenpai cerrado según `riichiPolicy`; ankan/shouminkan
+// solo si no empeoran el shanten. Con `noise>0` el descarte se aleatoriza a veces.
 //
-// Defensa: con un riichi enemigo y la propia mano a 2+ de tenpai, fold puro:
-// genbutsu del atacante > honores > suji > terminales > resto. Bajo amenaza
-// tampoco se llama. (El "genbutsu global post-riichi" y la lectura de manos
-// abiertas quedan fuera de v1.)
+// Llamadas (`callPolicy`): never / yakuhai / improve (histórico: pon yakuhai o mano
+// abierta que mejore + chi con mano abierta) / greedy (llama todo lo que baje shanten).
+//
+// Defensa (`defense` + `foldFromShanten`): con un riichi enemigo y la mano a
+// foldFromShanten+ de tenpai, fold puro: genbutsu > honores > suji > terminales >
+// resto (`suji`), solo genbutsu (`genbutsu`), o nunca doblarse (`none`).
 //
 // `naiveTurnAction`/`naiveReaction` conservan la política aleatoria previa,
 // solo para medir la fuerza comparativa en tests.
@@ -29,6 +33,10 @@ import {
 } from '../core/tile'
 import { countsOf, shanten } from '../core/shanten'
 import { ukeire } from '../core/ukeire'
+import {
+  DEFAULT_BEHAVIOR, resolveBehavior,
+  type BotBehavior, type BotProfile, type Defense,
+} from './profiles'
 
 const t34s = (ids: readonly TileId[]): Tile34[] => ids.map(tile34Of)
 
@@ -65,11 +73,13 @@ interface DiscardEval {
  * Mejores descartes de un pool de 14−3·melds fichas: mínimo shanten; cerca de
  * tenpai (≤1) desempata por ukeire real, lejos por centralidad (más barato).
  * `banned` excluye un tipo como candidato (kuikae) sin sacarlo del conteo.
+ * `useUkeire=false` (novato) omite el ukeire: desempate solo por centralidad.
  */
 function bestDiscards(
   pool34: readonly Tile34[],
   melds: number,
   banned: Tile34 | null = null,
+  useUkeire = true,
 ): DiscardEval[] {
   const counts = countsOf(pool34)
   const seen = new Set<Tile34>()
@@ -84,7 +94,7 @@ function bestDiscards(
   const best = Math.min(...evals.map((e) => e.shanten))
   const top = evals.filter((e) => e.shanten === best)
 
-  if (best <= 1) {
+  if (useUkeire && best <= 1) {
     for (const e of top) {
       counts[e.tile]!--
       e.ukeire = ukeire(counts, melds).total
@@ -99,9 +109,14 @@ function bestDiscards(
 
 // --- defensa ------------------------------------------------------------------------
 
-/** Puntuación de seguridad de un tipo frente al pond del amenazante. */
-function safetyScore(t: Tile34, threatDiscards: readonly Tile34[]): number {
+/**
+ * Puntuación de seguridad de un tipo frente al pond del amenazante. Con defensa
+ * `genbutsu` solo el genbutsu cuenta (el resto empata a 0); con `suji`, la escala
+ * completa honores/suji/terminales. (`none` no llega aquí: no se dobla.)
+ */
+function safetyScore(t: Tile34, threatDiscards: readonly Tile34[], defense: Defense): number {
   if (threatDiscards.includes(t)) return 100 // genbutsu
+  if (defense === 'genbutsu') return 0 // sin lectura fina: fuera del genbutsu, todo igual
   if (isHonor(t)) return 60
   const suji = new Set<Tile34>()
   for (const d of threatDiscards) {
@@ -118,10 +133,13 @@ function safetyScore(t: Tile34, threatDiscards: readonly Tile34[]): number {
   return 10
 }
 
-// --- política seria -----------------------------------------------------------------
+// --- política parametrizada ----------------------------------------------------------
 
-export function botTurnAction(state: HandState, rng: Rng): Action {
-  void rng // la política es determinista; se conserva la firma
+export function botTurnAction(
+  state: HandState,
+  rng: Rng,
+  behavior: BotBehavior = DEFAULT_BEHAVIOR,
+): Action {
   if (tsumoScore(state)) return { type: 'tsumo' }
 
   const me = state.turn
@@ -143,7 +161,7 @@ export function botTurnAction(state: HandState, rng: Rng): Action {
   const ak = ankanOptions(state)
   if (ak.length > 0) {
     if (st.riichi > 0) return { type: 'ankan', tile34: ak[0]! }
-    const bestNow = bestDiscards(pool34, melds, banned)[0]!.shanten
+    const bestNow = bestDiscards(pool34, melds, banned, behavior.useUkeire)[0]!.shanten
     for (const t of ak) {
       const counts = countsOf(pool34)
       counts[t]! -= 4
@@ -154,15 +172,20 @@ export function botTurnAction(state: HandState, rng: Rng): Action {
   if (st.riichi > 0) return { type: 'discard', tile: state.drawn! }
 
   const threat = firstThreat(state, me)
-  const evals = bestDiscards(pool34, melds, banned)
+  const evals = bestDiscards(pool34, melds, banned, behavior.useUkeire)
 
-  // fold: amenaza y mano atrasada → la ficha más segura, la mano da igual
-  if (threat !== null && evals[0]!.shanten >= 2) {
+  // fold: amenaza y mano atrasada → la ficha más segura, la mano da igual.
+  // `defense:'none'` no se dobla nunca; foldFromShanten Infinity (attacker) tampoco.
+  if (
+    behavior.defense !== 'none' &&
+    threat !== null &&
+    evals[0]!.shanten >= behavior.foldFromShanten
+  ) {
     const threatDiscards = state.seats[threat]!.discarded
     let bestT: Tile34 = candidates34[0]!
     let bestScore = -1
     for (const t of new Set(candidates34)) {
-      const sc = safetyScore(t, threatDiscards)
+      const sc = safetyScore(t, threatDiscards, behavior.defense)
       if (sc > bestScore) {
         bestScore = sc
         bestT = t
@@ -171,20 +194,24 @@ export function botTurnAction(state: HandState, rng: Rng): Action {
     return { type: 'discard', tile: pickCopy(pool, bestT) }
   }
 
-  // riichi al llegar a tenpai: el descarte que deja más ukeire
-  const ro = riichiOptions(state)
-  if (ro.length > 0) {
-    let best: TileId = ro[0]!
-    let bestUke = -1
-    for (const id of ro) {
-      const rest = pool.filter((x) => x !== id)
-      const u = ukeire(countsOf(t34s(rest)), melds).total
-      if (u > bestUke) {
-        bestUke = u
-        best = id
+  // riichi al llegar a tenpai (salvo damaten): el descarte que deja más ukeire
+  if (behavior.riichiPolicy === 'always') {
+    const ro = riichiOptions(state)
+    if (ro.length > 0) {
+      let best: TileId = ro[0]!
+      if (behavior.useUkeire) {
+        let bestUke = -1
+        for (const id of ro) {
+          const rest = pool.filter((x) => x !== id)
+          const u = ukeire(countsOf(t34s(rest)), melds).total
+          if (u > bestUke) {
+            bestUke = u
+            best = id
+          }
+        }
       }
+      return { type: 'riichi', tile: best }
     }
-    return { type: 'riichi', tile: best }
   }
 
   // shouminkan si no empeora el shanten (la 4ª copia suele ser grasa)
@@ -199,6 +226,13 @@ export function botTurnAction(state: HandState, rng: Rng): Action {
     }
   }
 
+  // ruido: a veces suelta un descarte al azar de entre los de mínimo shanten
+  // (evals ya son solo los del mejor shanten). Aquí es donde se usa `rng`.
+  if (behavior.noise > 0 && evals.length > 1 && rng() < behavior.noise) {
+    const pick = evals[Math.floor(rng() * evals.length)]!
+    return { type: 'discard', tile: pickCopy(pool, pick.tile) }
+  }
+
   return { type: 'discard', tile: pickCopy(pool, evals[0]!.tile) }
 }
 
@@ -206,13 +240,18 @@ export function botReaction(
   state: HandState,
   offer: ReactionOffer,
   rng: Rng,
+  behavior: BotBehavior = DEFAULT_BEHAVIOR,
 ): Action {
-  void rng
+  void rng // las reacciones no meten ruido; se conserva la firma
   const seat = offer.seat
   if (offer.ron) return { type: 'ron', seat }
 
-  // bajo riichi enemigo no se llama
-  if (firstThreat(state, seat) !== null) return { type: 'pass', seat }
+  if (behavior.callPolicy === 'never') return { type: 'pass', seat }
+
+  // reflejo defensivo: bajo riichi enemigo no se llama, salvo quien no defiende
+  // (defense 'none') ni se dobla jamás (attacker, foldFromShanten Infinity)
+  const defends = behavior.defense !== 'none' && behavior.foldFromShanten !== Infinity
+  if (defends && firstThreat(state, seat) !== null) return { type: 'pass', seat }
 
   const st = state.seats[seat]!
   const tile = tile34Of(state.reaction!.tile)
@@ -231,11 +270,24 @@ export function botReaction(
       isDragon(tile) ||
       tile === seatWind(seat, state.dealer) ||
       tile === state.roundWind
-    if ((yakuhai || isOpen) && afterRemoving([tile, tile]) < before) {
-      return { type: 'pon', seat }
-    }
+    const improves = afterRemoving([tile, tile]) < before
+    // greedy: cualquier pon que mejore; yakuhai: solo yakuhai; improve: yakuhai o mano abierta
+    const wantPon =
+      behavior.callPolicy === 'greedy'
+        ? improves
+        : behavior.callPolicy === 'yakuhai'
+          ? yakuhai && improves
+          : (yakuhai || isOpen) && improves
+    if (wantPon) return { type: 'pon', seat }
   }
-  if (offer.chi.length > 0 && isOpen) {
+  // chi: greedy siempre; yakuhai nunca; improve solo con la mano ya abierta
+  const chiAllowed =
+    behavior.callPolicy === 'greedy'
+      ? true
+      : behavior.callPolicy === 'yakuhai'
+        ? false
+        : isOpen
+  if (offer.chi.length > 0 && chiAllowed) {
     let best: { start: Tile34; after: number } | null = null
     for (const start of offer.chi) {
       const others = [start, start + 1, start + 2].filter((x) => x !== tile)
@@ -246,6 +298,27 @@ export function botReaction(
   }
   // daiminkan: nunca (v1)
   return { type: 'pass', seat }
+}
+
+// --- fábrica de políticas ------------------------------------------------------------
+
+/** Una política de bot: qué juega en su turno y cómo reacciona a una oferta. */
+export interface BotPolicy {
+  turn(state: HandState, rng: Rng): Action
+  reaction(state: HandState, offer: ReactionOffer, rng: Rng): Action
+}
+
+/**
+ * Empaqueta un perfil (estilo × habilidad) en un `BotPolicy`: resuelve una sola vez
+ * el comportamiento y lo cierra sobre las dos decisiones. Es lo que consumen el
+ * controlador (una política por asiento) y el simulador de los tests.
+ */
+export function makePolicy(profile: BotProfile): BotPolicy {
+  const behavior = resolveBehavior(profile)
+  return {
+    turn: (state, rng) => botTurnAction(state, rng, behavior),
+    reaction: (state, offer, rng) => botReaction(state, offer, rng, behavior),
+  }
 }
 
 // --- política ingenua (solo benchmark en tests) ---------------------------------------

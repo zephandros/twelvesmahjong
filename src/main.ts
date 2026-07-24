@@ -81,6 +81,7 @@ if (debug === 'board') {
         game,
         log: saved.log,
         botSeed: saved.botSeed,
+        difficulty: saved.difficulty,
       })
     }
     toMenu()

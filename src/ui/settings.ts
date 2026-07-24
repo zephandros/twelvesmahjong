@@ -5,12 +5,20 @@
 import type { Locale } from './i18n'
 import type { MatchLength, RuleSet } from '../core/rules-config'
 import { DEFAULT_RULES, UMA_PRESETS } from '../core/rules-config'
+import type { SkillId } from '../ai/profiles'
 
 export type TableTheme = 'green' | 'red' | 'blue' | 'wood'
 export type TileBack = 'amber' | 'green' | 'red' | 'blue' | 'charcoal'
 export type VolumeChannel = 'master' | 'music' | 'sfx' | 'voices'
 /** 'auto' = seguir al navegador en cada arranque (hasta que el usuario elija). */
 export type Language = Locale | 'auto'
+/** Dificultad de los rivales: fija su HABILIDAD (el estilo lo trae cada personaje). */
+export type Difficulty = 'easy' | 'normal' | 'hard'
+
+/** Dificultad global → nivel de habilidad de los bots rivales (ver ai/profiles.ts). */
+export function skillFor(d: Difficulty): SkillId {
+  return d === 'easy' ? 'novice' : d === 'hard' ? 'expert' : 'intermediate'
+}
 
 export interface Settings {
   volumes: Record<VolumeChannel, number> // 0..1
@@ -23,6 +31,8 @@ export interface Settings {
   showWaits: boolean
   /** Reglamento de la PRÓXIMA partida; una en curso conserva el suyo. */
   rules: RuleSet
+  /** Dificultad de los rivales de la PRÓXIMA partida (la en curso conserva la suya). */
+  difficulty: Difficulty
 }
 
 export const DEFAULTS: Settings = {
@@ -33,6 +43,7 @@ export const DEFAULTS: Settings = {
   language: 'auto',
   showWaits: true,
   rules: DEFAULT_RULES,
+  difficulty: 'normal',
 }
 
 /** Valores admitidos de los ajustes numéricos de reglas (los ofrece el cycler). */
@@ -42,6 +53,7 @@ const KEY = 'tm-settings-v1'
 const THEMES: readonly TableTheme[] = ['green', 'red', 'blue', 'wood']
 const BACKS: readonly TileBack[] = ['amber', 'green', 'red', 'blue', 'charcoal']
 const LANGUAGES: readonly Language[] = ['auto', 'es', 'en', 'ja']
+const DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard']
 
 const LENGTHS: readonly MatchLength[] = ['tonpuusen', 'hanchan']
 
@@ -105,6 +117,9 @@ export function loadSettings(): Settings {
         : DEFAULTS.language,
       showWaits: typeof p.showWaits === 'boolean' ? p.showWaits : DEFAULTS.showWaits,
       rules: readRules(p.rules),
+      difficulty: DIFFICULTIES.includes(p.difficulty as Difficulty)
+        ? (p.difficulty as Difficulty)
+        : DEFAULTS.difficulty,
     }
   } catch {
     return structuredClone(DEFAULTS)
