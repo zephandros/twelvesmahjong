@@ -315,6 +315,7 @@ export const MESSAGES = {
   "mp.code-label": { es: "CÓDIGO DE SALA", en: "ROOM CODE", ja: "合言葉" },
   "mp.code-hint": { es: "Pide el código a quien creó la sala.", en: "Ask the room's host for the code.", ja: "部屋を作った人に合言葉を聞いてください。" },
   "mp.name-label": { es: "TU NOMBRE", en: "YOUR NAME", ja: "あなたの名前" },
+  "mp.name-required": { es: "Escribe tu nombre para crear una sala o unirte.", en: "Enter your name to create or join a room.", ja: "名前が必要です。" },
   "mp.room-code": { es: "CÓDIGO", en: "CODE", ja: "合言葉" },
   "mp.copy": { es: "COPIAR", en: "COPY", ja: "コピー" },
   "mp.copied": { es: "Copiado", en: "Copied", ja: "コピーしました" },

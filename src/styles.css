@@ -448,9 +448,9 @@ html, body {
      lado libre —el puesto va arriba-derecha y las insignias de viento/oya
      abajo).
    - `.tm-action-timer`: el reloj del PROPIO jugador, que no va en su panel
-     (fuera de donde está mirando mientras decide) sino sobre la zona de
-     acción; su posición la fija `place()` desde hud.ts, encima de la fila de
-     opciones de chi para que ni las múltiples quepan debajo sin taparlo. */
+     (fuera de donde está mirando mientras decide) sino centrado sobre el
+     rótulo de turno —punto fijo, ver hud.ts— y bastante más grande: es el que
+     hay que reconocer de un vistazo sin dejar de mirar la mano. */
 .tm-panel__timer,
 .tm-action-timer {
   min-width: 46px;
@@ -467,11 +467,35 @@ html, body {
   line-height: 1;
   color: var(--cream);
 }
+/* El reloj de un rival va bajo la fila de insignias (arriba quedan el viento a
+   la izquierda y el puesto a la derecha; a 10px del borde superior se comía la
+   insignia de viento) y del lado que MIRA A LA MESA: en los paneles de la
+   derecha, pegado a su borde izquierdo; en los de la izquierda, al derecho.
+   Así los cuatro relojes quedan hacia el centro de la pantalla. */
 .tm-panel__timer {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 56px;
+  right: 8px;
   z-index: 3;
+}
+.tm-panel--tr .tm-panel__timer,
+.tm-panel--br .tm-panel__timer {
+  right: auto;
+  left: 8px;
+}
+/* En los paneles de la izquierda el reloj cae justo donde vive el distintivo de
+   RIICHI: cuando coinciden, el distintivo baja (el reloj se dibuja antes en el
+   HTML precisamente para poder decirlo con un selector hermano). */
+.tm-panel__timer:not(.is-hidden) ~ .tm-panel__riichi { top: 110px; }
+.tm-panel--tr .tm-panel__timer:not(.is-hidden) ~ .tm-panel__riichi,
+.tm-panel--br .tm-panel__timer:not(.is-hidden) ~ .tm-panel__riichi { top: 56px; }
+/* El propio reloj, al doble: se lee de reojo mientras se mira la mano, y a 46px
+   se perdía contra el fieltro. Aro más grueso por la misma razón. */
+.tm-action-timer {
+  min-width: 92px;
+  height: 92px;
+  font-size: 50px;
+  box-shadow: inset 0 0 0 3px var(--gold), 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 .tm-panel__timer.is-hidden,
 .tm-action-timer.is-hidden { display: none; }
@@ -481,6 +505,9 @@ html, body {
   color: #ffd9d2;
   box-shadow: inset 0 0 0 2px #d9534f, 0 0 14px rgba(217, 83, 79, 0.55);
   animation: tm-timer-pulse 0.9s ease-in-out infinite;
+}
+.tm-action-timer.is-urgent {
+  box-shadow: inset 0 0 0 3px #d9534f, 0 0 26px rgba(217, 83, 79, 0.6);
 }
 @keyframes tm-timer-pulse {
   50% { transform: scale(1.12); }
@@ -641,6 +668,12 @@ html, body {
 }
 .tm-btn:hover { filter: brightness(1.1); }
 .tm-btn:active { transform: translateY(1px); }
+/* Apagado = se ve apagado. Estaba solo en las acciones de la selección de
+   personaje, y el lobby tiene botones que nacen deshabilitados (crear/unirse
+   sin nombre, empezar sin personaje) que parecían pulsables. */
+.tm-btn:disabled { opacity: 0.35; cursor: default; }
+.tm-btn:disabled:hover { filter: none; }
+.tm-btn:disabled:active { transform: none; }
 .tm-btn--primary { color: var(--ink); background: linear-gradient(var(--gold-lt), var(--gold)); border-color: var(--gold-lt); }
 .tm-btn--normal { color: var(--cream); background: rgba(10, 18, 12, 0.85); border-color: var(--gold); }
 .tm-btn--muted { color: var(--muted); background: rgba(10, 18, 12, 0.7); border-color: #5f6f60; }
@@ -1182,7 +1215,6 @@ html, body {
   font-size: 36px;
   padding: 14px 28px;
 }
-.tm-select__actions .tm-btn:disabled { opacity: 0.35; cursor: default; }
 
 /* --- lobby de multijugador ----------------------------------------------------- */
 /* Reutiliza .tm-select (cabecera, asientos, rejilla de personajes): es la misma
@@ -1227,6 +1259,16 @@ html, body {
   letter-spacing: 0.08em;
 }
 .tm-field--name { width: 520px; }
+/* Aviso de campo obligatorio bajo el nombre. Se apaga con `visibility` y no con
+   `display`: si desapareciera, la columna entera pegaría un salto al escribir
+   la primera letra. */
+.tm-field__req {
+  font-family: var(--ui);
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+}
+.tm-field__req.is-off { visibility: hidden; }
 /* `width:100%` + `min-width:0`: sin esto el ancho INTRÍNSECO del input (unos 20
    caracteres al tamaño de fuente de la UI) se impone y desborda la tarjeta. */
 .tm-field input {

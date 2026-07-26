@@ -44,6 +44,12 @@ export interface HudInfo {
 
 const PLACE_KEYS = ['hud.place.1', 'hud.place.2', 'hud.place.3', 'hud.place.4'] as const
 
+// Cuenta atrás de la propia decisión (red): diámetro, y borde superior de la
+// caja del rótulo de turno (`turnEl`: bottom 148 + 22px de caja de línea), que
+// es contra lo que se alinea. Medido en el DOM, no estimado.
+const TIMER_D = 92
+const TURN_LABEL_TOP = 910
+
 const PANEL_MARGIN = 24
 const PANEL_W = 240 - PANEL_MARGIN * 2
 const PANEL_H = 540 - PANEL_MARGIN * 2
@@ -162,15 +168,20 @@ export class Hud {
       const isSelf = rel === 'self'
       const c = chars[seat]!
 
+      // La esquina va en el class: el reloj de decisión se coloca del lado que
+      // mira a la mesa (izquierda en los paneles de la derecha y al revés), y
+      // eso solo lo sabe el CSS si se lo decimos.
       const panel = document.createElement('div')
-      panel.className = `tm-panel${isSelf ? ' tm-panel--self' : ''}`
+      panel.className = `tm-panel tm-panel--${corner}${isSelf ? ' tm-panel--self' : ''}`
       panel.innerHTML =
         `<img class="tm-panel__img" src="${thumbUrl(c)}" alt="">` +
         `<div class="tm-panel__wind"></div>` +
         `<div class="tm-panel__oya"></div>` +
         `<span class="tm-panel__place"></span>` +
-        `<div class="tm-panel__riichi"></div>` +
+        // El reloj va ANTES que el distintivo de riichi para que el selector
+        // hermano (`~`) de styles.css pueda apartarlo cuando ambos coinciden.
         `<div class="tm-panel__timer is-hidden"><span></span></div>` +
+        `<div class="tm-panel__riichi"></div>` +
         `<div class="tm-panel__info">` +
         `<div class="tm-panel__row"><span class="tm-panel__player"></span></div>` +
         `<div class="tm-panel__row"><span class="tm-panel__name"></span></div>` +
@@ -232,31 +243,38 @@ export class Hud {
     stage.appendChild(counter)
 
     // --- botones de acción + rótulo de turno ---
-    this.buttonsRow = el('div', 'display:flex;gap:10px')
-    this.buttonsRow.className = 'tm-action-row'
-    place(this.buttonsRow, { right: 264, bottom: 116, z: 45 })
-    stage.appendChild(this.buttonsRow)
+    // Pila anclada abajo-derecha del fieltro: opciones de chi encima, acciones
+    // debajo. El `gap` reproduce exactamente el hueco de 18px que había entre
+    // las dos filas cuando estaban posicionadas a mano (bottom 116 y 172).
+    const buttonStack = el('div', 'display:flex;flex-direction:column;align-items:flex-end;gap:18px')
+    place(buttonStack, { right: 264, bottom: 116, z: 45 })
+    stage.appendChild(buttonStack)
 
     // fila de opciones de chi, encima de los botones de acción
     this.chiRow = el('div', 'display:flex;gap:10px')
     this.chiRow.className = 'tm-action-row'
-    place(this.chiRow, { right: 264, bottom: 172, z: 45 })
-    stage.appendChild(this.chiRow)
+    buttonStack.appendChild(this.chiRow)
 
-    // Cuenta atrás de la PROPIA decisión (red): fija encima de donde el humano
-    // actúa —los botones de llamada, o su mano si toca descartar— y NO en su
-    // panel (esquina inferior izquierda, fuera de donde está mirando mientras
-    // decide). Un solo punto fijo sirve para las dos cosas: va por encima de
-    // `chiRow`, que es la más alta de las dos filas de botones, así que ni las
-    // opciones múltiples de chi lo tapan. Los rivales sí ven su reloj en su
-    // propio panel — ese circuito no cambia.
-    // El `bottom` deja el mismo hueco (18px) que hay entre las dos filas de
-    // botones: con las 3 opciones de chi —el máximo— la fila llega a y=854, y
-    // el reloj termina en 836. Medido, no estimado.
+    this.buttonsRow = el('div', 'display:flex;gap:10px')
+    this.buttonsRow.className = 'tm-action-row'
+    buttonStack.appendChild(this.buttonsRow)
+
+    // Cuenta atrás de la PROPIA decisión (red). NO va en su panel (esquina
+    // inferior izquierda, fuera de donde está mirando mientras decide) NI atada
+    // a los botones —cambiaba de sitio según cuántos hubiera—: punto fijo en el
+    // eje central de la mesa, justo encima del rótulo de turno, y al doble de
+    // tamaño que el de un rival. Sirve igual para descartar que para cantar.
+    // `left` centrado a mano (no `centerX`): la animación de `is-urgent` escribe
+    // `transform`, y un translate en el posicionamiento se lo comería el keyframe.
     this.actionTimerEl = el('div', '')
     this.actionTimerEl.className = 'tm-action-timer is-hidden'
     this.actionTimerEl.innerHTML = '<span></span>'
-    place(this.actionTimerEl, { right: 264, bottom: 244, z: 46 })
+    place(this.actionTimerEl, {
+      left: 960 - TIMER_D / 2,
+      bottom: STAGE_H - TURN_LABEL_TOP + 16, // 16px de aire sobre el rótulo
+      width: TIMER_D,
+      z: 46,
+    })
     stage.appendChild(this.actionTimerEl)
     this.actionTimerNum = this.actionTimerEl.querySelector('span')!
 

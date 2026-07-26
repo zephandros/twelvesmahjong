@@ -311,6 +311,7 @@ mp.join|Botón: unirse con un código|UNIRSE|JOIN|参加する
 mp.code-label|Etiqueta del campo de código de sala|CÓDIGO DE SALA|ROOM CODE|合言葉
 mp.code-hint|Ayuda bajo el campo de código|Pide el código a quien creó la sala.|Ask the room's host for the code.|部屋を作った人に合言葉を聞いてください。
 mp.name-label|Etiqueta del campo de nombre|TU NOMBRE|YOUR NAME|あなたの名前
+mp.name-required|Aviso bajo el campo de nombre: sin nombre no se puede crear ni entrar|Escribe tu nombre para crear una sala o unirte.|Enter your name to create or join a room.|名前が必要です。
 mp.room-code|Encabezado del código de sala ya creada|CÓDIGO|CODE|合言葉
 mp.copy|Botón: copiar el código al portapapeles|COPIAR|COPY|コピー
 mp.copied|Aviso tras copiar el código|Copiado|Copied|コピーしました

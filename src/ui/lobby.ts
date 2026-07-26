@@ -91,12 +91,13 @@ export function renderLobby(
         <label class="tm-field tm-field--name">
           <span>${t('mp.name-label')}</span>
           <input type="text" data-f="name" maxlength="16" value="${escapeAttr(saved)}" autocomplete="nickname">
+          <span class="tm-field__req" data-f="name-req">${t('mp.name-required')}</span>
         </label>
         <div class="tm-lobby__split">
           <section class="tm-lobby__card">
             <span class="tm-lobby__hint">${t('mp.create-hint')}</span>
             <div class="tm-lobby__turnstile" data-f="turnstile"></div>
-            <button class="tm-btn tm-btn--primary" data-act="create">${t('mp.create')}</button>
+            <button class="tm-btn tm-btn--primary" data-act="create" disabled>${t('mp.create')}</button>
           </section>
           <section class="tm-lobby__card">
             <label class="tm-field">
@@ -116,13 +117,28 @@ export function renderLobby(
     const joinBtn = wrap.querySelector<HTMLButtonElement>('[data-act="join"]')!
     const createBtn = wrap.querySelector<HTMLButtonElement>('[data-act="create"]')!
     const statusEl = wrap.querySelector<HTMLElement>('[data-f="status"]')!
+    const reqEl = wrap.querySelector<HTMLElement>('[data-f="name-req"]')!
+
+    // Sin nombre no se entra: un asiento sin nombre es indistinguible de uno de
+    // la IA en el lobby y en los paneles de la mesa. Los dos botones se apagan
+    // hasta que haya algo escrito (espacios no cuentan: el nombre se manda con
+    // trim) y el aviso bajo el campo explica por qué están apagados.
+    const sync = (): void => {
+      const named = nameEl.value.trim().length > 0
+      createBtn.disabled = !named
+      joinBtn.disabled = !named || !isRoomCode(codeEl.value)
+      reqEl.classList.toggle('is-off', named)
+    }
+    nameEl.addEventListener('input', sync)
 
     // El código solo admite el alfabeto sin ambigüedades (ver worker/code.ts);
     // se normaliza mientras se escribe para que no haya que pensarlo.
     codeEl.addEventListener('input', () => {
       codeEl.value = codeEl.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
-      joinBtn.disabled = !isRoomCode(codeEl.value)
+      sync()
     })
+
+    sync() // el nombre puede venir de localStorage: el estado inicial no es fijo
 
     joinBtn.addEventListener('click', () => {
       playUiClick()

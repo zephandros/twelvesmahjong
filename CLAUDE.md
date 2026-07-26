@@ -597,11 +597,24 @@ por el test de regresión de `nextAlarm`.
 
 **Cuenta atrás, dónde se pinta** (`hud.ts:timerFor`): el reloj del PROPIO jugador
 NO va en su panel de esquina —queda fuera de donde mira mientras decide— sino en
-`.tm-action-timer`, fijo sobre la zona de acción y alineado a la derecha con las
-filas de botones. Un solo punto sirve para descartar y para chi/pon/kan/riichi/ron:
-va por encima de `chiRow`, la más alta, con 18 px de hueco medidos con las 3
-opciones de chi (el máximo). El reloj de un RIVAL sí va en su panel
-(`.tm-panel__timer`). `timerFor(seat)` es el único sitio que decide el destino.
+`.tm-action-timer`, **centrado sobre el rótulo de turno y al doble de tamaño**
+(92 px frente a los 46 del panel de un rival): tiene que reconocerse de reojo sin
+dejar de mirar la mano. Es un **punto fijo** (`left` centrado a mano sobre x=960,
+`bottom` derivado de `TURN_LABEL_TOP`), NO atado a los botones: colgarlo de la fila
+de acciones lo movía de sitio según cuántos botones hubiera y con 3 opciones de chi
+se iba al centro de la pantalla. Nota: pisa la 3.ª fila del pond propio (a partir
+del descarte 19), un caso raro y de fichas ya conocidas. `left` no puede usar
+`centerX`: la animación de `is-urgent` escribe `transform` y se comería el
+translate.
+
+El reloj de un RIVAL va en su panel (`.tm-panel__timer`), **bajo la fila de
+insignias** (a 10 px del borde superior tapaba la insignia de viento) y **del lado
+que mira a la mesa**: pegado al borde izquierdo en los paneles de la derecha
+(`--tr`/`--br`), al derecho en los de la izquierda. De ahí el `tm-panel--<corner>`
+en el class del panel. En los paneles de la izquierda coincide con el distintivo de
+RIICHI, así que el distintivo baja cuando el reloj está visible; por eso el reloj se
+escribe ANTES en el HTML del panel, para poder decirlo con un selector hermano.
+`timerFor(seat)` sigue siendo el único sitio que decide el destino.
 
 ## Alcance v1
 
