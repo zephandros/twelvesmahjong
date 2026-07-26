@@ -98,8 +98,17 @@ export class Hud {
     windBadge: HTMLElement
     riichiTag: HTMLElement
     nameEl: HTMLElement
+    playerEl: HTMLElement
+    timerEl: HTMLElement
+    timerNum: HTMLElement
     oyaEl: HTMLElement
   }>()
+
+  /** Nombre de la persona por asiento (null = IA). Vacío en partida local. */
+  private players: readonly (string | null)[] = []
+  /** Cuenta atrás en curso: a quién se espera, hasta cuándo, y su ticker. */
+  private deadline: { seats: Seat[]; at: number } | null = null
+  private deadlineTimer: ReturnType<typeof setInterval> | null = null
 
   private readonly kyokuJp: HTMLElement
   private readonly kyokuEn: HTMLElement
@@ -110,6 +119,11 @@ export class Hud {
   private readonly sticksEl: HTMLElement
   private readonly buttonsRow: HTMLElement
   private readonly chiRow: HTMLElement
+  /** Cuenta atrás de la propia decisión (red): ver comentario en el constructor. */
+  private readonly actionTimerEl: HTMLElement
+  private readonly actionTimerNum: HTMLElement
+  /** Aviso de espera al resto tras cerrar los resultados (red). */
+  private readonly waitOthersEl: HTMLElement
   private readonly waitsEl: HTMLElement
   private readonly turnEl: HTMLElement
   private readonly overlay: HTMLElement
@@ -156,7 +170,9 @@ export class Hud {
         `<div class="tm-panel__oya"></div>` +
         `<span class="tm-panel__place"></span>` +
         `<div class="tm-panel__riichi"></div>` +
+        `<div class="tm-panel__timer is-hidden"><span></span></div>` +
         `<div class="tm-panel__info">` +
+        `<div class="tm-panel__row"><span class="tm-panel__player"></span></div>` +
         `<div class="tm-panel__row"><span class="tm-panel__name"></span></div>` +
         `<div class="tm-panel__score"></div>` +
         `</div>`
@@ -171,6 +187,9 @@ export class Hud {
         windBadge: panel.querySelector('.tm-panel__wind')!,
         riichiTag: panel.querySelector('.tm-panel__riichi')!,
         nameEl: panel.querySelector('.tm-panel__name')!,
+        playerEl: panel.querySelector('.tm-panel__player')!,
+        timerEl: panel.querySelector('.tm-panel__timer')!,
+        timerNum: panel.querySelector('.tm-panel__timer span')!,
         oyaEl: panel.querySelector('.tm-panel__oya')!,
       })
     }
@@ -224,6 +243,31 @@ export class Hud {
     place(this.chiRow, { right: 264, bottom: 172, z: 45 })
     stage.appendChild(this.chiRow)
 
+    // Cuenta atrás de la PROPIA decisión (red): fija encima de donde el humano
+    // actúa —los botones de llamada, o su mano si toca descartar— y NO en su
+    // panel (esquina inferior izquierda, fuera de donde está mirando mientras
+    // decide). Un solo punto fijo sirve para las dos cosas: va por encima de
+    // `chiRow`, que es la más alta de las dos filas de botones, así que ni las
+    // opciones múltiples de chi lo tapan. Los rivales sí ven su reloj en su
+    // propio panel — ese circuito no cambia.
+    // El `bottom` deja el mismo hueco (18px) que hay entre las dos filas de
+    // botones: con las 3 opciones de chi —el máximo— la fila llega a y=854, y
+    // el reloj termina en 836. Medido, no estimado.
+    this.actionTimerEl = el('div', '')
+    this.actionTimerEl.className = 'tm-action-timer is-hidden'
+    this.actionTimerEl.innerHTML = '<span></span>'
+    place(this.actionTimerEl, { right: 264, bottom: 244, z: 46 })
+    stage.appendChild(this.actionTimerEl)
+    this.actionTimerNum = this.actionTimerEl.querySelector('span')!
+
+    // Aviso de "ya he continuado, faltan otros". Va por encima de todo (la
+    // pantalla de victoria incluida) porque aparece justo cuando esa pantalla
+    // se cierra y el jugador se queda mirando una mesa que aún no se mueve.
+    this.waitOthersEl = el('div', '')
+    this.waitOthersEl.className = 'tm-wait-others is-hidden'
+    place(this.waitOthersEl, { left: 960, bottom: 300, centerX: true, z: 120 })
+    stage.appendChild(this.waitOthersEl)
+
     // tira de esperas del humano (espejo izquierdo de los botones de acción)
     this.waitsEl = document.createElement('div')
     this.waitsEl.className = 'tm-waits is-hidden'
@@ -273,8 +317,106 @@ export class Hud {
   private setPanelName(seat: Seat, alt?: AltForm): void {
     const p = this.portraits.get(seat)!
     const name = charName(this.chars[seat]!, alt)
-    p.nameEl.textContent = seat === this.human ? `${name} · ${t('hud.you')}` : name
+    p.nameEl.textContent = name
     p.panel.querySelector('.tm-panel__img')!.setAttribute('alt', name)
+
+    // Persona y personaje son cosas distintas, y en red hace falta ver las dos:
+    // saber que enfrente está Marta llevando a Drácula, y cuáles son bots.
+    // En partida local no hay personas: la línea se oculta y el "· TÚ" vuelve
+    // junto al nombre del personaje, como ha sido siempre.
+    const label = this.playerLabel(seat)
+    p.playerEl.textContent = label ?? ''
+    p.playerEl.classList.toggle('is-hidden', label === null)
+    if (this.players.length === 0 && seat === this.human) {
+      p.nameEl.textContent = `${name} · ${t('hud.you')}`
+    }
+  }
+
+  /** Etiqueta de persona del asiento, o null si no hay que enseñar ninguna. */
+  private playerLabel(seat: Seat): string | null {
+    if (this.players.length === 0) return null // partida local
+    const you = seat === this.human ? t('hud.you') : null
+    const name = this.players[seat] ?? null
+    if (name === null) return you ?? t('mp.seat-bot') // asiento de la IA
+    return you === null ? name : `${name} · ${you}`
+  }
+
+  /** Nombres de los jugadores (solo partidas en red). */
+  setPlayers(players: readonly (string | null)[]): void {
+    this.players = players
+    for (const seat of SEATS) this.setPanelName(seat)
+  }
+
+  // --- cuenta atrás de decisión (solo en red) ------------------------------------
+
+  /**
+   * Arranca la cuenta atrás sobre los paneles de `seats`. En red el plazo es
+   * real: si vence, el árbitro juega por ese asiento con la IA, así que el
+   * jugador tiene que verlo venir.
+   */
+  setDeadline(seats: Seat[], at: number): void {
+    this.deadline = { seats, at }
+    if (this.deadlineTimer === null) {
+      // 250 ms basta para que el número no dé saltos y no cuesta nada.
+      this.deadlineTimer = setInterval(() => this.paintDeadline(), 250)
+    }
+    this.paintDeadline()
+  }
+
+  /**
+   * "Ya continué, faltan otros". `n` = cuántos faltan; 0 lo oculta.
+   * Sin esto, quien cierra primero la pantalla de resultados se queda mirando
+   * una mesa quieta sin saber por qué.
+   */
+  setWaitingOthers(n: number): void {
+    this.waitOthersEl.classList.toggle('is-hidden', n <= 0)
+    if (n > 0) this.waitOthersEl.textContent = t('mp.waiting-others', { n })
+  }
+
+  /** Se resolvió la jugada: fuera relojes. */
+  clearDeadline(): void {
+    this.deadline = null
+    if (this.deadlineTimer !== null) {
+      clearInterval(this.deadlineTimer)
+      this.deadlineTimer = null
+    }
+    for (const seat of SEATS) this.hideTimer(seat)
+  }
+
+  /**
+   * Reloj de un asiento: el propio va sobre la zona de acción
+   * (`actionTimerEl`); el de un rival, en su panel de esquina. Único punto
+   * donde se decide el destino, para no repetir la condición en cada sitio.
+   */
+  private timerFor(seat: Seat): { el: HTMLElement; num: HTMLElement } {
+    if (seat === this.human) return { el: this.actionTimerEl, num: this.actionTimerNum }
+    const p = this.portraits.get(seat)!
+    return { el: p.timerEl, num: p.timerNum }
+  }
+
+  /** Oculta el reloj Y le quita lo urgente: si no, al reaparecer daría un
+   *  fogonazo rojo heredado del plazo anterior. */
+  private hideTimer(seat: Seat): void {
+    const { el } = this.timerFor(seat)
+    el.classList.add('is-hidden')
+    el.classList.remove('is-urgent')
+  }
+
+  private paintDeadline(): void {
+    const d = this.deadline
+    if (!d) return
+    const left = Math.max(0, Math.ceil((d.at - Date.now()) / 1000))
+    for (const seat of SEATS) {
+      if (!d.seats.includes(seat)) {
+        this.hideTimer(seat)
+        continue
+      }
+      const { el, num } = this.timerFor(seat)
+      el.classList.remove('is-hidden')
+      num.textContent = String(left)
+      // últimos 5 segundos: el reloj se pone rojo y late
+      el.classList.toggle('is-urgent', left <= 5)
+    }
   }
 
   // Overlay de ajustes de mesa, abierto desde el botón MENÚ del marco.
@@ -575,7 +717,8 @@ export class Hud {
     this.overlay.querySelector('.tm-overlay__continue')!.addEventListener('click', onContinue, { once: true })
   }
 
-  showGameEnd(s: HandState, onRematch: () => void, onCharacters: () => void): void {
+  /** `onRematch` null = sin revancha (partida en red: la negociaría la sala). */
+  showGameEnd(s: HandState, onRematch: (() => void) | null, onCharacters: () => void): void {
     const names = (seat: Seat) => charName(this.chars[seat]!)
     // puntos de mesa a la izquierda, resultado con uma/oka a la derecha
     const rows = finalResults(s.seats.map((st) => st.points), s.rules)
@@ -592,13 +735,39 @@ export class Hud {
       `<div class="tm-deltas">${rows}</div>` +
       `<div style="display:flex;gap:10px;margin-top:8px">` +
       `<button class="tm-btn tm-btn--muted" data-act="chars">${t('hud.to-menu')}</button>` +
-      `<button class="tm-btn tm-btn--primary" data-act="rematch">${t('hud.rematch')}</button>` +
+      (onRematch
+        ? `<button class="tm-btn tm-btn--primary" data-act="rematch">${t('hud.rematch')}</button>`
+        : '') +
       `</div></div>`
     this.overlay.classList.remove('is-hidden')
-    this.overlay.querySelector('[data-act="rematch"]')!.addEventListener('click', onRematch, { once: true })
+    if (onRematch) {
+      this.overlay.querySelector('[data-act="rematch"]')!
+        .addEventListener('click', onRematch, { once: true })
+    }
     this.overlay.querySelector('[data-act="chars"]')!.addEventListener(
       'click',
       () => { this.musicBar.dispose(); onCharacters() }, // el stage muere: baja del oyente
+      { once: true },
+    )
+  }
+
+  /**
+   * La partida en red se ha caído y no se puede seguir. No hay nada que
+   * decidir: solo enterarse y volver a la portada. `message` llega ya
+   * traducido desde ui/net.ts, que es quien sabe por qué se cortó.
+   */
+  showNetError(message: string, onCharacters: () => void): void {
+    this.overlay.innerHTML =
+      `<div class="tm-overlay__card">` +
+      `<div class="tm-overlay__title">${t('net.error.title')}</div>` +
+      `<div class="tm-overlay__sub">${message}</div>` +
+      `<div style="display:flex;gap:10px;margin-top:8px">` +
+      `<button class="tm-btn tm-btn--primary" data-act="chars">${t('hud.to-menu')}</button>` +
+      `</div></div>`
+    this.overlay.classList.remove('is-hidden')
+    this.overlay.querySelector('[data-act="chars"]')!.addEventListener(
+      'click',
+      () => { this.musicBar.dispose(); onCharacters() },
       { once: true },
     )
   }

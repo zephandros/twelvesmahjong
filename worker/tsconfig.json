@@ -1,0 +1,28 @@
+{
+  // Config aparte de la raíz porque el Worker NO tiene DOM: `lib` sin "DOM" y
+  // `types` con los de Cloudflare. El tsconfig raíz hace `include: ["src",
+  // "tests", "vite.config.ts"]`, así que worker/ ya le queda fuera y no hay
+  // choque de librerías entre los dos.
+  //
+  // Se compilan también core/ y ai/ porque el Worker los importa tal cual: el
+  // núcleo es puro y determinista, así que el árbitro del servidor es
+  // literalmente el mismo código que el cliente.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": [".", "../src/core", "../src/ai"]
+}

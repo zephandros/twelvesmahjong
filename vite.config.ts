@@ -49,6 +49,14 @@ export default defineConfig({
         // 404 nunca la ve un usuario con el SW instalado (navigateFallback
         // sirve index.html): ninguna de las dos pinta nada offline.
         globIgnores: ['og/**', '404.html'],
+        // SIN navigateFallback (vite-plugin-pwa lo pone en 'index.html' por
+        // defecto). El juego es UNA sola página en '/': no hay rutas de cliente
+        // que rescatar, y ese fallback solo servía para que el service worker
+        // contestara el índice a CUALQUIER navegación — con lo que una URL
+        // inventada llevaba a la portada en vez de a la 404, y /api/ quedaba
+        // secuestrado. La raíz sigue funcionando offline porque index.html está
+        // precacheado (workbox resuelve '/' por directoryIndex).
+        navigateFallback: null,
         runtimeCaching: [
           {
             // Música: CacheFirst con rangeRequests (HTMLAudioElement pide rangos).

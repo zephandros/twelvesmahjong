@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "twelvesmahjong",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-07-26",
+
+  // El sitio estático (dist/) lo sirve el propio Worker vía el binding ASSETS.
+  //
+  // `run_worker_first` se deja en su valor por defecto (false) A PROPÓSITO: así
+  // una petición que corresponde a un asset se sirve SIN invocar el Worker. Si
+  // alguien inunda /api/, la portada y la partida de un jugador siguen en pie.
+  //
+  // `not_found_handling: "404-page"` reproduce lo que hacía Pages: servir
+  // public/404.html con un 404 REAL. Con "single-page-application" se
+  // devolvería 200 y volveríamos a los soft-404 que documenta CLAUDE.md.
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
+
+  // Una sala de multijugador = un Durable Object. Backend SQLite (new_sqlite_classes),
+  // que es el que entra en el plan gratuito.
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
+
+  "observability": { "enabled": true }
+}

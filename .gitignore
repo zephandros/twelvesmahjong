@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dev-dist/
+.env
 *.local
 .DS_Store
 .vite/
@@ -9,3 +10,8 @@ dev-dist/
 raw/
 
 __pycache__/
+
+# Secretos locales de wrangler dev
+.dev.vars
+# Estado local de wrangler (caché, storage de los Durable Objects en dev)
+.wrangler/

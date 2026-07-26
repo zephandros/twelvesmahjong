@@ -25,8 +25,9 @@ el panel y la pantalla de victoria muestran a Mr. Hyde.
 Remoto: `origin git@github-zephandros:zephandros/twelvesmahjong.git` (rama `main`).
 Autor: `zephandro <twelvesrpg@gmail.com>` (config `--local`). **`raw/` está en
 `.gitignore`** — pesa ~110 MB y tiene respaldo externo; no debe entrar al repo.
-El juego está **publicado en https://twelvesmahjong.com** (Cloudflare; `dist/` va
-al host, no al repo).
+El juego está **publicado en https://twelvesmahjong.com** (Cloudflare Workers;
+`dist/` va al host, no al repo). Tampoco entran `.dev.vars` (secretos de
+`wrangler dev`) ni `.wrangler/`.
 
 ## Stack
 
@@ -39,9 +40,12 @@ al host, no al repo).
   con el servidor parado la partida es 100% jugable; lo único que falta offline es la
   música aún no escuchada (se cachea al primer play). Presupuesto de precache <15 MB.
 - **vitest** para tests. El núcleo se testea sin DOM.
-- Distribución: host estático (GitHub Pages). El SW **no** funciona sobre `file://`.
+- Distribución: **Cloudflare Workers + Static Assets** (`wrangler.jsonc`), que sirve
+  `dist/` y aloja el Durable Object del multijugador. El SW **no** funciona sobre
+  `file://`. La configuración manual del hosting vive en `docs/cloudflare-setup.md`.
 
-Comandos: `npm run dev` · `npm run build` · `npm test`. Assets: `npm run assets:tiles`
+Comandos: `npm run dev` · `npm run build` · `npm test` · `npm run dev:worker`
+(wrangler dev, para probar el multijugador) · `npm run deploy`. Assets: `npm run assets:tiles`
 · `assets:audio` (requiere ffmpeg) · `assets:fonts` (requiere Python + fontTools)
 · `assets:i18n` (CSV de traducciones → módulo TS; solo node).
 
@@ -441,10 +445,15 @@ Cambiar de dominio = tocar esos cuatro.
   lo inyecta el bundle, así que en dev llegaría tarde) y usa `system-ui`, para que el
   japonés no dependa del subset de Kosugi.
 - **`public/404.html`**: página autónoma con `noindex` y rutas **absolutas** (el host la
-  sirve para cualquier ruta). Su sola existencia hace que Cloudflare Pages devuelva un
-  404 real en vez de `index.html` con 200 (soft-404). Ojo: con el SW instalado el
-  `navigateFallback` sigue sirviendo `index.html` — el 404 es para rastreadores y
-  primeras visitas.
+  sirve para cualquier ruta). La sirve el Worker vía `not_found_handling: "404-page"`,
+  con status 404 real en vez de `index.html` con 200 (soft-404).
+- **`navigateFallback: null`** en el workbox de `vite.config.ts` (2026-07-26). El plugin
+  lo pone en `'index.html'` por defecto y eso hacía que, **con el service worker ya
+  instalado**, cualquier URL inventada acabara en la portada: el 404 solo lo veían los
+  rastreadores y las primeras visitas. El juego es UNA sola página en `/` —no hay rutas
+  de cliente que rescatar—, así que el fallback no aportaba nada. La raíz sigue
+  funcionando offline porque `index.html` está precacheado (workbox resuelve `/` por
+  `directoryIndex`); **auditoría offline repetida tras el cambio: pasa**.
 - **Precache**: `og/**` y `404.html` van en `globIgnores` (nadie los mira offline).
 
 Pendiente del lado del hosting (no es código): CNAME `www` → apex con redirección en
@@ -492,6 +501,107 @@ núcleo no lee ajustes de ningún global, se los pasan.
 - **`ui/stats.ts`** (`tm-stats-v1`): acumulador con funciones **puras**
   (`recordAction` / `recordHand` / `recordGame`), enganchadas en `apply()` y `showEnd()`.
   `ui/stats-screen.ts` las pinta clonando el patrón de `glossary.ts`.
+
+## Multijugador online (2026-07-26)
+
+Sala privada por código, hasta 4 humanos; los asientos que sobren los llevan bots.
+**Configuración manual del hosting: `docs/cloudflare-setup.md`** (Turnstile, cutover
+de dominio, regla WAF). Sin cuentas ni matchmaking.
+
+**Despliegue: ya NO es Pages.** El sitio lo sirve un **Worker con Static Assets**
+(`wrangler.jsonc`, `npm run deploy`), que además aloja el Durable Object. Claves:
+`not_found_handling: "404-page"` conserva el 404 real de la sección SEO, y
+`run_worker_first` se deja en false **a propósito** — un asset se sirve sin invocar
+el Worker, así que inundar `/api/` no tumba la portada ni el juego de un jugador.
+
+**El árbitro es el DO y corre EL MISMO `src/core/`.** No reimplementa mahjong:
+importa `reduce`, y como `reduce` lanza ante una jugada ilegal, ese es su validador
+de reglas. Igual con `src/ai/` para los bots y los relevos.
+
+- **`worker/room-logic.ts`** — puro, testeado en node sin workerd
+  (`tests/room-logic.test.ts`). `authorize(s, seat, a)` es **TODA la superficie
+  anti-trampas**: el núcleo no tiene noción de identidad. Rechaza `draw` venido de un
+  cliente (lo genera el servidor), acciones de turno desde un asiento que no es
+  `state.turn`, y reacciones firmadas con el `seat` de otro. `nextStep` es el espejo
+  sin timers de `ai/sim.ts`.
+- **`worker/room.ts`** — `GameRoom` con **WebSocket Hibernation**. Nada vive solo en
+  memoria entre mensajes: el estado se persiste como **log de acciones** (mismo
+  contrato que `ui/persist.ts`) y se reconstruye con `replay`. **Una sola alarma** por
+  DO sirve a la vez de plazo de decisión y de caducidad de sala, y se recalcula entera
+  tras cada evento.
+- **El servidor NO aplica `DELAY`/`BEAT`**: emite tan rápido como calcula. El ritmo lo
+  pone el cliente con una **cola de entrada** (`inbox` en `controller.ts`), que reusa
+  la tabla `DELAY` para que una partida online se vea igual que una local.
+- **Desconexión**: al vencer el plazo se le juega **esa decisión y nada más**; solo
+  tras `ABANDON_AFTER` (3) plazos seguidos el asiento pasa a `auto` y lo mueve la IA
+  como a un bot. El escalón importa: **el servidor no tiene pausas** (las pone el
+  cliente), así que dar por perdido el asiento al primer fallo se comía varias manos
+  de golpe y quien volvía no reconocía la partida. En **reacción** el vencimiento
+  inyecta `pass`, nunca deja que la IA cante por el ausente. Reconectar (token en
+  localStorage) devuelve el asiento, pone `misses` a cero **y vuelve a llamar a
+  `#pump`** — sin eso el que reconectaba se quedaba sin reloj y sin turno.
+- **Cuenta atrás**: el mensaje `deadline` lleva una **duración**, no una marca de
+  tiempo (el reloj del cliente puede ir desfasado). El controlador no la pinta a
+  ciegas: `refreshDeadline()` cruza el plazo del árbitro con el estado ya aplicado,
+  porque el `deadline` puede llegar mientras la cola de entrada aún tiene jugadas
+  anteriores.
+- **Anti-abuso** (`worker/ticket.ts`): `POST /api/room` **no instancia ningún DO** —
+  valida Turnstile, sortea el código y firma un ticket HMAC (clave derivada de
+  `TURNSTILE_SECRET` por HKDF). El DO nace, y escribe por primera vez, solo cuando
+  alguien abre el WebSocket con un ticket válido. Un bot que martillee el POST no crea
+  ni una sala. Más: autolimpieza por alarma (`deleteAll`), tope de 4 sockets, 4 KB y
+  20 msg/s por conexión, y códigos de 6 caracteres del servidor
+  (`src/net/codes.ts`, alfabeto sin I/O/0/1).
+
+**Reubicaciones que impuso el Worker** (no puede importar `ui/`, que arrastra i18n y
+localStorage): `CharacterId` + `CHARACTER_STYLES` → **`src/ai/roster.ts`**,
+`Difficulty` + `skillFor` → **`src/ai/profiles.ts`**, los RNG por bot →
+**`src/ai/bot-seats.ts`**. `ui/characters.ts` y `ui/settings.ts` los **reexportan**,
+así que el resto de la app importa donde siempre. `src/net/` es el terreno común
+(protocolo y códigos) de cliente y servidor.
+
+En `controller.ts`, `HUMAN` pasó a ser **`mySeat`** (variable del closure, `net.seat`
+en red) y `apply()` se partió en **`submit`** (input → manda) y **`apply`** (vía
+autoritativa → reduce). Sin predicción ni rollback: se bloquea el input hasta que la
+jugada vuelve confirmada.
+
+**Turnstile es la única dependencia externa del proyecto** y se carga **bajo demanda**,
+solo al abrir la pantalla de crear sala (`ui/turnstile.ts`): el juego de un jugador y
+el modo offline no tocan la red jamás.
+
+**Para desarrollar en local hacen falta las dos claves de PRUEBAS a la vez**:
+`TURNSTILE_SECRET` en `.dev.vars` y `VITE_TURNSTILE_SITEKEY` en **`.env.local`**
+(Vite lo prioriza sobre `.env`, que guarda la real). Mezclar una real con una de
+prueba hace que `siteverify` rechace el token. Y la sitekey real solo autoriza los
+hostnames de su widget, así que en `127.0.0.1` da **110200** ("domain mismatch"),
+que la UI muestra como "no se pudo cargar la comprobación" — parece un bloqueador
+y no lo es. Los dos archivos están en `.gitignore`.
+
+**Fin de mano SINCRONIZADO** (2026-07-26). El árbitro **no reparte la mano siguiente
+hasta que todos cierren su pantalla de resultados**: `CONTINUAR` manda `{t:'ready'}` y
+el DO solo avanza cuando `canAdvance` lo permite (`room-logic.ts`, puro y testeado en
+`tests/room-handend.test.ts`). Solo se espera a humanos **conectados y no ausentes**, y
+hay un tope de `DEADLINE.handEnd` (15 s) para que un abandono no congele la mesa. Quien
+ya confirmó ve `mp.waiting-others` mientras faltan otros.
+
+Antes se repartía en cuanto la mano acababa: quien se entretuviera leyendo la pantalla
+de victoria **perdía turnos sin verlos pasar**, porque su reloj de decisión ya corría
+por detrás y encima invisible (`refreshDeadline` lo oculta con `phase === 'ended'`).
+Medido: 98 s en la pantalla de victoria = varias manos jugadas por la IA.
+
+**Trampa de la alarma única**: al abrir la espera hay que **apagar `deadlineAt`**
+(`#pump` lo pone a 0 en cada pasada y solo lo fija la rama `await`). Arrastrar un plazo
+vencido hacía que `nextAlarm` armara la alarma en el pasado → saltaba al instante, no
+encontraba a quién jugarle, se rearmaba igual, y **la sala se colgaba en bucle**. Atado
+por el test de regresión de `nextAlarm`.
+
+**Cuenta atrás, dónde se pinta** (`hud.ts:timerFor`): el reloj del PROPIO jugador
+NO va en su panel de esquina —queda fuera de donde mira mientras decide— sino en
+`.tm-action-timer`, fijo sobre la zona de acción y alineado a la derecha con las
+filas de botones. Un solo punto sirve para descartar y para chi/pon/kan/riichi/ron:
+va por encima de `chiRow`, la más alta, con 18 px de hueco medidos con las 3
+opciones de chi (el máximo). El reloj de un RIVAL sí va en su panel
+(`.tm-panel__timer`). `timerFor(seat)` es el único sitio que decide el destino.
 
 ## Alcance v1
 

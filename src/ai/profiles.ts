@@ -16,6 +16,20 @@ export type StyleId =
 /** Nivel de competencia (la dificultad global lo fija para los rivales). */
 export type SkillId = 'novice' | 'intermediate' | 'expert'
 
+/**
+ * Dificultad de los rivales: fija su HABILIDAD (el estilo lo trae cada
+ * personaje, ver ai/roster.ts). Vive aquí, y no en ui/settings.ts, porque el
+ * árbitro del multijugador la necesita y no puede importar ui/.
+ * `ui/settings.ts` la reexporta.
+ */
+export type Difficulty = 'easy' | 'normal' | 'hard'
+
+export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard']
+
+export function skillFor(d: Difficulty): SkillId {
+  return d === 'easy' ? 'novice' : d === 'hard' ? 'expert' : 'intermediate'
+}
+
 /** Un bot = un estilo con un nivel. Inmutable y serializable. */
 export interface BotProfile {
   readonly style: StyleId

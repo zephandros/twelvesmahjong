@@ -300,3 +300,45 @@ music.prev|Tooltip del reproductor in-game: tema anterior|Tema anterior|Previous
 music.next|Tooltip del reproductor in-game: tema siguiente|Tema siguiente|Next track|次の曲
 music.mute|Tooltip del reproductor in-game: silenciar la música|Silenciar música|Mute music|ミュート
 music.unmute|Tooltip del reproductor in-game: quitar el silencio|Activar música|Unmute music|ミュート解除
+net.error.title|Título del aviso cuando se corta la partida en red|CONEXIÓN PERDIDA|CONNECTION LOST|接続が切れました
+net.error.closed|La sala se cerró desde el servidor|La sala se ha cerrado.|The room was closed.|対局室が閉じられました。
+net.error.dropped|No se pudo recuperar la conexión tras varios intentos|No se pudo reconectar con la sala.|Could not reconnect to the room.|対局室に再接続できませんでした。
+menu.multiplayer|Botón de la portada: partida en red|MULTIJUGADOR|MULTIPLAYER|オンライン対戦
+mp.title|Título de la pantalla de multijugador|MULTIJUGADOR|MULTIPLAYER|オンライン対戦
+mp.sub|Subtítulo: cómo funciona|Juega con amigos. Los asientos libres los ocupan rivales con IA.|Play with friends. Free seats are filled by AI rivals.|友達と対局。空席はAIが埋めます。
+mp.create|Botón: crear una sala nueva|CREAR SALA|CREATE ROOM|対局室を作る
+mp.join|Botón: unirse con un código|UNIRSE|JOIN|参加する
+mp.code-label|Etiqueta del campo de código de sala|CÓDIGO DE SALA|ROOM CODE|合言葉
+mp.code-hint|Ayuda bajo el campo de código|Pide el código a quien creó la sala.|Ask the room's host for the code.|部屋を作った人に合言葉を聞いてください。
+mp.name-label|Etiqueta del campo de nombre|TU NOMBRE|YOUR NAME|あなたの名前
+mp.room-code|Encabezado del código de sala ya creada|CÓDIGO|CODE|合言葉
+mp.copy|Botón: copiar el código al portapapeles|COPIAR|COPY|コピー
+mp.copied|Aviso tras copiar el código|Copiado|Copied|コピーしました
+mp.share-hint|Instrucción para el anfitrión|Comparte este código con tus amigos.|Share this code with your friends.|この合言葉を友達に伝えてください。
+mp.connecting|Estado: abriendo la conexión|Conectando…|Connecting…|接続中…
+mp.reconnecting|Estado: se cayó y se reintenta|Reconectando…|Reconnecting…|再接続中…
+mp.checking|Estado: validando la prueba de Turnstile|Comprobando…|Verifying…|確認中…
+mp.seat-empty|Asiento del lobby sin jugador|Libre|Empty|空席
+mp.seat-bot|Asiento que ocupará la IA|IA|AI|AI
+mp.you|Marca del asiento propio en el lobby|TÚ|YOU|あなた
+mp.host|Marca del anfitrión en el lobby|ANFITRIÓN|HOST|親機
+mp.offline|Marca de un jugador desconectado|Sin conexión|Offline|切断
+mp.begin|Botón del anfitrión para empezar la partida|EMPEZAR|BEGIN|開始
+mp.wait-host|Aviso a quien no es anfitrión|Esperando a que el anfitrión empiece…|Waiting for the host to begin…|親機の開始を待っています…
+mp.pick-first|Aviso: hay que elegir personaje antes de empezar|Elige tu personaje.|Pick your character.|自分の打ち手を選んでください。
+mp.taken|Personaje ya cogido por otro jugador|Ya elegido|Taken|選択済み
+mp.error.no-room|Error: el código no existe|No hay ninguna sala con ese código.|No room with that code.|その合言葉の対局室はありません。
+mp.error.bad-ticket|Error: se intentó abrir sala sin pasar la comprobación|La sala ha caducado. Crea una nueva.|The room expired. Create a new one.|対局室の有効期限が切れました。新しく作ってください。
+mp.error.room-full|Error: los cuatro asientos ocupados|La sala ya está llena.|The room is full.|対局室は満席です。
+mp.error.already-started|Error: la partida ya arrancó|La partida ya ha empezado.|The game already started.|すでに対局が始まっています。
+mp.error.character-taken|Error: dos jugadores con el mismo personaje|Ese personaje ya está cogido.|That character is taken.|その打ち手は選ばれています。
+mp.error.not-host|Error: solo el anfitrión puede empezar|Solo el anfitrión puede empezar.|Only the host can begin.|開始できるのは親機だけです。
+mp.error.flood|Error: demasiados mensajes|Demasiadas peticiones.|Too many requests.|要求が多すぎます。
+mp.error.bad-message|Error genérico de protocolo|Error de comunicación.|Communication error.|通信エラー。
+mp.error.turnstile|Error: no se pudo validar que eres humano|No se pudo comprobar que eres una persona. Inténtalo de nuevo.|Could not verify you are human. Try again.|人間であることを確認できませんでした。もう一度お試しください。
+mp.error.turnstile-blocked|Error: el script de Turnstile no cargó|No se pudo cargar la comprobación. ¿Tienes un bloqueador activo?|Could not load the check. Do you have a blocker enabled?|確認を読み込めませんでした。ブロッカーが有効ですか？
+mp.error.offline|Error: no hay conexión|El multijugador necesita conexión a internet.|Multiplayer needs an internet connection.|オンライン対戦には接続が必要です。
+mp.error.disabled|Error: el servidor tiene el multijugador apagado|El multijugador no está disponible ahora mismo.|Multiplayer is unavailable right now.|オンライン対戦は現在利用できません。
+mp.error.network|Error: el servidor no responde|No se pudo contactar con el servidor.|Could not reach the server.|サーバーに接続できませんでした。
+mp.create-hint|Texto de la tarjeta de crear sala|Crea una sala y comparte su código con quien quieras invitar.|Create a room and share its code with whoever you want to invite.|対局室を作り、招きたい人に合言葉を伝えます。
+mp.waiting-others|Aviso tras cerrar los resultados: faltan otros jugadores por continuar|Esperando a los demás… ({n})|Waiting for the others… ({n})|他の人を待っています…（{n}）

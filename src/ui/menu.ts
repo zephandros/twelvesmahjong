@@ -78,7 +78,7 @@ let started = false
 
 export function renderMenu(
   root: HTMLElement,
-  opts: { onStart: () => void; onResume: () => void },
+  opts: { onStart: () => void; onResume: () => void; onMultiplayer: () => void },
 ): void {
   root.innerHTML = ''
   const settings = loadSettings()
@@ -109,6 +109,7 @@ export function renderMenu(
         ? `<button class="tm-btn tm-btn--primary tm-menu__play" data-act="resume"></button>
            <button class="tm-btn tm-btn--muted tm-menu__sub-btn" data-act="new"></button>`
         : `<button class="tm-btn tm-btn--primary tm-menu__play" data-act="start"></button>`}
+      <button class="tm-btn tm-btn--muted tm-menu__sub-btn" data-act="multiplayer"></button>
       <button class="tm-btn tm-btn--muted tm-menu__sub-btn" data-act="options"></button>
       <div class="tm-menu__gate-prompt"></div>
     </div>
@@ -333,6 +334,7 @@ export function renderMenu(
     label('resume', 'menu.continue')
     label('new', 'menu.new-game')
     label('options', 'menu.options')
+    label('multiplayer', 'menu.multiplayer')
     menu.querySelector<HTMLElement>('.tm-menu__gate-prompt')!.textContent = t('menu.tap-start')
     menu.querySelector<HTMLElement>('.tm-menu__credits')!.textContent = t('menu.credits')
   }
@@ -348,6 +350,12 @@ export function renderMenu(
     ?.addEventListener('click', () => {
       playUiClick()
       opts.onStart()
+    })
+
+  menu.querySelector<HTMLButtonElement>('[data-act="multiplayer"]')
+    ?.addEventListener('click', () => {
+      playUiClick()
+      opts.onMultiplayer()
     })
 
   menu.querySelector<HTMLButtonElement>('[data-act="resume"]')

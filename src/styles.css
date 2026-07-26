@@ -427,6 +427,83 @@ html, body {
 }
 .tm-panel__row { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
 .tm-panel__name { font-family: var(--ui); font-size: 24px; color: var(--cream); text-shadow: 0 1px 3px #000; }
+/* Persona que juega el asiento (solo en red): va ENCIMA del personaje y más
+   pequeña, para que el protagonista siga siendo el personaje. */
+.tm-panel__player {
+  font-family: var(--title);
+  font-weight: 300;
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-shadow: 0 1px 3px #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.tm-panel__player.is-hidden { display: none; }
+
+/* Cuenta atrás de decisión (red). Aspecto compartido por dos sitios:
+   - `.tm-panel__timer`: reloj de un RIVAL, arriba-izquierda de su panel (el
+     lado libre —el puesto va arriba-derecha y las insignias de viento/oya
+     abajo).
+   - `.tm-action-timer`: el reloj del PROPIO jugador, que no va en su panel
+     (fuera de donde está mirando mientras decide) sino sobre la zona de
+     acción; su posición la fija `place()` desde hud.ts, encima de la fila de
+     opciones de chi para que ni las múltiples quepan debajo sin taparlo. */
+.tm-panel__timer,
+.tm-action-timer {
+  min-width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(8, 5, 2, 0.82);
+  box-shadow: inset 0 0 0 2px var(--gold);
+  font-family: var(--title);
+  font-weight: 300;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--cream);
+}
+.tm-panel__timer {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+}
+.tm-panel__timer.is-hidden,
+.tm-action-timer.is-hidden { display: none; }
+/* Últimos segundos: si vence, juega la IA por ti. Conviene que se note. */
+.tm-panel__timer.is-urgent,
+.tm-action-timer.is-urgent {
+  color: #ffd9d2;
+  box-shadow: inset 0 0 0 2px #d9534f, 0 0 14px rgba(217, 83, 79, 0.55);
+  animation: tm-timer-pulse 0.9s ease-in-out infinite;
+}
+@keyframes tm-timer-pulse {
+  50% { transform: scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-panel__timer.is-urgent,
+  .tm-action-timer.is-urgent { animation: none; }
+}
+/* "Ya continué, faltan otros" (red). Aparece justo al cerrarse la pantalla de
+   resultados, cuando la mesa todavía no se mueve y sin esto no se entiende por
+   qué. Pastilla centrada, sin tapar la mano. */
+.tm-wait-others {
+  padding: 12px 28px;
+  border-radius: 24px;
+  background: rgba(8, 5, 2, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(231, 197, 106, 0.45), 0 6px 20px rgba(0, 0, 0, 0.5);
+  font-family: var(--ui);
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.tm-wait-others.is-hidden { display: none; }
 .tm-panel__score { font-family: var(--title); font-weight: 300; font-size: 34px; line-height: 1; color: #f4ecd6; letter-spacing: 0.02em; text-align: right; }
 /* Botón de menú: pastilla sobre la banda superior del marco de la mesa (24px),
    a juego con el reproductor de la banda inferior. */
@@ -1106,6 +1183,112 @@ html, body {
   padding: 14px 28px;
 }
 .tm-select__actions .tm-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* --- lobby de multijugador ----------------------------------------------------- */
+/* Reutiliza .tm-select (cabecera, asientos, rejilla de personajes): es la misma
+   pantalla, con personas en los asientos. Aquí solo lo propio de la red. */
+.tm-lobby__entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 44px;
+  padding: 40px 0;
+}
+/* `stretch` (y no flex-start) es lo que mantiene las dos tarjetas a la misma
+   altura; dentro, el botón se pega abajo con margin-top:auto. Así da igual que
+   una columna tenga más texto que la otra: los botones quedan alineados. */
+.tm-lobby__split {
+  display: flex;
+  gap: 64px;
+  align-items: stretch;
+}
+.tm-lobby__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 620px;
+  padding: 36px 40px 40px;
+  border: 1px solid rgba(231, 197, 106, 0.28);
+  border-radius: 18px;
+  background: rgba(8, 5, 2, 0.42);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
+}
+.tm-lobby__card .tm-btn { margin-top: auto; }
+.tm-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-family: var(--ui);
+  color: var(--muted);
+  font-size: 22px;
+  letter-spacing: 0.08em;
+}
+.tm-field--name { width: 520px; }
+/* `width:100%` + `min-width:0`: sin esto el ancho INTRÍNSECO del input (unos 20
+   caracteres al tamaño de fuente de la UI) se impone y desborda la tarjeta. */
+.tm-field input {
+  font-family: var(--ui);
+  font-size: 34px;
+  padding: 12px 18px;
+  width: 100%;
+  min-width: 0;
+  color: var(--cream);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(231, 197, 106, 0.35);
+  border-radius: 6px;
+  text-align: center;
+}
+.tm-field input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+/* El código se lee en voz alta: monoespaciado y muy separado para no confundir. */
+.tm-lobby__entry .tm-field input[data-f='code'],
+.tm-lobby__code-value {
+  font-family: var(--title);
+  letter-spacing: 0.3em;
+}
+.tm-lobby__hint,
+.tm-lobby__status {
+  font-family: var(--ui);
+  font-size: 22px;
+  line-height: 1.4;
+  color: var(--muted);
+  max-width: 100%;
+  text-align: center;
+  min-height: 28px;
+}
+.tm-lobby__status { min-height: 34px; }
+.tm-lobby__code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: 8px 0 18px;
+}
+.tm-lobby__code-label {
+  font-family: var(--ui);
+  font-size: 22px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+}
+.tm-lobby__code-value {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--gold);
+}
+/* Sitio del widget de Turnstile: no debe empujar el layout cuando aparece. */
+.tm-lobby__turnstile {
+  min-height: 70px;
+  display: flex;
+  justify-content: center;
+}
+/* El asiento propio y el personaje ya elegido se marcan igual que en la
+   selección de un jugador, para que la lectura sea la misma. */
+.tm-char.is-mine img { border-color: var(--gold); }
 
 /* --- menú principal (portada) ------------------------------------------------ */
 /* Diseño fijo dentro del stage 1920×1080; el letterbox lo escala todo. */

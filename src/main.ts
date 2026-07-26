@@ -45,10 +45,24 @@ if (debug === 'board') {
     { renderMenu }, { renderSelect }, { startGame }, persist, { CHARACTERS },
   ]) => {
     // Flujo: menú → selección de personaje → partida; con partida guardada,
-    // CONTINUAR salta la selección y reanuda desde el log.
+    // CONTINUAR salta la selección y reanuda desde el log. MULTIJUGADOR abre el
+    // lobby, que se carga aparte para no meter la red en el arranque.
     const toMenu = (): void => {
       app.innerHTML = ''
-      renderMenu(app, { onStart: toSelect, onResume: toResume })
+      renderMenu(app, { onStart: toSelect, onResume: toResume, onMultiplayer: toLobby })
+    }
+    const toLobby = (): void => {
+      void import('./ui/lobby').then(({ renderLobby }) => {
+        app.innerHTML = ''
+        renderLobby(
+          app,
+          ({ net, roster, resume }) => {
+            app.innerHTML = ''
+            startGame(app, roster, toMenu, resume ? { net, resume } : { net })
+          },
+          toMenu,
+        )
+      })
     }
     const toSelect = (): void => {
       app.innerHTML = ''
@@ -78,10 +92,12 @@ if (debug === 'board') {
       }
       app.innerHTML = ''
       startGame(app, roster, toMenu, {
-        game,
-        log: saved.log,
-        botSeed: saved.botSeed,
-        difficulty: saved.difficulty,
+        resume: {
+          game,
+          log: saved.log,
+          botSeed: saved.botSeed,
+          difficulty: saved.difficulty,
+        },
       })
     }
     toMenu()

@@ -5,21 +5,17 @@
 import type { Locale } from './i18n'
 import type { MatchLength, RuleSet } from '../core/rules-config'
 import { DEFAULT_RULES, UMA_PRESETS } from '../core/rules-config'
-import type { SkillId } from '../ai/profiles'
+// Difficulty y skillFor viven en ai/profiles.ts (el árbitro del multijugador los
+// necesita y no puede importar ui/); se reexportan para no mover los imports.
+export { skillFor, type Difficulty } from '../ai/profiles'
+import type { Difficulty } from '../ai/profiles'
+import { DIFFICULTIES } from '../ai/profiles'
 
 export type TableTheme = 'green' | 'red' | 'blue' | 'wood'
 export type TileBack = 'amber' | 'green' | 'red' | 'blue' | 'charcoal'
 export type VolumeChannel = 'master' | 'music' | 'sfx' | 'voices'
 /** 'auto' = seguir al navegador en cada arranque (hasta que el usuario elija). */
 export type Language = Locale | 'auto'
-/** Dificultad de los rivales: fija su HABILIDAD (el estilo lo trae cada personaje). */
-export type Difficulty = 'easy' | 'normal' | 'hard'
-
-/** Dificultad global → nivel de habilidad de los bots rivales (ver ai/profiles.ts). */
-export function skillFor(d: Difficulty): SkillId {
-  return d === 'easy' ? 'novice' : d === 'hard' ? 'expert' : 'intermediate'
-}
-
 export interface Settings {
   volumes: Record<VolumeChannel, number> // 0..1
   /** Mute del canal de música (reproductor in-game); no toca volumes.music. */
@@ -53,7 +49,6 @@ const KEY = 'tm-settings-v1'
 const THEMES: readonly TableTheme[] = ['green', 'red', 'blue', 'wood']
 const BACKS: readonly TileBack[] = ['amber', 'green', 'red', 'blue', 'charcoal']
 const LANGUAGES: readonly Language[] = ['auto', 'es', 'en', 'ja']
-const DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard']
 
 const LENGTHS: readonly MatchLength[] = ['tonpuusen', 'hanchan']
 

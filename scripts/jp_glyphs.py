@@ -44,4 +44,8 @@ GLYPHS = (
     '新消ョ成績喰飛び給原'  # navegación de la portada + cyclers de reglas
     '難易度級'  # cycler de dificultad (難易度 · 初級/中級/上級; 初中上 ya arriba)
     '記録均得銃率高'  # pantalla de estadísticas (stats.*)
+    '接室せん'  # multijugador: avisos de conexión (net.*)
+    # lobby de multijugador (mp.*): crear/unirse, asientos, errores
+    '友達空席埋参合葉部屋っ聞く名こ伝確認機済そ有ば要求多ぎ信間お試読込必現在利用サ招'
+    '他（）'  # espera de fin de mano (mp.waiting-others)
 )
