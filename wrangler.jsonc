@@ -10,21 +10,35 @@
   // una petición que corresponde a un asset se sirve SIN invocar el Worker. Si
   // alguien inunda /api/, la portada y la partida de un jugador siguen en pie.
   //
-  // `not_found_handling: "404-page"` reproduce lo que hacía Pages: servir
-  // public/404.html con un 404 REAL. Con "single-page-application" se
-  // devolvería 200 y volveríamos a los soft-404 que documenta CLAUDE.md.
+  // `not_found_handling: "404-page"` sirve public/404.html con un 404 REAL. Con
+  // "single-page-application" se devolvería 200 y volveríamos a los soft-404
+  // que documenta CLAUDE.md.
   "assets": {
     "directory": "dist",
     "binding": "ASSETS",
     "not_found_handling": "404-page"
   },
 
-  // Una sala de multijugador = un Durable Object. Backend SQLite (new_sqlite_classes),
-  // que es el que entra en el plan gratuito.
-  "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }]
+  // El multijugador vive en Firebase (Realtime Database); el Worker solo emite
+  // las sesiones. El Durable Object `GameRoom` de la primera versión se retira
+  // con la migración v2 (hace falta declararlo: Cloudflare no borra clases
+  // desplegadas por omisión).
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameRoom"] },
+    { "tag": "v2", "deleted_classes": ["GameRoom"] }
+  ],
+
+  "vars": {
+    "PB_URL": "https://api.kovalt.mx",
+    // Id del proyecto de Firebase (el mismo de VITE_FIREBASE_PROJECT_ID en .env).
+    "FIREBASE_PROJECT_ID": "twelves-mahjong-db"
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
+
+  // Frena la fuerza bruta de códigos de sala: 20 sesiones de invitado por
+  // minuto e IP. Gratis en el plan free.
+  "ratelimits": [
+    { "name": "GUEST_LIMIT", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }
+  ],
 
   "observability": { "enabled": true }
 }

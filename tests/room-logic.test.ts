@@ -1,7 +1,7 @@
-// Árbitro de multijugador (worker/room-logic.ts).
+// Árbitro de multijugador (src/net/room-logic.ts).
 //
 // El módulo es puro a propósito para poder probarlo aquí, con vitest en node y
-// sin levantar workerd. Dos cosas que atar:
+// sin red. Dos cosas que atar:
 //
 //  1. `authorize` — es TODA la superficie anti-trampas. El núcleo no tiene
 //     noción de identidad: si esto se afloja, un cliente puede jugar por otro.
@@ -9,7 +9,7 @@
 //     reproduzca al mismo estado, igual que el guardado local (replay.test.ts).
 
 import { describe, it, expect } from 'vitest'
-import { actorOf, authorize, nextStep, waitingOn, timeoutAction } from '../worker/room-logic'
+import { actorOf, authorize, nextStep, waitingOn, timeoutAction } from '../src/net/room-logic'
 import type { Action } from '../src/core/actions'
 import type { Seat } from '../src/core/seat'
 import { newGame, advanceGame, type GameState } from '../src/core/game'

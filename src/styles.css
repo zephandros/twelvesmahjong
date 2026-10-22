@@ -1304,6 +1304,40 @@ html, body {
   min-height: 28px;
 }
 .tm-lobby__status { min-height: 34px; }
+.tm-lobby__hint--soft { color: var(--muted); opacity: 0.8; }
+/* "Sesión: Nombre · cerrar sesión" dentro de la tarjeta de crear sala. */
+.tm-lobby__account {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-family: var(--ui);
+  font-size: 22px;
+  color: var(--gold);
+}
+.tm-lobby__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 18px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.tm-lobby__link:hover { color: var(--gold-lt); }
+/* Inicio de sesión en Kovalt: una sola tarjeta centrada con los dos caminos
+   (código al correo, Google) uno bajo otro. */
+.tm-lobby__card--login { width: 720px; }
+.tm-lobby__card--login .tm-btn { margin-top: 0; }
+.tm-lobby__card--login .tm-field.is-off { display: none; }
+.tm-lobby__or {
+  font-family: var(--ui);
+  font-size: 20px;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
 .tm-lobby__code {
   display: flex;
   align-items: center;

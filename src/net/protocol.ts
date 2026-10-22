@@ -1,7 +1,13 @@
-// Protocolo de multijugador. Vive en src/net/ y NO en worker/ ni en ui/ porque
-// lo comparten los dos lados: el Durable Object lo importa para construir los
-// mensajes y ui/net.ts para leerlos. Solo tipos y constantes; cero lógica y
-// cero dependencias de plataforma.
+// Modelo de datos de una sala de multijugador, y nada más: tipos y constantes.
+//
+// Una sala es un subárbol `rooms/{code}` de Firebase Realtime Database. No hay
+// servidor de juego: el ÁRBITRO es el cliente del anfitrión (ver net/host.ts),
+// que escribe el log autoritativo; los demás clientes lo reproducen
+// (net/client.ts). Las Security Rules (firebase/database.rules.json) replican
+// quién puede escribir qué, así que este archivo y las reglas van a la par.
+//
+// Vive en src/net/ y no en ui/ porque lo comparten el cliente, el árbitro y
+// los tests de node: cero DOM, cero Firebase.
 
 import type { Action } from '../core/actions'
 import type { Seat } from '../core/seat'
@@ -9,6 +15,7 @@ import type { RuleSet } from '../core/rules-config'
 import type { CharacterId } from '../ai/roster'
 import type { Difficulty } from '../ai/profiles'
 import type { GameLog } from '../core/replay'
+import type { GameState } from '../core/game'
 
 /** Plazos de decisión (ms). Vencido el plazo, el árbitro juega por el ausente. */
 export const DEADLINE = {
@@ -30,109 +37,227 @@ export const DEADLINE = {
   handEnd: 15_000,
 }
 
-/** Caducidad de la sala, recalculada en cada evento (ms). */
-export const ROOM_TTL = {
-  /** Lobby con menos de dos jugadores: nadie viene, se recoge pronto. */
-  empty: 5 * 60_000,
-  /** Lobby con gente, o partida sin nadie conectado. */
-  idle: 30 * 60_000,
+/** Plazos fallidos seguidos antes de dar el asiento por abandonado. */
+export const ABANDON_AFTER = 3
+
+/** Nombre visible: lo que cabe en un panel de esquina. */
+export const MAX_NAME = 16
+
+// --- el subárbol rooms/{code} -------------------------------------------------------
+
+export type Phase = 'lobby' | 'playing' | 'done'
+
+export interface RoomMeta {
+  /** uid del anfitrión: la cuenta de Kovalt que creó la sala y hace de árbitro. */
+  host: string
+  phase: Phase
+  /** Marca de tiempo del servidor; las reglas dejan borrar salas viejas. */
+  createdAt: number
 }
 
-/** Higiene por conexión: no fiarse del cliente. */
-export const LIMITS = {
-  /** Tamaño máximo de un mensaje entrante. */
-  messageBytes: 4096,
-  /** Mensajes por segundo antes de cerrar el socket por inundación. */
-  messagesPerSecond: 20,
+export interface SeatSlot {
+  /** uid de Firebase del jugador; vacío en un asiento de la IA. */
+  uid: string
+  name: string
+  characterId: CharacterId | null
+  /** Asiento de relleno: nunca hubo humano. Solo lo escribe el anfitrión al empezar. */
+  bot?: true
 }
+
+/** Lo que el anfitrión fija al empezar y ya no cambia. */
+export interface GameSetup {
+  seed: number
+  botSeed: number
+  rules: RuleSet
+  difficulty: Difficulty
+  roster: CharacterId[]
+  /** Nombre de la persona de cada asiento; null = lo lleva la IA. */
+  players: (string | null)[]
+}
+
+/** Una acción aceptada. `h` = índice de mano, para reconstruir `GameLog.hands`. */
+export interface LogEntry {
+  h: number
+  a: Action
+}
+
+/** Intención de jugada de un asiento. `seq` = acciones vistas; si no cuadra, se descarta. */
+export interface Intent {
+  seq: number
+  a: Action
+}
+
+/**
+ * Reloj de decisión. `ms` es una DURACIÓN y `at` la marca del servidor al
+ * escribirlo: cada cliente calcula lo que queda con su propio desfase
+ * (`.info/serverTimeOffset`), así el reloj no depende de la hora de nadie.
+ */
+export interface Clock {
+  seats: Seat[]
+  ms: number
+  at: number
+}
+
+/** Fin de mano: a quién se espera para repartir, y cuánto queda de gracia. */
+export interface HandEndWait {
+  waiting: Seat[]
+  ms: number
+  at: number
+}
+
+/** Rutas relativas a `rooms/{code}`. Las reglas conocen exactamente estas. */
+export const PATH = {
+  meta: 'meta',
+  seats: 'seats',
+  seat: (i: Seat): string => `seats/${i}`,
+  game: 'game',
+  log: 'log',
+  intents: 'intents',
+  intent: (uid: string): string => `intents/${uid}`,
+  /** Intención rechazada por el árbitro: el cliente desbloquea su input. */
+  nack: (uid: string): string => `nack/${uid}`,
+  ready: 'ready',
+  readyOf: (uid: string): string => `ready/${uid}`,
+  presence: 'presence',
+  presenceOf: (uid: string): string => `presence/${uid}`,
+  clock: 'clock',
+  handEnd: 'handEnd',
+} as const
+
+/**
+ * Clave de la entrada `n` del log. Con prefijo y relleno: ordena como número al
+ * ordenar como texto, y nunca parece un índice entero (RTDB convertiría el
+ * nodo en array, ver `seatsOf`).
+ */
+export function logKey(n: number): string {
+  return `n${String(n).padStart(6, '0')}`
+}
+
+export function logIndex(key: string): number {
+  return Number(key.slice(1))
+}
+
+/**
+ * RTDB devuelve como ARRAY cualquier nodo cuyas claves sean 0..n casi
+ * completas, y como objeto si no. Los asientos son cuatro claves 0..3, así que
+ * llegan de las dos formas según cuántos estén ocupados: se normaliza aquí.
+ */
+export function seatsOf(raw: unknown): (SeatSlot | null)[] {
+  const out: (SeatSlot | null)[] = [null, null, null, null]
+  if (!raw || typeof raw !== 'object') return out
+  for (const i of [0, 1, 2, 3]) {
+    const v = (raw as Record<string, unknown>)[String(i)]
+    if (v && typeof v === 'object' && typeof (v as SeatSlot).uid === 'string') {
+      out[i] = v as SeatSlot
+    }
+  }
+  return out
+}
+
+/** Cuatro valores, uno por asiento, pase lo que pase con la forma del nodo. */
+export function fourOf<T>(raw: unknown, fallback: T): T[] {
+  const out: T[] = [fallback, fallback, fallback, fallback]
+  if (!raw || typeof raw !== 'object') return out
+  for (const i of [0, 1, 2, 3]) {
+    const v = (raw as Record<string, unknown>)[String(i)]
+    if (v !== undefined && v !== null) out[i] = v as T
+  }
+  return out
+}
+
+/** Entradas `log/{key}` → `GameLog.hands`, agrupadas por mano y en orden. */
+export function logFromEntries(
+  seed: number,
+  rules: RuleSet,
+  entries: readonly LogEntry[],
+): GameLog {
+  const hands: Action[][] = [[]]
+  for (const e of entries) {
+    while (hands.length <= e.h) hands.push([])
+    hands[e.h]!.push(e.a)
+  }
+  return { seed, rules, hands }
+}
+
+export function countActions(log: GameLog): number {
+  let n = 0
+  for (const hand of log.hands) n += hand.length
+  return n
+}
+
+// --- vista del lobby --------------------------------------------------------------
 
 export interface PlayerView {
   name: string
   characterId: CharacterId | null
   connected: boolean
-  /** El árbitro está jugando por él (bot de relleno, o humano ausente). */
-  auto: boolean
 }
 
-// --- servidor → cliente ---------------------------------------------------------
-
-export type ServerMessage =
-  /** Estado del lobby. Se reenvía entero en cada cambio: son cuatro asientos. */
-  | {
-      t: 'lobby'
-      code: string
-      you: Seat
-      host: boolean
-      seats: (PlayerView | null)[]
-      /** Personajes ya cogidos por otro (la selección los bloquea). */
-      taken: CharacterId[]
-    }
-  /** La partida arranca (o se reanuda tras reconectar). */
-  | {
-      t: 'start'
-      you: Seat
-      seed: number
-      botSeed: number
-      rules: RuleSet
-      difficulty: Difficulty
-      roster: CharacterId[]
-      /**
-       * Nombre del jugador de cada asiento; null = lo lleva la IA. El personaje
-       * y la persona son cosas distintas: el panel del tablero enseña los dos.
-       */
-      players: (string | null)[]
-      /** Todo lo jugado hasta ahora: al reconectar se reproduce sin pedir nada. */
-      log: GameLog
-      seq: number
-    }
-  /** Una acción aceptada por el árbitro. `seq` = cuántas van, contando esta. */
-  | { t: 'action'; seq: number; action: Action }
-  /**
-   * A quién se espera y cuánto queda, para pintar el reloj.
-   *
-   * `ms` es una DURACIÓN, no una marca de tiempo: el reloj del cliente puede ir
-   * desfasado respecto al del servidor, y con un plazo de 20 s ese desfase se
-   * vería. Cada cliente calcula el vencimiento con su propio reloj.
-   */
-  | { t: 'deadline'; seats: Seat[]; ms: number }
-  /**
-   * La mano acabó y el árbitro espera a que todos cierren la pantalla de
-   * resultados. `waiting` son los asientos que faltan por confirmar; `ms`, lo
-   * que queda antes de repartir de todas formas.
-   */
-  | { t: 'handend'; waiting: Seat[]; ms: number }
-  | { t: 'error'; code: ErrorCode }
+export interface LobbyView {
+  code: string
+  you: Seat
+  host: boolean
+  /** El anfitrión está conectado (sin él no se puede empezar ni jugar). */
+  hostOnline: boolean
+  seats: (PlayerView | null)[]
+  /** Personajes ya cogidos por otro (la selección los bloquea). */
+  taken: CharacterId[]
+}
 
 export type ErrorCode =
   | 'no_room' // el código no corresponde a ninguna sala viva
-  | 'bad_ticket' // abrir sala sin haber pasado Turnstile
   | 'room_full'
   | 'already_started'
   | 'character_taken'
   | 'not_host'
-  | 'flood'
-  | 'bad_message'
+  | 'closed' // el anfitrión cerró la sala
+  | 'session' // la sesión de Firebase caducó o no vale para esta sala
+  | 'network'
 
-// --- cliente → servidor ---------------------------------------------------------
+// --- lo que ve el controlador ---------------------------------------------------
 
-export type ClientMessage =
-  /** Primer mensaje. Con `token` se recupera el asiento tras una reconexión. */
-  | { t: 'join'; name: string; token?: string }
-  | { t: 'pick'; characterId: CharacterId }
-  /** Solo el anfitrión. Los asientos vacíos se rellenan con bots. */
-  | { t: 'start'; rules: RuleSet; difficulty: Difficulty }
-  /** Intención de jugada. `seq` = acciones vistas; si no cuadra, se descarta. */
-  | { t: 'intent'; seq: number; action: Action }
-  /** "He cerrado la pantalla de resultados": reparte cuando estemos todos. */
-  | { t: 'ready' }
+/** Partida reanudada desde un log (guardado local o sala con historia). */
+export interface Resume {
+  game: GameState
+  log: GameLog
+  botSeed: number
+  difficulty: Difficulty
+}
 
 /**
- * Respuesta de `POST /api/room`. No trae identidad de jugador: el `token` con
- * el que se reclama un asiento lo sortea el propio cliente y lo presenta en
- * `join`; el árbitro se limita a recordar cuál fue el primero en cada asiento.
+ * Partida en red, vista desde el controlador (ui/controller.ts), que así no
+ * sabe nada de Firebase: solo recibe el flujo autoritativo y manda intenciones.
  */
-export interface CreateRoomResponse {
-  code: string
-  /** Prueba de haber pasado Turnstile; se presenta al abrir el WebSocket. */
-  hostTicket: string
+export interface NetGame {
+  /** Asiento que juega ESTE cliente. */
+  readonly seat: Seat
+  readonly seed: number
+  readonly rules: RuleSet
+  readonly botSeed: number
+  readonly difficulty: Difficulty
+  /** Nombre de la persona de cada asiento; null = lo lleva la IA. */
+  readonly players: readonly (string | null)[]
+  /** Acciones ya aceptadas por el árbitro, en orden estricto. */
+  onAction(cb: (a: Action) => void): void
+  /**
+   * A quién se espera y cuántos ms quedan. Alimenta la cuenta atrás de los
+   * paneles: en red hay un plazo real, y si vence juega la IA por ti.
+   */
+  onDeadline(cb: (seats: Seat[], ms: number) => void): void
+  /**
+   * Fin de mano: a qué asientos se espera para repartir la siguiente, y cuánto
+   * queda antes de repartir igualmente.
+   */
+  onHandEnd(cb: (waiting: Seat[], ms: number) => void): void
+  /** Aviso no fatal en pantalla (p. ej. el anfitrión se ha desconectado); null lo quita. */
+  onNotice(cb: (notice: 'host-away' | null) => void): void
+  /** "He cerrado la pantalla de resultados." */
+  ready(): void
+  /** La partida se acabó por el lado de la red (sala cerrada, sesión caducada). */
+  onClose(cb: (code: ErrorCode) => void): void
+  /** Manda una intención. `seq` = acciones vistas, para que el árbitro descarte las rancias. */
+  send(a: Action, seq: number): void
+  /** Intención descartada por el árbitro: toca desbloquear el input. */
+  onNack(cb: () => void): void
+  close(): void
 }

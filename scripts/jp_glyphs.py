@@ -27,6 +27,7 @@ GLYPHS = (
     '混老頭純帯小元国士無双大喜字緑蓮宝燈裏赤跳倍数え不思議ビ代書人シヘザ千夜肖像画つ顔'
     'ハミピナ仲ァ夫編み手糸し切'
     '生時停止曲次ュ解除'  # reproductor de música in-game (music.*)
+    '入力許可桁送'      # multijugador: inicio de sesión en Kovalt (mp.login-*, mp.otp-*, mp.send-code)
     'はい'            # confirmación del menú in-game (hud.yes)
     '待表示'          # tira de esperas (hud.waits / hud.show-waits)
     'ち'             # 待ち

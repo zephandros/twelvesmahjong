@@ -6,12 +6,11 @@
 // de victoria perdía turnos sin verlos pasar, porque su reloj de decisión ya
 // corría por detrás.
 //
-// La decisión vive en `canAdvance`/`pendingReady` de worker/room-logic.ts, que
-// son puras justamente para poder probarlas aquí sin levantar workerd.
+// La decisión vive en `canAdvance`/`pendingReady` de src/net/room-logic.ts, que
+// son puras justamente para poder probarlas aquí sin red.
 
 import { describe, it, expect } from 'vitest'
-import { pendingReady, canAdvance, nextAlarm, type ReadySeat } from '../worker/room-logic'
-import type { Seat } from '../src/core/seat'
+import { pendingReady, canAdvance, type ReadySeat } from '../src/net/room-logic'
 
 /** Cuatro asientos humanos, conectados y sin confirmar. */
 const humanos = (): ReadySeat[] =>
@@ -86,48 +85,5 @@ describe('cuándo se reparte la mano siguiente', () => {
     expect(canAdvance(s, 0, AHORA)).toBe(false)
     for (const x of s) x.ready = true
     expect(canAdvance(s, 0, AHORA)).toBe(true)
-  })
-})
-
-describe('la única alarma del objeto', () => {
-  const GRACIA = 5_000
-
-  it('coge el vencimiento más próximo de los que están activos', () => {
-    // plazo de decisión el más cercano
-    expect(nextAlarm(AHORA + 1_000, AHORA + 9_000, AHORA + 99_000, GRACIA))
-      .toBe(AHORA + 1_000 + GRACIA)
-    // gracia de fin de mano la más cercana
-    expect(nextAlarm(0, AHORA + 2_000, AHORA + 99_000, GRACIA)).toBe(AHORA + 2_000)
-  })
-
-  it('un plazo a 0 está apagado y no cuenta', () => {
-    expect(nextAlarm(0, 0, AHORA + 60_000, GRACIA)).toBe(AHORA + 60_000)
-  })
-
-  it('REGRESIÓN: un plazo de decisión muerto no debe arrastrarse', () => {
-    // Esto colgó la sala: al abrir la espera de fin de mano quedaba un
-    // `deadlineAt` ya vencido, la alarma se armaba en el pasado, saltaba al
-    // instante sin nada que hacer y se rearmaba igual, en bucle.
-    const vencido = AHORA - 30_000
-    expect(nextAlarm(vencido, AHORA + 15_000, AHORA + 99_000, GRACIA)).toBeLessThan(AHORA)
-    // El arreglo es apagarlo (#pump lo pone a 0 en cada pasada): así la alarma
-    // salta cuando toca de verdad, al vencer la gracia.
-    expect(nextAlarm(0, AHORA + 15_000, AHORA + 99_000, GRACIA)).toBe(AHORA + 15_000)
-  })
-})
-
-describe('regresión: el bug que esto arregla', () => {
-  it('con humanos conectados NUNCA se reparte de inmediato', () => {
-    // Antes el árbitro llamaba a advanceGame en cuanto la mano acababa, sin
-    // preguntar a nadie: ese `true` era el bug.
-    const s = humanos()
-    expect(canAdvance(s, 0, AHORA)).toBe(false)
-  })
-
-  it('el que ya confirmó no vuelve a aparecer como pendiente', () => {
-    const s = humanos()
-    s[0]!.ready = true
-    const espera: Seat[] = pendingReady(s)
-    expect(espera).not.toContain(0)
   })
 })

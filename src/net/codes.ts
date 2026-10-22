@@ -1,7 +1,7 @@
-// Códigos de sala. Los genera SIEMPRE el servidor, nunca el cliente: si el
-// cliente eligiera el código podría okupar los bonitos o enumerar salas ajenas.
-// El cliente solo usa `isRoomCode`, para no mandar al servidor lo que ya se sabe
-// que no es un código.
+// Códigos de sala. Los sortea el cliente del anfitrión al crear la sala
+// (`ui/net.ts`); las Security Rules impiden pisar una sala viva, y con 32^6
+// combinaciones chocar es 1 entre mil millones. `isRoomCode` lo usan la UI y el
+// Worker para no aceptar lo que ya se sabe que no es un código.
 //
 // Alfabeto sin caracteres ambiguos (fuera I, O, 0, 1) para que se pueda dictar
 // por voz o por chat sin equivocarse. Son 32 símbolos = 5 bits exactos, así que

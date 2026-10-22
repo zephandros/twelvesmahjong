@@ -1,5 +1,5 @@
-// Cerebro del árbitro, en funciones PURAS. La clase GameRoom (room.ts) es una
-// cáscara: sockets, storage y alarmas. Todo lo que hay que razonar vive aquí,
+// Cerebro del árbitro, en funciones PURAS. `RoomHost` (host.ts) es la cáscara:
+// almacén, timers y presencia. Todo lo que hay que razonar vive aquí,
 // para poder testearlo con vitest en node sin levantar workerd — la misma
 // filosofía que el núcleo, que se testea sin DOM.
 //
@@ -7,13 +7,13 @@
 // acción ilegal. Lo único que este módulo añade es lo que el núcleo no sabe:
 // QUIÉN manda cada acción.
 
-import type { Action } from '../src/core/actions'
-import type { HandState } from '../src/core/state'
-import type { Seat } from '../src/core/seat'
-import { SEATS } from '../src/core/seat'
-import type { GameState } from '../src/core/game'
-import type { BotPolicy } from '../src/ai/bot'
-import type { Rng } from '../src/core/rng'
+import type { Action } from '../core/actions'
+import type { HandState } from '../core/state'
+import type { Seat } from '../core/seat'
+import { SEATS } from '../core/seat'
+import type { GameState } from '../core/game'
+import type { BotPolicy } from '../ai/bot'
+import type { Rng } from '../core/rng'
 
 /**
  * Asiento que ejecuta una acción.
@@ -162,30 +162,6 @@ export function pendingReady(seats: readonly ReadySeat[]): Seat[] {
     const s = seats[seat]
     return s !== undefined && s.human && s.connected && !s.ready
   })
-}
-
-/**
- * Cuándo debe sonar la única alarma del objeto.
- *
- * Un DO tiene UNA sola alarma para tres vencimientos: el plazo de decisión, la
- * gracia de fin de mano y la caducidad de la sala. Se coge el más próximo de
- * los que estén ACTIVOS — un plazo a 0 está apagado y no cuenta.
- *
- * Ojo con los plazos ya vencidos: si se arrastra uno del pasado, la alarma se
- * arma en el pasado, salta al instante, no encuentra nada que hacer y se
- * rearma igual. Eso colgó la sala una vez; por eso `#pump` pone `deadlineAt` a
- * 0 en cada pasada y solo lo fija si de verdad se espera a alguien.
- */
-export function nextAlarm(
-  deadlineAt: number,
-  readyAt: number,
-  expiresAt: number,
-  grace: number,
-): number {
-  const candidates = [expiresAt]
-  if (deadlineAt > 0) candidates.push(deadlineAt + grace)
-  if (readyAt > 0) candidates.push(readyAt)
-  return Math.min(...candidates)
 }
 
 /**

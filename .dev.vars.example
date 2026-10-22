@@ -1,0 +1,3 @@
+# Secretos de `wrangler dev` (copia a `.dev.vars`, que está en .gitignore).
+# El JSON completo de la cuenta de servicio de Firebase, en UNA línea.
+FIREBASE_SERVICE_ACCOUNT=

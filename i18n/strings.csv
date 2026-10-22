@@ -317,8 +317,7 @@ mp.copy|Botón: copiar el código al portapapeles|COPIAR|COPY|コピー
 mp.copied|Aviso tras copiar el código|Copiado|Copied|コピーしました
 mp.share-hint|Instrucción para el anfitrión|Comparte este código con tus amigos.|Share this code with your friends.|この合言葉を友達に伝えてください。
 mp.connecting|Estado: abriendo la conexión|Conectando…|Connecting…|接続中…
-mp.reconnecting|Estado: se cayó y se reintenta|Reconectando…|Reconnecting…|再接続中…
-mp.checking|Estado: validando la prueba de Turnstile|Comprobando…|Verifying…|確認中…
+mp.checking|Estado: comprobando la sesión o el código|Comprobando…|Verifying…|確認中…
 mp.seat-empty|Asiento del lobby sin jugador|Libre|Empty|空席
 mp.seat-bot|Asiento que ocupará la IA|IA|AI|AI
 mp.you|Marca del asiento propio en el lobby|TÚ|YOU|あなた
@@ -329,17 +328,30 @@ mp.wait-host|Aviso a quien no es anfitrión|Esperando a que el anfitrión empiec
 mp.pick-first|Aviso: hay que elegir personaje antes de empezar|Elige tu personaje.|Pick your character.|自分の打ち手を選んでください。
 mp.taken|Personaje ya cogido por otro jugador|Ya elegido|Taken|選択済み
 mp.error.no-room|Error: el código no existe|No hay ninguna sala con ese código.|No room with that code.|その合言葉の対局室はありません。
-mp.error.bad-ticket|Error: se intentó abrir sala sin pasar la comprobación|La sala ha caducado. Crea una nueva.|The room expired. Create a new one.|対局室の有効期限が切れました。新しく作ってください。
 mp.error.room-full|Error: los cuatro asientos ocupados|La sala ya está llena.|The room is full.|対局室は満席です。
 mp.error.already-started|Error: la partida ya arrancó|La partida ya ha empezado.|The game already started.|すでに対局が始まっています。
 mp.error.character-taken|Error: dos jugadores con el mismo personaje|Ese personaje ya está cogido.|That character is taken.|その打ち手は選ばれています。
-mp.error.not-host|Error: solo el anfitrión puede empezar|Solo el anfitrión puede empezar.|Only the host can begin.|開始できるのは親機だけです。
-mp.error.flood|Error: demasiados mensajes|Demasiadas peticiones.|Too many requests.|要求が多すぎます。
-mp.error.bad-message|Error genérico de protocolo|Error de comunicación.|Communication error.|通信エラー。
-mp.error.turnstile|Error: no se pudo validar que eres humano|No se pudo comprobar que eres una persona. Inténtalo de nuevo.|Could not verify you are human. Try again.|人間であることを確認できませんでした。もう一度お試しください。
-mp.error.turnstile-blocked|Error: el script de Turnstile no cargó|No se pudo cargar la comprobación. ¿Tienes un bloqueador activo?|Could not load the check. Do you have a blocker enabled?|確認を読み込めませんでした。ブロッカーが有効ですか？
 mp.error.offline|Error: no hay conexión|El multijugador necesita conexión a internet.|Multiplayer needs an internet connection.|オンライン対戦には接続が必要です。
-mp.error.disabled|Error: el servidor tiene el multijugador apagado|El multijugador no está disponible ahora mismo.|Multiplayer is unavailable right now.|オンライン対戦は現在利用できません。
+mp.error.disabled|Error: el multijugador está apagado (sin Firebase o sin cuenta de servicio)|El multijugador no está disponible ahora mismo.|Multiplayer is unavailable right now.|オンライン対戦は現在利用できません。
 mp.error.network|Error: el servidor no responde|No se pudo contactar con el servidor.|Could not reach the server.|サーバーに接続できませんでした。
+mp.error.closed|Error: el anfitrión cerró la sala|El anfitrión ha cerrado la sala.|The host closed the room.|親機が対局室を閉じました。
+mp.error.session|Error: la sesión de Firebase caducó o no vale para esta sala|La sesión ha caducado. Vuelve a entrar.|Your session expired. Enter again.|セッションが切れました。もう一度入ってください。
+mp.error.not-allowed|Error: la cuenta no está en la lista blanca de Kovalt|Esta cuenta no tiene acceso al multijugador.|This account has no access to multiplayer.|このアカウントはオンライン対戦を利用できません。
+mp.error.login|Error: código de un solo uso incorrecto o caducado|No se pudo iniciar sesión. Revisa el código.|Could not sign in. Check the code.|サインインできませんでした。コードを確認してください。
+mp.error.name|Error: el servidor rechazó el nombre|Escribe un nombre válido.|Enter a valid name.|名前を入力してください。
+mp.host-away|Aviso: el anfitrión (árbitro) no está conectado|El anfitrión se ha desconectado. Esperando…|The host disconnected. Waiting…|親機が切断されました。待機中…
+mp.login|Botón: abrir el inicio de sesión de Kovalt|INICIAR SESIÓN|SIGN IN|サインイン
+mp.login-sub|Subtítulo de la pantalla de inicio de sesión|Cuenta de Kovalt|Kovalt account|Kovaltアカウント
+mp.login-hint|Por qué hace falta cuenta|Para crear una sala necesitas una cuenta de Kovalt autorizada.|Creating a room needs an authorized Kovalt account.|対局室を作るには、許可されたKovaltアカウントが必要です。
+mp.signed-in|Cuenta con sesión abierta; {name} = nombre de la cuenta|Sesión: {name}|Signed in: {name}|サインイン中: {name}
+mp.logout|Botón pequeño: cerrar la sesión de Kovalt|cerrar sesión|sign out|サインアウト
+mp.email-label|Etiqueta del campo de correo|CORREO|EMAIL|メール
+mp.otp-label|Etiqueta del campo del código de un solo uso|CÓDIGO DEL CORREO|CODE FROM EMAIL|メールのコード
+mp.otp-hint|Ayuda bajo el campo del código|Ocho dígitos; caduca en tres minutos.|Eight digits; expires in three minutes.|8桁。3分で切れます。
+mp.send-code|Botón: pedir el código al correo|ENVIAR CÓDIGO|SEND CODE|コードを送る
+mp.verify|Botón: canjear el código|ENTRAR|ENTER|入る
+mp.code-sent|Estado: el código ya va de camino|Te hemos enviado un código al correo.|We sent a code to your email.|メールにコードを送りました。
+mp.or|Separador entre OTP y Google|o|or|または
+mp.google|Botón: entrar con Google|CONTINUAR CON GOOGLE|CONTINUE WITH GOOGLE|Googleで続ける
 mp.create-hint|Texto de la tarjeta de crear sala|Crea una sala y comparte su código con quien quieras invitar.|Create a room and share its code with whoever you want to invite.|対局室を作り、招きたい人に合言葉を伝えます。
 mp.waiting-others|Aviso tras cerrar los resultados: faltan otros jugadores por continuar|Esperando a los demás… ({n})|Waiting for the others… ({n})|他の人を待っています…（{n}）

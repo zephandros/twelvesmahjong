@@ -1,0 +1,52 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && auth.token.kvExp > now && (data.child('meta/host').val() === auth.uid || auth.token.room === $code)",
+
+        ".write": "auth != null && auth.token.kvExp > now && auth.token.guest !== true && ((!data.exists() && newData.child('meta/host').val() === auth.uid) || data.child('meta/host').val() === auth.uid || (data.child('meta/createdAt').val() < now - 86400000 && !newData.exists()))",
+
+        "meta": {
+          ".validate": "newData.hasChildren(['host', 'phase', 'createdAt']) && newData.child('host').isString() && newData.child('phase').val().matches(/^(lobby|playing|done)$/) && newData.child('createdAt').isNumber()"
+        },
+
+        "seats": {
+          "$seat": {
+            ".write": "auth != null && auth.token.kvExp > now && auth.token.guest === true && auth.token.room === $code && $seat.matches(/^[0-3]$/) && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('rooms/' + $code + '/meta/phase').val() === 'lobby') || (data.child('uid').val() === auth.uid && (newData.child('uid').val() === auth.uid || (!newData.exists() && root.child('rooms/' + $code + '/meta/phase').val() === 'lobby'))))",
+            ".validate": "newData.hasChildren(['uid', 'name']) && newData.child('uid').isString() && newData.child('name').isString() && newData.child('name').val().length <= 16 && (!newData.hasChild('characterId') || (newData.child('characterId').isString() && (root.child('rooms/' + $code + '/seats/0/characterId').val() !== newData.child('characterId').val() || $seat === '0') && (root.child('rooms/' + $code + '/seats/1/characterId').val() !== newData.child('characterId').val() || $seat === '1') && (root.child('rooms/' + $code + '/seats/2/characterId').val() !== newData.child('characterId').val() || $seat === '2') && (root.child('rooms/' + $code + '/seats/3/characterId').val() !== newData.child('characterId').val() || $seat === '3')))"
+          }
+        },
+
+        "intents": {
+          "$uid": {
+            ".write": "auth != null && auth.token.kvExp > now && auth.uid === $uid && auth.token.room === $code",
+            ".validate": "!newData.exists() || (newData.hasChildren(['seq', 'a']) && newData.child('seq').isNumber())"
+          }
+        },
+
+        "ready": {
+          "$uid": {
+            ".write": "auth != null && auth.token.kvExp > now && auth.uid === $uid && auth.token.room === $code",
+            ".validate": "!newData.exists() || newData.val() === true"
+          }
+        },
+
+        "presence": {
+          "$uid": {
+            ".write": "auth != null && auth.token.kvExp > now && auth.uid === $uid && (auth.token.room === $code || root.child('rooms/' + $code + '/meta/host').val() === auth.uid)",
+            ".validate": "!newData.exists() || newData.val() === true"
+          }
+        },
+
+        "log": {
+          "$key": {
+            ".validate": "!data.exists() && newData.hasChildren(['h', 'a'])"
+          }
+        }
+      }
+    }
+  }
+}

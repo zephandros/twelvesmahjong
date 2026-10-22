@@ -130,6 +130,8 @@ export class Hud {
   private readonly actionTimerNum: HTMLElement
   /** Aviso de espera al resto tras cerrar los resultados (red). */
   private readonly waitOthersEl: HTMLElement
+  private waitOthers = 0
+  private notice: string | null = null
   private readonly waitsEl: HTMLElement
   private readonly turnEl: HTMLElement
   private readonly overlay: HTMLElement
@@ -387,8 +389,28 @@ export class Hud {
    * una mesa quieta sin saber por qué.
    */
   setWaitingOthers(n: number): void {
-    this.waitOthersEl.classList.toggle('is-hidden', n <= 0)
-    if (n > 0) this.waitOthersEl.textContent = t('mp.waiting-others', { n })
+    this.waitOthers = n
+    if (n > 0) {
+      this.waitOthersEl.textContent = t('mp.waiting-others', { n })
+      this.waitOthersEl.classList.remove('is-hidden')
+    } else if (this.notice === null) {
+      this.waitOthersEl.classList.add('is-hidden')
+    }
+  }
+
+  /**
+   * Aviso de red que no bloquea (hoy: "el anfitrión se ha desconectado").
+   * Comparte sitio con el de espera de fin de mano: nunca coinciden, porque
+   * sin anfitrión no hay quien reparta.
+   */
+  setNotice(text: string | null): void {
+    this.notice = text
+    if (text === null) {
+      if (this.waitOthers === 0) this.waitOthersEl.classList.add('is-hidden')
+      return
+    }
+    this.waitOthersEl.textContent = text
+    this.waitOthersEl.classList.remove('is-hidden')
   }
 
   /** Se resolvió la jugada: fuera relojes. */

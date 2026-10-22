@@ -4,6 +4,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 // Base '' keeps asset URLs relative, so the build works under any GitHub Pages subpath.
 export default defineConfig({
   base: '',
+  build: {
+    rollupOptions: {
+      output: {
+        // Firebase y PocketBase (solo multijugador) en su propio chunk, con
+        // nombre fijo para poder dejarlo FUERA del precache (abajo): el modo
+        // de un jugador sigue siendo 100 % offline y no paga esos ~300 kB.
+        manualChunks: (id) =>
+          /node_modules[\/](@?firebase|pocketbase)/.test(id) ? 'mp-vendor' : undefined,
+      },
+    },
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
@@ -48,7 +59,9 @@ export default defineConfig({
         // La imagen social (og/cover.jpg) solo la piden los rastreadores, y la
         // 404 nunca la ve un usuario con el SW instalado (navigateFallback
         // sirve index.html): ninguna de las dos pinta nada offline.
-        globIgnores: ['og/**', '404.html'],
+        // Ni el chunk de red (`mp-vendor`): el multijugador no existe offline
+        // y ui/lobby.ts ya avisa si no carga.
+        globIgnores: ['og/**', '404.html', '**/mp-vendor-*.js'],
         // SIN navigateFallback (vite-plugin-pwa lo pone en 'index.html' por
         // defecto). El juego es UNA sola página en '/': no hay rutas de cliente
         // que rescatar, y ese fallback solo servía para que el service worker

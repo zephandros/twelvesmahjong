@@ -5,10 +5,10 @@
 //
 //   LOCAL — este cliente es el árbitro. Juega `mySeat` (0) y mueve los otros
 //           tres asientos con ai/bot.ts. Persiste el log en localStorage.
-//   RED   — el árbitro es el Durable Object. Este cliente juega el asiento que
-//           le tocó (`net.seat`) y NO decide nada: recibe el flujo autoritativo
-//           de acciones por `net` y lo reproduce. No toca los bots ni el
-//           guardado local (el servidor es el guardado).
+//   RED   — el árbitro es el cliente del ANFITRIÓN (net/host.ts). Este cliente
+//           juega el asiento que le tocó (`net.seat`) y NO decide nada: recibe
+//           el flujo autoritativo de acciones por `net` y lo reproduce. No toca
+//           los bots ni el guardado local (la sala es el guardado).
 //
 // La diferencia se concentra en tres sitios: `submit` (lo que hace el input),
 // `scheduleStep` (de dónde sale la siguiente acción) y `persist`.
@@ -21,7 +21,7 @@ import type { HandState } from '../core/state'
 import { reduce } from '../core/reducer'
 import { newGame, advanceGame, type GameState } from '../core/game'
 import { newLog, type GameLog } from '../core/replay'
-import type { RuleSet } from '../core/rules-config'
+import type { NetGame, Resume } from '../net/protocol'
 import {
   tsumoScore, riichiOptions, ankanOptions, shouminkanOptions, canKyuushu,
   seatWaits, isTenpai, seatFuriten, remainingFor,
@@ -38,7 +38,7 @@ import { computePlacements } from './geometry'
 import { showWinScreen } from './win-screen'
 import { createCutIn, type CutIn } from './cut-in'
 import { altForm, CHARACTER_STYLES, type Roster, type CharacterId } from './characters'
-import { loadSettings, skillFor, type Difficulty } from './settings'
+import { loadSettings, skillFor } from './settings'
 import { saveGame, clearSave } from './persist'
 import {
   loadStats, saveStats, recordAction, recordHand, recordGame, type Stats,
@@ -106,47 +106,9 @@ interface Beat {
   done(): void
 }
 
-/** Partida reanudada desde el guardado (ver ui/persist.ts). */
-export interface Resume {
-  game: GameState
-  log: GameLog
-  botSeed: number
-  difficulty: Difficulty
-}
-
-/**
- * Partida en red. Lo aporta ui/net.ts; el controlador solo ve esta interfaz, así
- * que no sabe nada de WebSockets.
- */
-export interface NetGame {
-  /** Asiento que juega ESTE cliente. */
-  readonly seat: Seat
-  readonly seed: number
-  readonly rules: RuleSet
-  readonly botSeed: number
-  readonly difficulty: Difficulty
-  /** Nombre de la persona de cada asiento; null = lo lleva la IA. */
-  readonly players: readonly (string | null)[]
-  /** Acciones ya aceptadas por el árbitro, en orden estricto. */
-  onAction(cb: (a: Action) => void): void
-  /**
-   * A quién se espera y cuántos ms quedan. Alimenta la cuenta atrás de los
-   * paneles: en red hay un plazo real, y si vence juega la IA por ti.
-   */
-  onDeadline(cb: (seats: Seat[], ms: number) => void): void
-  /**
-   * Fin de mano: a qué asientos se espera para repartir la siguiente, y cuánto
-   * queda antes de repartir igualmente.
-   */
-  onHandEnd(cb: (waiting: Seat[], ms: number) => void): void
-  /** "He cerrado la pantalla de resultados." */
-  ready(): void
-  /** La partida se acabó por el lado de la red (desconexión, cierre de sala). */
-  onClose(cb: (reason: string) => void): void
-  /** Manda una intención. `seq` = acciones vistas, para que el árbitro descarte las rancias. */
-  send(a: Action, seq: number): void
-  close(): void
-}
+// `Resume` y `NetGame` viven en net/protocol.ts (los comparten el cliente de
+// red y los tests); se reexportan para que el resto de la UI importe de aquí.
+export type { Resume, NetGame } from '../net/protocol'
 
 export interface StartOptions {
   resume?: Resume
@@ -827,11 +789,21 @@ export function startGame(
       inbox.push(a)
       // Si el bucle estaba parado esperando a la red, lo despierta. Si hay un
       // beat corriendo, scheduleStep se corta solo y la cola espera a que acabe.
-      if (timer === null) scheduleStep()
+      // Con la mano acabada tampoco: la cola espera a que el jugador pulse
+      // CONTINUAR (si no, se volvería a pintar la pantalla de resultados).
+      if (timer === null && game.hand.phase !== 'ended') scheduleStep()
     })
-    net.onClose((reason) => {
+    // El árbitro tiró la intención (rancia, o ilegal): se desbloquea el input
+    // sin esperar a que llegue otra jugada.
+    net.onNack(() => {
+      if (!awaitingAck) return
+      awaitingAck = false
+      render()
+    })
+    net.onNotice((n) => hud.setNotice(n === null ? null : t('mp.host-away')))
+    net.onClose((code) => {
       teardown()
-      hud.showNetError(reason, onCharacters)
+      hud.showNetError(t(`mp.error.${code.replace(/_/g, '-')}` as Parameters<typeof t>[0]), onCharacters)
     })
   }
 

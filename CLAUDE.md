@@ -41,11 +41,12 @@ El juego está **publicado en https://twelvesmahjong.com** (Cloudflare Workers;
   música aún no escuchada (se cachea al primer play). Presupuesto de precache <15 MB.
 - **vitest** para tests. El núcleo se testea sin DOM.
 - Distribución: **Cloudflare Workers + Static Assets** (`wrangler.jsonc`), que sirve
-  `dist/` y aloja el Durable Object del multijugador. El SW **no** funciona sobre
-  `file://`. La configuración manual del hosting vive en `docs/cloudflare-setup.md`.
+  `dist/` y emite las sesiones del multijugador (`/api/sesion`, `/api/invitado`). El
+  SW **no** funciona sobre `file://`. La configuración manual del multijugador
+  (Firebase + Kovalt) vive en `docs/multiplayer-setup.md`.
 
 Comandos: `npm run dev` · `npm run build` · `npm test` · `npm run dev:worker`
-(wrangler dev, para probar el multijugador) · `npm run deploy`. Assets: `npm run assets:tiles`
+(wrangler dev, sirve `dist/` + `/api/*` en el 8787) · `npm run deploy`. Assets: `npm run assets:tiles`
 · `assets:audio` (requiere ffmpeg) · `assets:fonts` (requiere Python + fontTools)
 · `assets:i18n` (CSV de traducciones → módulo TS; solo node).
 
@@ -502,119 +503,75 @@ núcleo no lee ajustes de ningún global, se los pasan.
   (`recordAction` / `recordHand` / `recordGame`), enganchadas en `apply()` y `showEnd()`.
   `ui/stats-screen.ts` las pinta clonando el patrón de `glossary.ts`.
 
-## Multijugador online (2026-07-26)
+## Multijugador online (2026-10-21: Firebase + lista blanca de Kovalt)
 
 Sala privada por código, hasta 4 humanos; los asientos que sobren los llevan bots.
-**Configuración manual del hosting: `docs/cloudflare-setup.md`** (Turnstile, cutover
-de dominio, regla WAF). Sin cuentas ni matchmaking.
+Sin cuentas para jugar, sin matchmaking, sin espectadores ni listas de salas.
+**Configuración manual: `docs/multiplayer-setup.md`** (proyecto de Firebase, reglas,
+cuenta de servicio, lista blanca).
 
-**Despliegue: ya NO es Pages.** El sitio lo sirve un **Worker con Static Assets**
-(`wrangler.jsonc`, `npm run deploy`), que además aloja el Durable Object. Claves:
-`not_found_handling: "404-page"` conserva el 404 real de la sección SEO, y
-`run_worker_first` se deja en false **a propósito** — un asset se sirve sin invocar
-el Worker, así que inundar `/api/` no tumba la portada ni el juego de un jugador.
+**Ya NO hay servidor de juego.** La primera versión (2026-07-26) tenía un Durable
+Object por sala con WebSockets; se retiró entera (migración `v2` de `wrangler.jsonc`
+borra la clase `GameRoom`). Ahora:
 
-**El árbitro es el DO y corre EL MISMO `src/core/`.** No reimplementa mahjong:
-importa `reduce`, y como `reduce` lanza ante una jugada ilegal, ese es su validador
-de reglas. Igual con `src/ai/` para los bots y los relevos.
-
-- **`worker/room-logic.ts`** — puro, testeado en node sin workerd
-  (`tests/room-logic.test.ts`). `authorize(s, seat, a)` es **TODA la superficie
-  anti-trampas**: el núcleo no tiene noción de identidad. Rechaza `draw` venido de un
-  cliente (lo genera el servidor), acciones de turno desde un asiento que no es
-  `state.turn`, y reacciones firmadas con el `seat` de otro. `nextStep` es el espejo
-  sin timers de `ai/sim.ts`.
-- **`worker/room.ts`** — `GameRoom` con **WebSocket Hibernation**. Nada vive solo en
-  memoria entre mensajes: el estado se persiste como **log de acciones** (mismo
-  contrato que `ui/persist.ts`) y se reconstruye con `replay`. **Una sola alarma** por
-  DO sirve a la vez de plazo de decisión y de caducidad de sala, y se recalcula entera
-  tras cada evento.
-- **El servidor NO aplica `DELAY`/`BEAT`**: emite tan rápido como calcula. El ritmo lo
-  pone el cliente con una **cola de entrada** (`inbox` en `controller.ts`), que reusa
-  la tabla `DELAY` para que una partida online se vea igual que una local.
-- **Desconexión**: al vencer el plazo se le juega **esa decisión y nada más**; solo
-  tras `ABANDON_AFTER` (3) plazos seguidos el asiento pasa a `auto` y lo mueve la IA
-  como a un bot. El escalón importa: **el servidor no tiene pausas** (las pone el
-  cliente), así que dar por perdido el asiento al primer fallo se comía varias manos
-  de golpe y quien volvía no reconocía la partida. En **reacción** el vencimiento
-  inyecta `pass`, nunca deja que la IA cante por el ausente. Reconectar (token en
-  localStorage) devuelve el asiento, pone `misses` a cero **y vuelve a llamar a
-  `#pump`** — sin eso el que reconectaba se quedaba sin reloj y sin turno.
-- **Cuenta atrás**: el mensaje `deadline` lleva una **duración**, no una marca de
-  tiempo (el reloj del cliente puede ir desfasado). El controlador no la pinta a
-  ciegas: `refreshDeadline()` cruza el plazo del árbitro con el estado ya aplicado,
-  porque el `deadline` puede llegar mientras la cola de entrada aún tiene jugadas
-  anteriores.
-- **Anti-abuso** (`worker/ticket.ts`): `POST /api/room` **no instancia ningún DO** —
-  valida Turnstile, sortea el código y firma un ticket HMAC (clave derivada de
-  `TURNSTILE_SECRET` por HKDF). El DO nace, y escribe por primera vez, solo cuando
-  alguien abre el WebSocket con un ticket válido. Un bot que martillee el POST no crea
-  ni una sala. Más: autolimpieza por alarma (`deleteAll`), tope de 4 sockets, 4 KB y
-  20 msg/s por conexión, y códigos de 6 caracteres del servidor
-  (`src/net/codes.ts`, alfabeto sin I/O/0/1).
-
-**Reubicaciones que impuso el Worker** (no puede importar `ui/`, que arrastra i18n y
-localStorage): `CharacterId` + `CHARACTER_STYLES` → **`src/ai/roster.ts`**,
-`Difficulty` + `skillFor` → **`src/ai/profiles.ts`**, los RNG por bot →
-**`src/ai/bot-seats.ts`**. `ui/characters.ts` y `ui/settings.ts` los **reexportan**,
-así que el resto de la app importa donde siempre. `src/net/` es el terreno común
-(protocolo y códigos) de cliente y servidor.
-
-En `controller.ts`, `HUMAN` pasó a ser **`mySeat`** (variable del closure, `net.seat`
-en red) y `apply()` se partió en **`submit`** (input → manda) y **`apply`** (vía
-autoritativa → reduce). Sin predicción ni rollback: se bloquea el input hasta que la
-jugada vuelve confirmada.
-
-**Turnstile es la única dependencia externa del proyecto** y se carga **bajo demanda**,
-solo al abrir la pantalla de crear sala (`ui/turnstile.ts`): el juego de un jugador y
-el modo offline no tocan la red jamás.
-
-**Para desarrollar en local hacen falta las dos claves de PRUEBAS a la vez**:
-`TURNSTILE_SECRET` en `.dev.vars` y `VITE_TURNSTILE_SITEKEY` en **`.env.local`**
-(Vite lo prioriza sobre `.env`, que guarda la real). Mezclar una real con una de
-prueba hace que `siteverify` rechace el token. Y la sitekey real solo autoriza los
-hostnames de su widget, así que en `127.0.0.1` da **110200** ("domain mismatch"),
-que la UI muestra como "no se pudo cargar la comprobación" — parece un bloqueador
-y no lo es. Los dos archivos están en `.gitignore`.
-
-**Fin de mano SINCRONIZADO** (2026-07-26). El árbitro **no reparte la mano siguiente
-hasta que todos cierren su pantalla de resultados**: `CONTINUAR` manda `{t:'ready'}` y
-el DO solo avanza cuando `canAdvance` lo permite (`room-logic.ts`, puro y testeado en
-`tests/room-handend.test.ts`). Solo se espera a humanos **conectados y no ausentes**, y
-hay un tope de `DEADLINE.handEnd` (15 s) para que un abandono no congele la mesa. Quien
-ya confirmó ve `mp.waiting-others` mientras faltan otros.
-
-Antes se repartía en cuanto la mano acababa: quien se entretuviera leyendo la pantalla
-de victoria **perdía turnos sin verlos pasar**, porque su reloj de decisión ya corría
-por detrás y encima invisible (`refreshDeadline` lo oculta con `phase === 'ended'`).
-Medido: 98 s en la pantalla de victoria = varias manos jugadas por la IA.
-
-**Trampa de la alarma única**: al abrir la espera hay que **apagar `deadlineAt`**
-(`#pump` lo pone a 0 en cada pasada y solo lo fija la rama `await`). Arrastrar un plazo
-vencido hacía que `nextAlarm` armara la alarma en el pasado → saltaba al instante, no
-encontraba a quién jugarle, se rearmaba igual, y **la sala se colgaba en bucle**. Atado
-por el test de regresión de `nextAlarm`.
-
-**Cuenta atrás, dónde se pinta** (`hud.ts:timerFor`): el reloj del PROPIO jugador
-NO va en su panel de esquina —queda fuera de donde mira mientras decide— sino en
-`.tm-action-timer`, **centrado sobre el rótulo de turno y al doble de tamaño**
-(92 px frente a los 46 del panel de un rival): tiene que reconocerse de reojo sin
-dejar de mirar la mano. Es un **punto fijo** (`left` centrado a mano sobre x=960,
-`bottom` derivado de `TURN_LABEL_TOP`), NO atado a los botones: colgarlo de la fila
-de acciones lo movía de sitio según cuántos botones hubiera y con 3 opciones de chi
-se iba al centro de la pantalla. Nota: pisa la 3.ª fila del pond propio (a partir
-del descarte 19), un caso raro y de fichas ya conocidas. `left` no puede usar
-`centerX`: la animación de `is-urgent` escribe `transform` y se comería el
-translate.
-
-El reloj de un RIVAL va en su panel (`.tm-panel__timer`), **bajo la fila de
-insignias** (a 10 px del borde superior tapaba la insignia de viento) y **del lado
-que mira a la mesa**: pegado al borde izquierdo en los paneles de la derecha
-(`--tr`/`--br`), al derecho en los de la izquierda. De ahí el `tm-panel--<corner>`
-en el class del panel. En los paneles de la izquierda coincide con el distintivo de
-RIICHI, así que el distintivo baja cuando el reloj está visible; por eso el reloj se
-escribe ANTES en el HTML del panel, para poder decirlo con un selector hermano.
-`timerFor(seat)` sigue siendo el único sitio que decide el destino.
+- **Estado en Firebase Realtime Database**, un subárbol `rooms/{code}` por sala
+  (`src/net/protocol.ts` documenta cada nodo y `PATH` da las rutas).
+- **El árbitro es el cliente del ANFITRIÓN** (`src/net/host.ts`, clase `RoomHost`):
+  el mismo bucle que tenía el DO (`src/net/room-logic.ts`, puro: `authorize`,
+  `nextStep`, `canAdvance`…), con timers normales en vez de "una sola alarma", y que
+  en lugar de difundir ESCRIBE en la sala. Cada pasada del bucle va en **un
+  `update` atómico** (varias acciones de golpe llegan en orden). Si el anfitrión
+  cierra la pestaña, la mesa se para (aviso `mp.host-away`); al volver,
+  `start()` reconstruye del log y sigue.
+- **Todos los clientes, anfitrión incluido, reproducen el log** por el mismo camino
+  (`src/net/client.ts`, `joinRoom`): no hay dos rutas. El controlador sigue viendo
+  solo la interfaz `NetGame` (ahora en `net/protocol.ts`, reexportada por
+  `ui/controller.ts`), con dos ganchos nuevos: `onNack` (intención descartada →
+  desbloquear el input) y `onNotice` (anfitrión ausente).
+- **`RoomStore`** (`src/net/store.ts`) es la única cara de Firebase que ven cliente y
+  árbitro: seis operaciones sobre rutas relativas a la sala. `ui/firebase.ts` la
+  implementa sobre la RTDB; **`MemoryBackend`** la implementa en memoria —con la
+  heurística de arrays de RTDB incluida— y con ella `tests/net.test.ts` juega
+  partidas enteras entre un anfitrión y dos invitados, con plazos, nack, fin de mano
+  sincronizado y caída/vuelta del anfitrión. **Determinismo en ese test**: se
+  stubbean `crypto.getRandomValues` y `Math.random`; sin eso cada run es otra partida.
+- **Trampas de RTDB** ya resueltas en código: un nodo con claves `0..n` vuelve como
+  ARRAY (y con huecos, como objeto) → `seatsOf`/`fourOf` normalizan; las claves del
+  log llevan prefijo (`n000012`, `logKey`) para no parecer índices y ordenar como
+  texto; `Clock`/`HandEndWait` llevan `ms` + `at: serverTimestamp()` y cada cliente
+  resta su `.info/serverTimeOffset`.
+- **Identidad y lista blanca** (`ui/session.ts`, Worker `worker/sessions.ts`, calcado
+  de Kovalt Roller): solo el Worker emite sesiones de Firebase (custom tokens con
+  claims `name`, `kvExp` 24 h, `guest`, `room`). **Crear sala** exige cuenta de
+  Kovalt: login **dentro del juego** contra api.kovalt.mx con el SDK de PocketBase
+  (OTP al correo o Google; la lista blanca la aplican los hooks del servidor) y canje
+  del token en `/api/sesion`, que pasa por `auth-refresh`. **Unirse** solo pide
+  código + nombre: `/api/invitado` da un token con `room = code`, y las reglas no le
+  dejan leer ninguna otra sala. El uid del anfitrión es su id de PocketBase, así que
+  **volver a su sala por código lo devuelve como árbitro** (`openAsGuest` lo detecta
+  leyendo `meta`). **No se usa la cookie de la suite** (`kv_suite_auth`):
+  twelvesmahjong.com no es subdominio de kovalt.mx; el token vive en `localStorage`.
+- **Reglas** (`firebase/database.rules.json`, publicar a mano): el anfitrión escribe
+  todo su subárbol; un invitado solo `seats/{i}` (el suyo, en lobby),
+  `intents/{uid}`, `ready/{uid}` y `presence/{uid}`; `log/*` es append-only; la
+  unicidad de personaje se valida contra los otros tres asientos; una sala de más de
+  24 h la puede borrar cualquier cuenta. Todo exige `kvExp > now`.
+- **Carga bajo demanda**: `ui/lobby.ts` hace `import('./net')` al abrirse; Firebase y
+  PocketBase van en el chunk **`mp-vendor`** (manualChunks en `vite.config.ts`, ~85 kB
+  gz) que está **fuera del precache** (`globIgnores`). Sin conexión el lobby dice
+  `mp.error.offline`; sin `VITE_FIREBASE_*` en el `.env` dice `mp.error.disabled`, y
+  sin `FIREBASE_SERVICE_ACCOUNT` en el Worker, lo mismo (interruptor de urgencia).
+- **Anti-abuso**: `ratelimits` `GUEST_LIMIT` (20/min/IP) en `/api/invitado`; el
+  código lo sortea el cliente (`newRoomCode`, 32^6) y chocar con una sala viva falla
+  por reglas, no se pisa. Límite conocido: **la semilla viaja a todos los clientes**
+  (igual que antes); la única superficie anti-trampas es `authorize`.
+- **Trampa de timers**: las pestañas ocultas frenan `setTimeout` (hasta 1/min tras 5
+  min); si el anfitrión se va a otra pestaña, los plazos de los demás se resuelven
+  con retraso. Documentado en el setup; sin solución en v1.
+- **Discord Activity: descartada** (2026-10-21). Hubo un prototipo sobre el DO que
+  nunca se commiteó; con Firebase el multijugador por código basta, y la lista blanca
+  de Kovalt es lo que protege la cuota de Firebase (solo una cuenta autorizada
+  puede crear salas; los invitados no tocan nada fuera de la suya).
 
 ## Alcance v1
 

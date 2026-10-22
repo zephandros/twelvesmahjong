@@ -4,9 +4,8 @@
   // "tests", "vite.config.ts"]`, así que worker/ ya le queda fuera y no hay
   // choque de librerías entre los dos.
   //
-  // Se compilan también core/ y ai/ porque el Worker los importa tal cual: el
-  // núcleo es puro y determinista, así que el árbitro del servidor es
-  // literalmente el mismo código que el cliente.
+  // src/net/ entra porque el Worker comparte con el cliente el alfabeto de los
+  // códigos de sala y el tope del nombre (protocol.ts es solo tipos y constantes).
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -24,5 +23,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": [".", "../src/core", "../src/ai"]
+  "include": [".", "../src/net/codes.ts", "../src/net/protocol.ts"]
 }
