@@ -357,6 +357,43 @@ describe('multijugador sobre el almacén en memoria', () => {
     expect(g1!.log).toEqual(host!.log)
   })
 
+  it('el propio anfitrión, dado por ausente, recupera el mando con `resume`', async () => {
+    const [host, g1] = await lobbyWith(2)
+    host!.conn.begin(DEFAULT_RULES, 'normal')
+    await settle()
+    for (let i = 0; i < 600 && host!.notices.at(-1) !== 'autopilot'; i++) {
+      await settle()
+      const s = host!.game!.hand
+      if (s.phase === 'ended') {
+        host!.continueHand()
+        g1!.continueHand()
+        continue
+      }
+      if (g1!.act()) continue
+      await settle(DEADLINE.turn + DEADLINE.grace + 1)
+    }
+    expect(host!.notices.at(-1)).toBe('autopilot')
+    expect(await backend.room(CODE).get(PATH.absent)).toEqual([0])
+    host!.net!.resume()
+    await settle()
+    expect(host!.notices.at(-1)).toBeNull()
+    expect(await backend.room(CODE).get(PATH.absent)).toBeNull()
+    for (let i = 0; i < 600; i++) {
+      await settle()
+      const s = host!.game!.hand
+      if (s.phase === 'discard' && s.turn === 0) break
+      if (s.phase === 'ended') { host!.continueHand(); g1!.continueHand(); continue }
+      if (g1!.act()) continue
+      await settle(DEADLINE.turn + DEADLINE.grace + 1)
+    }
+    expect(host!.deadline?.seats).toContain(0)
+    const before = host!.seq
+    expect(host!.act()).toBe(true)
+    await settle()
+    expect(host!.seq).toBeGreaterThan(before)
+    expect(host!.nacks).toBe(0)
+  })
+
   it('no se reparte la mano siguiente hasta que todos confirman, salvo que venza la gracia', async () => {
     const [host, g1] = await lobbyWith(2)
     host!.conn.begin(DEFAULT_RULES, 'normal')

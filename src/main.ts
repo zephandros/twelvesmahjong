@@ -24,6 +24,23 @@ function onGesture(): void {
 window.addEventListener('pointerdown', onGesture)
 window.addEventListener('keydown', onGesture)
 
+// Tras un deploy, la página que sigue abierta (o la que el service worker viejo
+// sirvió de su caché justo antes de que el nuevo la vaciara) pide chunks con
+// hashes que ya no existen y el import dinámico falla con 404: se recarga una
+// vez para coger la versión nueva. El candado evita un bucle si la recarga
+// tampoco los encuentra.
+window.addEventListener('vite:preloadError', (ev) => {
+  const KEY = 'tm-reloaded-for-chunk'
+  const now = Date.now()
+  try {
+    const last = Number(sessionStorage.getItem(KEY) ?? 0)
+    if (now - last < 60_000) return // ya se recargó hace nada: no insistir
+    sessionStorage.setItem(KEY, String(now))
+  } catch { /* sin storage: se recarga igual */ }
+  ev.preventDefault()
+  location.reload()
+})
+
 const debug = new URLSearchParams(location.search).get('debug')
 
 // El bloque .tm-boot de index.html (portada rastreable + pantalla de carga) lo
