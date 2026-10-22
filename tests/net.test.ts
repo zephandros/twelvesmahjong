@@ -357,6 +357,43 @@ describe('multijugador sobre el almacén en memoria', () => {
     expect(g1!.log).toEqual(host!.log)
   })
 
+  it('con un único humano ausente la partida NO se juega sola hasta el final: espera al fin de mano', async () => {
+    const [host] = await lobbyWith(1) // anfitrión + 3 bots
+    host!.conn.begin(DEFAULT_RULES, 'normal')
+    await settle()
+    // no toca nada: tras ABANDON_AFTER plazos la IA lleva su asiento
+    for (let i = 0; i < 20 && host!.notices.at(-1) !== 'autopilot'; i++) {
+      await settle(DEADLINE.turn + DEADLINE.grace + 1)
+    }
+    expect(host!.notices.at(-1)).toBe('autopilot')
+    // la mano en curso la acaba la IA de golpe…
+    await settle()
+    const logSize = async (): Promise<number> =>
+      Object.keys((await host!.store.get<Record<string, unknown>>(PATH.log)) ?? {}).length
+    const atEnd = await logSize()
+    expect(host!.game!.hand.phase).toBe('ended') // el cliente reproduce hasta ahí
+    // …pero NO se reparte la siguiente aunque pase la gracia mil veces: no hay
+    // nadie activo a quien no hacer esperar
+    await settle(DEADLINE.handEnd * 10)
+    expect(await logSize()).toBe(atEnd)
+    expect(host!.handEnd?.waiting).toEqual([0])
+    expect((await backend.room(CODE).get<RoomMeta>(PATH.meta))?.phase).toBe('playing')
+    // vuelve: toque + continuar → recupera el mando y la partida sigue
+    host!.net!.resume()
+    await settle()
+    expect(host!.notices.at(-1)).toBeNull()
+    host!.continueHand()
+    await settle()
+    expect(await logSize()).toBeGreaterThan(atEnd)
+    for (let i = 0; i < 50; i++) {
+      await settle()
+      const s = host!.game!.hand
+      if (s.phase === 'discard' && s.turn === 0) break
+      if (s.phase === 'ended') { host!.continueHand(); continue }
+    }
+    expect(host!.deadline?.seats).toEqual([0]) // se le espera con reloj: es suyo otra vez
+  })
+
   it('el propio anfitrión, dado por ausente, recupera el mando con `resume`', async () => {
     const [host, g1] = await lobbyWith(2)
     host!.conn.begin(DEFAULT_RULES, 'normal')

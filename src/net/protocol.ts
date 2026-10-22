@@ -237,6 +237,7 @@ export type ErrorCode =
   | 'closed' // el anfitrión cerró la sala
   | 'session' // la sesión de Firebase caducó o no vale para esta sala
   | 'network'
+  | 'desync' // el log llegó con huecos: el cliente corta antes que corromperse
 
 // --- lo que ve el controlador ---------------------------------------------------
 

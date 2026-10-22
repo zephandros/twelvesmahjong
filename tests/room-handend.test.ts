@@ -10,7 +10,7 @@
 // son puras justamente para poder probarlas aquí sin red.
 
 import { describe, it, expect } from 'vitest'
-import { pendingReady, canAdvance, type ReadySeat } from '../src/net/room-logic'
+import { pendingReady, canAdvance, anyoneActive, type ReadySeat } from '../src/net/room-logic'
 
 /** Cuatro asientos humanos, conectados y sin confirmar. */
 const humanos = (): ReadySeat[] =>
@@ -77,6 +77,36 @@ describe('cuándo se reparte la mano siguiente', () => {
     expect(canAdvance(s, AHORA + 15_000, AHORA)).toBe(false)
     // pierde la conexión → ya no cuenta, y la mesa sigue sin esperar la gracia
     s[3]!.connected = false
+    expect(canAdvance(s, AHORA + 15_000, AHORA)).toBe(true)
+  })
+
+  it('a un ausente conectado se le sigue esperando, dentro de la gracia', () => {
+    const s = humanos()
+    for (const x of s) x.ready = true
+    s[3]!.ready = false
+    s[3]!.absent = true
+    expect(pendingReady(s)).toEqual([3])
+    expect(canAdvance(s, AHORA + 15_000, AHORA)).toBe(false)
+    // vence la gracia: hay otros activos a los que no hacer esperar → se reparte
+    expect(canAdvance(s, AHORA - 1, AHORA)).toBe(true)
+  })
+
+  it('sin nadie activo no se reparte ni al vencer la gracia: la mesa espera a que alguien vuelva', () => {
+    // un único humano (los otros tres son bots), dado por ausente pero conectado
+    const s: ReadySeat[] = [
+      { human: true, connected: true, ready: false, absent: true },
+      { human: false, connected: false, ready: false },
+      { human: false, connected: false, ready: false },
+      { human: false, connected: false, ready: false },
+    ]
+    expect(anyoneActive(s)).toBe(false)
+    expect(pendingReady(s)).toEqual([0])
+    expect(canAdvance(s, AHORA - 1, AHORA)).toBe(false)
+    // vuelve (toque / continuar): se le espera como a cualquiera…
+    s[0]!.absent = false
+    expect(canAdvance(s, AHORA + 15_000, AHORA)).toBe(false)
+    // …y en cuanto confirma, se reparte
+    s[0]!.ready = true
     expect(canAdvance(s, AHORA + 15_000, AHORA)).toBe(true)
   })
 

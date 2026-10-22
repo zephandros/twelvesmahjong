@@ -574,6 +574,17 @@ borra la clase `GameRoom`). Ahora:
   tocar las reglas de Firebase), que el árbitro no valida ni mete en el log;
   solo devuelve el mando. De hecho **toda intención**, valga o no, prueba
   presencia y lo devuelve. No hace falta salir y entrar de la sala.
+- **Sin humanos activos no se reparte** (2026-10-22). Un ausente sigue siendo
+  `human` en `ReadySeat` (campo `absent` aparte): conectado, se le espera al
+  fin de mano dentro de la gracia; y `canAdvance` solo reparte por gracia si
+  `anyoneActive` (humano conectado y no ausente). Antes, con un único humano
+  dado por ausente, los 4 asientos eran automáticos y el árbitro encadenaba
+  TODA la partida en un solo bucle/`update` (miles de entradas): si Firebase
+  lo rechazaba o entregaba con huecos, los clientes reproducían un log
+  incompleto (`mano de 12 fichas con 1 melds`) y al llegar a `done` el
+  `resume` ya no servía. `armTimers` no arma el reloj de gracia sin activos
+  (sería un bucle a tiempo cero). El cliente, además, **corta con
+  `desync`** (`mp.error.desync`) si el log llega con un hueco (`n > seen`).
 - **Candado de árbitro** (`PATH.arbiter`, 2026-10-22): cada pestaña con el uid
   del anfitrión crea su `RoomHost` (PWA + navegador, o una pestaña vieja tras un
   refresh), y dos árbitros con estados distintos escribiendo en el mismo log lo

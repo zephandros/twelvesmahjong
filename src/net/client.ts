@@ -177,6 +177,15 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
         // tras reconectar, Firebase reenvía desde `fromKey`: lo visto se ignora
         const n = logIndex(key)
         if (n < seen) return
+        // Hueco: falta una entrada. Aplicar las siguientes sobre un estado al
+        // que le falta una jugada corrompe la partida en silencio (manos de
+        // 12 fichas con un meld…); mejor cortar y que vuelva a entrar por el
+        // código, que reconstruye del log entero.
+        if (n > seen) {
+          console.error(`log con hueco: esperaba ${seen}, llegó ${n}`)
+          die('desync')
+          return
+        }
         seen = n + 1
         if (onAction) onAction(e.a)
         else buffered.push(e.a)

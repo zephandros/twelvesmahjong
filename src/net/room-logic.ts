@@ -144,11 +144,30 @@ export const ALL_SEATS: readonly Seat[] = SEATS
 
 /** Lo que hace falta saber de un asiento para decidir si se le espera. */
 export interface ReadySeat {
-  /** Lo lleva una persona (ni bot de relleno ni dado por ausente). */
+  /** Lo lleva una persona (no es bot de relleno), esté ausente o no. */
   human: boolean
   connected: boolean
   /** Ya cerró su pantalla de resultados. */
   ready: boolean
+  /**
+   * Dado por ausente (varios plazos seguidos sin contestar): la IA juega por
+   * él, pero mientras siga conectado se le sigue esperando al final de la
+   * mano, dentro de la gracia. Lo que NO puede es ser el único que tire de
+   * la mesa: ver `anyoneActive`.
+   */
+  absent?: boolean
+}
+
+/**
+ * ¿Hay alguien de verdad al mando (humano, conectado y no ausente)?
+ *
+ * Si no lo hay, no tiene sentido repartir: nadie vería la mano, y con todos
+ * los asientos automáticos el árbitro encadenaría una mano tras otra hasta
+ * acabar la partida en un solo bucle (visto con un único humano ausente). La
+ * mesa se queda esperando a que alguien vuelva (toque, continuar o presencia).
+ */
+export function anyoneActive(seats: readonly ReadySeat[]): boolean {
+  return seats.some((s) => s.human && s.connected && !s.absent)
 }
 
 /**
@@ -179,7 +198,8 @@ export function canAdvance(
   readyAt: number,
   now: number,
 ): boolean {
-  // Se agotó la gracia: se reparte aunque falte alguien, para no colgar la mesa.
-  if (readyAt > 0 && now >= readyAt) return true
+  // Se agotó la gracia: se reparte aunque falte alguien, para no colgar la
+  // mesa… a quien sí está. Sin nadie activo no se reparte: se espera.
+  if (readyAt > 0 && now >= readyAt && anyoneActive(seats)) return true
   return pendingReady(seats).length === 0
 }

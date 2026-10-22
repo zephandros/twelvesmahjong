@@ -342,6 +342,7 @@ export const MESSAGES = {
   "mp.error.session": { es: "La sesión ha caducado. Vuelve a entrar.", en: "Your session expired. Enter again.", ja: "セッションが切れました。もう一度入ってください。" },
   "mp.error.not-allowed": { es: "Esta cuenta no tiene acceso al multijugador.", en: "This account has no access to multiplayer.", ja: "このアカウントはオンライン対戦を利用できません。" },
   "mp.error.login": { es: "No se pudo iniciar sesión. Revisa el código.", en: "Could not sign in. Check the code.", ja: "サインインできませんでした。コードを確認してください。" },
+  "mp.error.desync": { es: "La partida se ha desincronizado. Vuelve a entrar en la sala con el código.", en: "The game went out of sync. Enter the room again with its code.", ja: "対局のデータがずれました。合言葉でもう一度入ってください。" },
   "mp.error.name": { es: "Escribe un nombre válido.", en: "Enter a valid name.", ja: "名前を入力してください。" },
   "mp.host-away": { es: "El anfitrión se ha desconectado. Esperando…", en: "The host disconnected. Waiting…", ja: "親機が切断されました。待機中…" },
   "mp.autopilot": { es: "La IA juega por ti. Toca para retomar el control.", en: "The AI is playing for you. Tap to take back control.", ja: "AIが代わりに打っています。タップで自分で打てます。" },

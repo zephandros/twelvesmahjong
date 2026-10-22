@@ -338,6 +338,7 @@ mp.error.closed|Error: el anfitrión cerró la sala|El anfitrión ha cerrado la 
 mp.error.session|Error: la sesión de Firebase caducó o no vale para esta sala|La sesión ha caducado. Vuelve a entrar.|Your session expired. Enter again.|セッションが切れました。もう一度入ってください。
 mp.error.not-allowed|Error: la cuenta no está en la lista blanca de Kovalt|Esta cuenta no tiene acceso al multijugador.|This account has no access to multiplayer.|このアカウントはオンライン対戦を利用できません。
 mp.error.login|Error: código de un solo uso incorrecto o caducado|No se pudo iniciar sesión. Revisa el código.|Could not sign in. Check the code.|サインインできませんでした。コードを確認してください。
+mp.error.desync|Error: el log de la sala llegó con huecos; se corta antes de corromper la partida|La partida se ha desincronizado. Vuelve a entrar en la sala con el código.|The game went out of sync. Enter the room again with its code.|対局のデータがずれました。合言葉でもう一度入ってください。
 mp.error.name|Error: el servidor rechazó el nombre|Escribe un nombre válido.|Enter a valid name.|名前を入力してください。
 mp.host-away|Aviso: el anfitrión (árbitro) no está conectado|El anfitrión se ha desconectado. Esperando…|The host disconnected. Waiting…|親機が切断されました。待機中…
 mp.autopilot|Aviso: por inactividad la IA lleva tu asiento; cualquier toque o tecla lo recupera|La IA juega por ti. Toca para retomar el control.|The AI is playing for you. Tap to take back control.|AIが代わりに打っています。タップで自分で打てます。

@@ -29,7 +29,8 @@ import { makeBotRngs } from '../ai/bot-seats'
 import { CHARACTER_IDS, CHARACTER_STYLES, type CharacterId } from '../ai/roster'
 import { skillFor, type Difficulty } from '../ai/profiles'
 import {
-  authorize, nextStep, waitingOn, timeoutAction, pendingReady, canAdvance, type ReadySeat,
+  authorize, nextStep, waitingOn, timeoutAction, pendingReady, canAdvance, anyoneActive,
+  type ReadySeat,
 } from './room-logic'
 import {
   ABANDON_AFTER, DEADLINE, PATH, logKey, logFromEntries, countActions, seatsOf,
@@ -373,6 +374,7 @@ export class RoomHost {
       this.readyAt = 0
       this.pending[`${PATH.meta}/phase`] = 'done'
       this.pending[PATH.ready] = null
+      for (const seat of SEATS) this.absent[seat] = false // acabó: fuera el aviso
     }
     this.pending[PATH.clock] = clock
     this.pending[PATH.handEnd] = handEnd
@@ -409,7 +411,10 @@ export class RoomHost {
       const ms = Math.max(0, this.deadlineAt + DEADLINE.grace - Date.now())
       this.deadlineTimer = setTimeout(() => void this.serial(() => this.onDeadline()), ms)
     }
-    if (this.readyAt > 0) {
+    // La gracia solo cuenta si hay alguien activo a quien no hacer esperar;
+    // si no, la mesa espera un evento (vuelve alguien) y no un reloj — armarlo
+    // sería un bucle de `pump` a tiempo cero que reescribe `handEnd` sin fin.
+    if (this.readyAt > 0 && anyoneActive(this.readySeats())) {
       const ms = Math.max(0, this.readyAt - Date.now())
       this.readyTimer = setTimeout(() => void this.serial(() => this.pump()), ms)
     }
@@ -471,9 +476,10 @@ export class RoomHost {
     return SEATS.map((seat) => {
       const slot = this.seats[seat]
       return {
-        human: slot !== null && slot !== undefined && !slot.bot && !this.absent[seat],
+        human: slot !== null && slot !== undefined && !slot.bot,
         connected: slot !== null && slot !== undefined && this.online.has(slot.uid),
         ready: this.ready[seat] === true,
+        absent: this.absent[seat] === true,
       }
     })
   }
