@@ -138,6 +138,14 @@ export const PATH = {
    * suyo para avisar "la IA juega por ti" y ofrecer recuperar el mando.
    */
   absent: 'absent',
+  /**
+   * Candado de árbitro: `{ id, at }` de la INSTANCIA de `RoomHost` que lleva
+   * la sala. El anfitrión puede tener la sala abierta en dos pestañas (PWA +
+   * navegador, o una pestaña vieja que sobrevivió a un refresh) y cada una
+   * crea su árbitro: sin candado los dos escriben en el mismo log con estados
+   * distintos y lo corrompen. Gana la última en arrancar; la otra cede.
+   */
+  arbiter: 'arbiter',
 } as const
 
 /**

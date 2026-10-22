@@ -574,6 +574,20 @@ borra la clase `GameRoom`). Ahora:
   tocar las reglas de Firebase), que el árbitro no valida ni mete en el log;
   solo devuelve el mando. De hecho **toda intención**, valga o no, prueba
   presencia y lo devuelve. No hace falta salir y entrar de la sala.
+- **Candado de árbitro** (`PATH.arbiter`, 2026-10-22): cada pestaña con el uid
+  del anfitrión crea su `RoomHost` (PWA + navegador, o una pestaña vieja tras un
+  refresh), y dos árbitros con estados distintos escribiendo en el mismo log lo
+  CORROMPEN (síntoma visto: `mano de 12 fichas con 1 melds` en los clientes).
+  `start()` escribe `{ id, at }` de la instancia y la vigila: si cambia a otro
+  id, la instancia cede (`yield` → `stop`, `active = false`) y la pestaña queda
+  de cliente normal; gana la última en arrancar. Una pestaña que cedió **no se
+  lleva la sala al cerrarse** (`closeAll` mira `host.active`). El id sale de
+  `crypto.randomUUID()`, no de `randomU32`: ese CSPRNG lo stubbea
+  `tests/net.test.ts` y consumirlo cambiaría la partida de cada test.
+- **`ready` rancio**: un "continuar" que llega con `readyAt === 0` (después de
+  repartir) se BORRA del nodo; si se dejara en `true`, el siguiente `set(true)`
+  del mismo jugador no cambiaría nada y RTDB no dispararía evento — el árbitro
+  esperaría la gracia entera sin enterarse.
 - **Trampa de timers**: las pestañas ocultas frenan `setTimeout` (hasta 1/min tras 5
   min); si el anfitrión se va a otra pestaña, los plazos de los demás se resuelven
   con retraso. Documentado en el setup; sin solución en v1.

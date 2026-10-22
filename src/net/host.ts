@@ -56,6 +56,10 @@ export class RoomHost {
   private readonly unsubs: Unsub[] = []
   private pending: Record<string, unknown> = {}
   private stopped = false
+  /** Identidad de ESTA instancia, para el candado `PATH.arbiter`. */
+  private readonly id = instanceId()
+  /** false cuando otra instancia (otra pestaña del anfitrión) tomó el relevo. */
+  private yielded = false
   private busy: Promise<void> = Promise.resolve()
   private policies: Partial<Record<Seat, BotPolicy>> = {}
   private rngs: Record<Seat, Rng> | null = null
@@ -76,6 +80,18 @@ export class RoomHost {
       this.phase = meta.phase
       this.seats = seatsOf(await this.store.get(PATH.seats))
 
+      // Candado: se reclama ANTES de mirar, así la primera lectura ya es la
+      // propia (o la de alguien más nuevo, y entonces se cede sin haber tocado
+      // nada). Dos pestañas arrancando a la vez: la última escritura gana y la
+      // otra se ve desplazada en cuanto le llega el valor.
+      await this.store.set(PATH.arbiter, { id: this.id, at: this.store.serverTimestamp() })
+      this.unsubs.push(
+        this.store.watch<{ id?: unknown }>(PATH.arbiter, (a) => {
+          if (a && a.id !== this.id) this.yield()
+        }),
+      )
+      if (this.stopped) return
+
       this.unsubs.push(
         this.store.watch<Record<string, boolean>>(PATH.presence, (p) => this.onPresence(p)),
         this.store.watch(PATH.seats, (raw) => { this.seats = seatsOf(raw) }),
@@ -87,7 +103,7 @@ export class RoomHost {
   /** EMPEZAR: rellena los asientos vacíos con bots y reparte. */
   begin(rules: RuleSet, difficulty: Difficulty): Promise<void> {
     return this.serial(async () => {
-      if (this.phase !== 'lobby') return
+      if (this.stopped || this.phase !== 'lobby') return
       this.seats = seatsOf(await this.store.get(PATH.seats))
       const used = new Set(this.seats.map((s) => s?.characterId).filter(Boolean) as CharacterId[])
       for (const seat of SEATS) {
@@ -128,6 +144,19 @@ export class RoomHost {
     for (const u of this.unsubs) u()
     this.unsubs.length = 0
     this.clearTimers()
+    this.pending = {} // lo no escrito se descarta: ya no es nuestro
+  }
+
+  /** ¿Sigue llevando la sala? false si otra pestaña del anfitrión tomó el relevo. */
+  get active(): boolean {
+    return !this.stopped && !this.yielded
+  }
+
+  /** Otra instancia reclamó el candado: esta se calla y la pestaña queda de cliente. */
+  private yield(): void {
+    if (this.yielded) return
+    this.yielded = true
+    this.stop()
   }
 
   // --- reanudación --------------------------------------------------------------
@@ -179,7 +208,7 @@ export class RoomHost {
   // --- entradas -------------------------------------------------------------------
 
   private async onIntents(all: Record<string, Intent>): Promise<void> {
-    if (this.phase !== 'playing' || !this.game || !this.log) return
+    if (this.stopped || this.phase !== 'playing' || !this.game || !this.log) return
     let moved = false
     for (const [uid, intent] of Object.entries(all)) {
       this.pending[PATH.intent(uid)] = null
@@ -222,7 +251,16 @@ export class RoomHost {
    * SIGUIENTE sin haberla visto.
    */
   private async onReady(all: Record<string, boolean>): Promise<void> {
-    if (this.phase !== 'playing' || this.readyAt === 0) return
+    if (this.stopped || this.phase !== 'playing') return
+    if (this.readyAt === 0) {
+      // Rancio (llegó después de repartir): se borra, o el nodo se quedaría
+      // en `true` y el SIGUIENTE "continuar" de ese jugador, al escribir el
+      // mismo valor, no dispararía ningún evento — el árbitro no se enteraría
+      // hasta agotar la gracia.
+      for (const uid of Object.keys(all)) this.pending[PATH.readyOf(uid)] = null
+      await this.flush()
+      return
+    }
     let changed = false
     for (const uid of Object.keys(all)) {
       const seat = this.seatOf(uid)
@@ -343,6 +381,10 @@ export class RoomHost {
   }
 
   private async flush(): Promise<void> {
+    if (this.stopped) {
+      this.pending = {}
+      return
+    }
     // La lista de ausentes va en el mismo `update` que la jugada que la cambió:
     // quien vuelve ve su aviso quitarse a la vez que le llega su reloj.
     const absent = SEATS.filter((seat) => this.absent[seat] && this.seats[seat] && !this.seats[seat]!.bot)
@@ -449,6 +491,16 @@ export class RoomHost {
 
 function deadlineFor(g: GameState): number {
   return g.hand.phase === 'reaction' ? DEADLINE.reaction : DEADLINE.turn
+}
+
+/**
+ * Identidad de una instancia de árbitro. NO usa `randomU32`: la semilla de la
+ * partida sale del mismo CSPRNG y `tests/net.test.ts` lo sustituye por un
+ * contador — consumirlo aquí cambiaría la partida de cada test.
+ */
+function instanceId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`
 }
 
 function randomU32(): number {

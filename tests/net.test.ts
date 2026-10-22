@@ -464,6 +464,45 @@ describe('multijugador sobre el almacén en memoria', () => {
     expect(g1!.log).toEqual(host2.log)
   }, 30_000)
 
+  it('dos pestañas del anfitrión: solo la última arbitra, y cerrar la que cedió no se lleva la sala', async () => {
+    const [tabA, g1] = await lobbyWith(2)
+    // segunda pestaña con la MISMA cuenta: reclama el candado y tabA cede
+    const tabB = new Player(backend.room(CODE), 'host', 'Ana')
+    await settle()
+    expect(tabB.lobby?.you).toBe(0)
+    // EMPEZAR desde la pestaña que cedió no hace nada…
+    tabA!.conn.begin(DEFAULT_RULES, 'normal')
+    await settle()
+    expect((await backend.room(CODE).get<RoomMeta>(PATH.meta))?.phase).toBe('lobby')
+    // …desde la que arbitra, sí
+    tabB.conn.begin(DEFAULT_RULES, 'normal')
+    await settle()
+    expect(tabA!.game).not.toBeNull()
+    expect(tabB.game).not.toBeNull()
+    // las jugadas del anfitrión pueden salir de cualquiera de sus pestañas:
+    // las procesa el único árbitro y los tres clientes reproducen el mismo log
+    for (let i = 0; i < 300; i++) {
+      await settle()
+      if (tabA!.game!.hand.phase === 'ended') break
+      if (i % 2 === 0 ? tabA!.act() : tabB.act()) continue
+      if (g1!.act()) continue
+      await settle(DEADLINE.turn + DEADLINE.grace + 1)
+    }
+    expect(countActions(logFromEntries(0, DEFAULT_RULES, []))).toBe(0)
+    expect(tabA!.log).toEqual(tabB.log)
+    expect(g1!.log).toEqual(tabB.log)
+    expect(g1!.seq).toBeGreaterThan(20)
+    // cerrar la pestaña que cedió NO cierra la sala
+    tabA!.conn.close()
+    await settle()
+    expect(g1!.dead).toBeNull()
+    expect(await backend.room(CODE).get<RoomMeta>(PATH.meta)).not.toBeNull()
+    // cerrar la que arbitra, sí
+    tabB.conn.close()
+    await settle()
+    expect(g1!.dead).toBe('closed')
+  })
+
   it('el anfitrión se lleva la sala al salir', async () => {
     const [host, g1] = await lobbyWith(2)
     host!.conn.close()

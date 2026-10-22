@@ -121,6 +121,9 @@ Con dos navegadores (o uno normal y otro en ventana privada):
       pasa a llevar su asiento y en su pantalla sale "La IA juega por ti. Toca
       para retomar el control". Un toque (o tecla) y el árbitro le devuelve el
       mando en su siguiente turno, sin salir de la sala.
+- [ ] Abrir la sala del anfitrión en una **segunda pestaña** del mismo navegador
+      (o la PWA): solo la última arbitra; la partida sigue consistente en los
+      tres clientes y cerrar la pestaña vieja no cierra la sala.
 - [ ] Cerrar el **primero** (el anfitrión): el otro ve "El anfitrión se ha
       desconectado. Esperando…" y nada se mueve. Reabrirlo, **MULTIJUGADOR →
       UNIRSE** con el código de su propia sala: como su sesión sigue en el

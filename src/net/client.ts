@@ -321,7 +321,9 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
 
   const closeAll = (): void => {
     if (closed) return
-    const wasHost = isHost()
+    // Una pestaña del anfitrión que cedió el arbitraje a otra NO se lleva la
+    // sala al cerrarse: la partida sigue en la pestaña que arbitra.
+    const wasHost = isHost() && (host === null || host.active)
     const seat = mySeat()
     teardown()
     if (wasHost) {
