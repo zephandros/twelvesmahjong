@@ -373,6 +373,9 @@ export class RoomHost {
       this.deadlineAt = 0
       this.readyAt = 0
       this.pending[`${PATH.meta}/phase`] = 'done'
+      // Hora del servidor: la limpieza del Worker (worker/cleanup.ts) borra la
+      // sala pasada 1 h desde aquí, sin esperar las 24 h de `createdAt`.
+      this.pending[`${PATH.meta}/endedAt`] = this.store.serverTimestamp()
       this.pending[PATH.ready] = null
       for (const seat of SEATS) this.absent[seat] = false // acabó: fuera el aviso
     }
