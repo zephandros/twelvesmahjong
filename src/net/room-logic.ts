@@ -171,6 +171,21 @@ export function anyoneActive(seats: readonly ReadySeat[]): boolean {
 }
 
 /**
+ * ¿Hay algún humano activo que NO sea de los que se está esperando?
+ *
+ * Los plazos existen para no bloquear a los DEMÁS: si quien falta por decidir
+ * es el único humano activo (solo contra bots, o los otros ya se fueron), no
+ * hay a quién proteger, y el árbitro ni corre el reloj ni juega por él — le
+ * espera como en una partida local. Sin esto, un jugador solo que se levanta
+ * un rato volvía a una mano jugada entera por la IA.
+ */
+export function othersActive(seats: readonly ReadySeat[], waiting: readonly Seat[]): boolean {
+  return seats.some(
+    (s, i) => s.human && s.connected && !s.absent && !waiting.includes(i as Seat),
+  )
+}
+
+/**
  * Asientos que faltan por confirmar el fin de mano.
  *
  * A la IA no se le espera, ni a quien no está conectado: si se esperara a todo

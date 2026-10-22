@@ -30,7 +30,7 @@ import { CHARACTER_IDS, CHARACTER_STYLES, type CharacterId } from '../ai/roster'
 import { skillFor, type Difficulty } from '../ai/profiles'
 import {
   authorize, nextStep, waitingOn, timeoutAction, pendingReady, canAdvance, anyoneActive,
-  type ReadySeat,
+  othersActive, type ReadySeat,
 } from './room-logic'
 import {
   ABANDON_AFTER, DEADLINE, PATH, logKey, logFromEntries, countActions, seatsOf,
@@ -334,11 +334,12 @@ export class RoomHost {
         break
       }
       if (step.kind === 'await') {
-        this.deadlineAt = Date.now() + deadlineFor(this.game)
-        clock = {
-          seats: waitingOn(this.game, auto),
-          ms: deadlineFor(this.game),
-          at: this.store.serverTimestamp(),
+        // Plazo solo si hay OTRO humano activo al que no hacer esperar; si
+        // no, ni reloj ni relevo: se espera a quien decide, como en local.
+        const waiting = waitingOn(this.game, auto)
+        if (othersActive(this.readySeats(), waiting)) {
+          this.deadlineAt = Date.now() + deadlineFor(this.game)
+          clock = { seats: waiting, ms: deadlineFor(this.game), at: this.store.serverTimestamp() }
         }
         break
       }

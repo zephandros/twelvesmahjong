@@ -574,6 +574,12 @@ borra la clase `GameRoom`). Ahora:
   tocar las reglas de Firebase), que el árbitro no valida ni mete en el log;
   solo devuelve el mando. De hecho **toda intención**, valga o no, prueba
   presencia y lo devuelve. No hace falta salir y entrar de la sala.
+- **Los plazos protegen a los DEMÁS** (`othersActive`, 2026-10-22): el árbitro
+  solo publica reloj (y por tanto solo fuerza decisiones y solo da por ausente)
+  cuando hay OTRO humano activo esperando a quien decide. Solo contra bots, o
+  con los demás desconectados/ausentes, no hay reloj ni relevo: la mesa espera
+  como en local. Con dos humanos, al ausente la IA le decide jugada a jugada
+  al ritmo del otro, y un toque le devuelve el mando en su siguiente decisión.
 - **Sin humanos activos no se reparte** (2026-10-22). Un ausente sigue siendo
   `human` en `ReadySeat` (campo `absent` aparte): conectado, se le espera al
   fin de mano dentro de la gracia; y `canAdvance` solo reparte por gracia si

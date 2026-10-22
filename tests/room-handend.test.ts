@@ -10,7 +10,7 @@
 // son puras justamente para poder probarlas aquí sin red.
 
 import { describe, it, expect } from 'vitest'
-import { pendingReady, canAdvance, anyoneActive, type ReadySeat } from '../src/net/room-logic'
+import { pendingReady, canAdvance, anyoneActive, othersActive, type ReadySeat } from '../src/net/room-logic'
 
 /** Cuatro asientos humanos, conectados y sin confirmar. */
 const humanos = (): ReadySeat[] =>
@@ -108,6 +108,29 @@ describe('cuándo se reparte la mano siguiente', () => {
     // …y en cuanto confirma, se reparte
     s[0]!.ready = true
     expect(canAdvance(s, AHORA + 15_000, AHORA)).toBe(true)
+  })
+
+  it('hay plazo solo si otro humano activo espera a quien decide', () => {
+    // solo contra bots: nadie a quien proteger → sin plazo
+    const solo: ReadySeat[] = [
+      { human: true, connected: true, ready: false },
+      { human: false, connected: false, ready: false },
+      { human: false, connected: false, ready: false },
+      { human: false, connected: false, ready: false },
+    ]
+    expect(othersActive(solo, [0])).toBe(false)
+    // dos humanos: el que decide tiene a otro esperando → plazo
+    const dos = [...solo]
+    dos[1] = { human: true, connected: true, ready: false }
+    expect(othersActive(dos, [0])).toBe(true)
+    // …salvo que el otro se haya ido o esté ausente
+    dos[1] = { human: true, connected: false, ready: false }
+    expect(othersActive(dos, [0])).toBe(false)
+    dos[1] = { human: true, connected: true, ready: false, absent: true }
+    expect(othersActive(dos, [0])).toBe(false)
+    // en una reacción se espera a los dos a la vez: ninguno protege al otro
+    dos[1] = { human: true, connected: true, ready: false }
+    expect(othersActive(dos, [0, 1])).toBe(false)
   })
 
   it('sin espera abierta (readyAt 0) manda solo quién falta', () => {

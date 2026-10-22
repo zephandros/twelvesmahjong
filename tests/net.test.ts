@@ -357,41 +357,58 @@ describe('multijugador sobre el almacén en memoria', () => {
     expect(g1!.log).toEqual(host!.log)
   })
 
-  it('con un único humano ausente la partida NO se juega sola hasta el final: espera al fin de mano', async () => {
+  it('un único humano (solo contra bots) nunca tiene plazo ni relevo: la mesa le espera', async () => {
     const [host] = await lobbyWith(1) // anfitrión + 3 bots
     host!.conn.begin(DEFAULT_RULES, 'normal')
     await settle()
-    // no toca nada: tras ABANDON_AFTER plazos la IA lleva su asiento
-    for (let i = 0; i < 20 && host!.notices.at(-1) !== 'autopilot'; i++) {
-      await settle(DEADLINE.turn + DEADLINE.grace + 1)
-    }
-    expect(host!.notices.at(-1)).toBe('autopilot')
-    // la mano en curso la acaba la IA de golpe…
-    await settle()
     const logSize = async (): Promise<number> =>
       Object.keys((await host!.store.get<Record<string, unknown>>(PATH.log)) ?? {}).length
-    const atEnd = await logSize()
-    expect(host!.game!.hand.phase).toBe('ended') // el cliente reproduce hasta ahí
-    // …pero NO se reparte la siguiente aunque pase la gracia mil veces: no hay
-    // nadie activo a quien no hacer esperar
-    await settle(DEADLINE.handEnd * 10)
-    expect(await logSize()).toBe(atEnd)
-    expect(host!.handEnd?.waiting).toEqual([0])
-    expect((await backend.room(CODE).get<RoomMeta>(PATH.meta))?.phase).toBe('playing')
-    // vuelve: toque + continuar → recupera el mando y la partida sigue
-    host!.net!.resume()
+    // le toca decidir y no toca nada durante MUCHOS plazos
+    for (let i = 0; i < 40 && !(host!.game!.hand.phase === 'discard' && host!.game!.hand.turn === 0); i++) {
+      await settle()
+    }
+    const before = await logSize()
+    await settle((DEADLINE.turn + DEADLINE.grace + 1) * (ABANDON_AFTER + 3))
+    // sin reloj, sin "la IA juega por ti", y el log no se mueve
+    expect(host!.deadline).toBeNull()
+    expect(host!.notices).not.toContain('autopilot')
+    expect(await logSize()).toBe(before)
+    // cuando quiere, juega, y su jugada entra
+    expect(host!.act()).toBe(true)
     await settle()
-    expect(host!.notices.at(-1)).toBeNull()
-    host!.continueHand()
+    expect(await logSize()).toBeGreaterThan(before)
+    expect(host!.nacks).toBe(0)
+  })
+
+  it('con dos humanos, el que se ausenta lo lleva la IA jugada a jugada y el otro marca el ritmo', async () => {
+    const [host, g1] = await lobbyWith(2)
+    host!.conn.begin(DEFAULT_RULES, 'normal')
     await settle()
-    expect(await logSize()).toBeGreaterThan(atEnd)
-    for (let i = 0; i < 50; i++) {
+    // el invitado no toca nada: tras ABANDON_AFTER plazos la IA lleva su asiento…
+    for (let i = 0; i < 400 && g1!.notices.at(-1) !== 'autopilot'; i++) {
       await settle()
       const s = host!.game!.hand
-      if (s.phase === 'discard' && s.turn === 0) break
-      if (s.phase === 'ended') { host!.continueHand(); continue }
+      if (s.phase === 'ended') { host!.continueHand(); g1!.continueHand(); continue }
+      if (host!.act()) continue
+      await settle(DEADLINE.turn + DEADLINE.grace + 1)
     }
-    expect(host!.deadline?.seats).toEqual([0]) // se le espera con reloj: es suyo otra vez
+    expect(g1!.notices.at(-1)).toBe('autopilot')
+    // …pero la mano NO se juega de golpe: en cuanto le toca al anfitrión, se le espera
+    await settle()
+    for (let i = 0; i < 200; i++) {
+      await settle()
+      const s = host!.game!.hand
+      if (s.phase === 'ended') { host!.continueHand(); g1!.continueHand(); continue }
+      if (s.phase === 'discard' && s.turn === 0) break
+      if (host!.act()) continue
+    }
+    expect(host!.game!.hand.turn).toBe(0)
+    // y como ya es el único humano activo, sin reloj: nadie a quien proteger
+    expect(await backend.room(CODE).get(PATH.clock)).toBeNull()
+    const before = host!.seq
+    await settle((DEADLINE.turn + DEADLINE.grace + 1) * 3)
+    expect(host!.seq).toBe(before) // nada se mueve sin el anfitrión
+    expect(host!.notices).not.toContain('autopilot')
   })
 
   it('el propio anfitrión, dado por ausente, recupera el mando con `resume`', async () => {

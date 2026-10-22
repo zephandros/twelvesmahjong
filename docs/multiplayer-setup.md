@@ -121,10 +121,11 @@ Con dos navegadores (o uno normal y otro en ventana privada):
       pasa a llevar su asiento y en su pantalla sale "La IA juega por ti. Toca
       para retomar el control". Un toque (o tecla) y el árbitro le devuelve el
       mando en su siguiente turno, sin salir de la sala.
-- [ ] Solo el anfitrión con 3 bots, sin tocar nada tres plazos: la IA acaba la
-      mano, sale la pantalla de resultados con el aviso y **no se reparte la
-      siguiente** hasta tocar y CONTINUAR; en el siguiente turno propio vuelve
-      el reloj (se ha recuperado el mando).
+- [ ] Solo el anfitrión con 3 bots: en su turno **no hay cuenta atrás** y la
+      mesa le espera indefinidamente (los plazos solo protegen a otros humanos).
+- [ ] Con dos humanos, uno deja de tocar tres plazos: le sale "La IA juega por
+      ti", la IA decide por él **solo cuando le toca** (el otro sigue marcando el
+      ritmo), y un toque le devuelve el mando en su siguiente decisión.
 - [ ] Abrir la sala del anfitrión en una **segunda pestaña** del mismo navegador
       (o la PWA): solo la última arbitra; la partida sigue consistente en los
       tres clientes y cerrar la pestaña vieja no cierra la sala.
