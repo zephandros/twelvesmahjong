@@ -308,6 +308,55 @@ describe('multijugador sobre el almacén en memoria', () => {
     expect(host!.deadline).not.toBeNull()
   })
 
+  it('quien fue dado por ausente ve el aviso y recupera el mando con un `resume`, sin salir de la sala', async () => {
+    const [host, g1] = await lobbyWith(2)
+    host!.conn.begin(DEFAULT_RULES, 'normal')
+    await settle()
+    // el invitado no toca nada hasta que la IA lleva su asiento
+    const playUntil = async (stop: () => boolean, guestPlays: boolean): Promise<void> => {
+      for (let i = 0; i < 600 && !stop(); i++) {
+        await settle()
+        const s = host!.game!.hand
+        if (s.phase === 'ended') {
+          host!.continueHand()
+          g1!.continueHand()
+          continue
+        }
+        if (host!.act()) continue
+        if (guestPlays && g1!.act()) continue
+        if (stop()) break
+        await settle(DEADLINE.turn + DEADLINE.grace + 1)
+      }
+    }
+    await playUntil(() => g1!.notices.at(-1) === 'autopilot', false)
+    expect(g1!.notices.at(-1)).toBe('autopilot')
+    expect(await backend.room(CODE).get(PATH.absent)).toEqual([1])
+    // el anfitrión no está ausente: su cliente no ve ese aviso
+    expect(host!.notices).not.toContain('autopilot')
+
+    // "Toca para retomar el control": el árbitro deja de jugar por él…
+    g1!.net!.resume()
+    await settle()
+    expect(g1!.notices.at(-1)).toBeNull()
+    expect(await backend.room(CODE).get(PATH.absent)).toBeNull()
+    expect(g1!.nacks).toBe(0) // el `resume` no es una jugada rancia
+
+    // …y en su siguiente turno se le espera de verdad, con reloj, y su jugada entra.
+    const guestTurn = (): boolean => {
+      const s = host!.game!.hand
+      return s.phase === 'discard' && s.turn === 1
+    }
+    await playUntil(guestTurn, false)
+    expect(guestTurn()).toBe(true)
+    expect(host!.deadline?.seats).toContain(1)
+    const before = host!.seq
+    expect(g1!.act()).toBe(true)
+    await settle()
+    expect(host!.seq).toBeGreaterThan(before)
+    expect(g1!.nacks).toBe(0)
+    expect(g1!.log).toEqual(host!.log)
+  })
+
   it('no se reparte la mano siguiente hasta que todos confirman, salvo que venza la gracia', async () => {
     const [host, g1] = await lobbyWith(2)
     host!.conn.begin(DEFAULT_RULES, 'normal')

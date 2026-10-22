@@ -340,6 +340,7 @@ mp.error.not-allowed|Error: la cuenta no está en la lista blanca de Kovalt|Esta
 mp.error.login|Error: código de un solo uso incorrecto o caducado|No se pudo iniciar sesión. Revisa el código.|Could not sign in. Check the code.|サインインできませんでした。コードを確認してください。
 mp.error.name|Error: el servidor rechazó el nombre|Escribe un nombre válido.|Enter a valid name.|名前を入力してください。
 mp.host-away|Aviso: el anfitrión (árbitro) no está conectado|El anfitrión se ha desconectado. Esperando…|The host disconnected. Waiting…|親機が切断されました。待機中…
+mp.autopilot|Aviso: por inactividad la IA lleva tu asiento; cualquier toque o tecla lo recupera|La IA juega por ti. Toca para retomar el control.|The AI is playing for you. Tap to take back control.|AIが代わりに打っています。タップで自分で打てます。
 mp.login|Botón: abrir el inicio de sesión de Kovalt|INICIAR SESIÓN|SIGN IN|サインイン
 mp.login-sub|Subtítulo de la pantalla de inicio de sesión|Cuenta de Kovalt|Kovalt account|Kovaltアカウント
 mp.login-hint|Por qué hace falta cuenta|Para crear una sala necesitas una cuenta de Kovalt autorizada.|Creating a room needs an authorized Kovalt account.|対局室を作るには、許可されたKovaltアカウントが必要です。

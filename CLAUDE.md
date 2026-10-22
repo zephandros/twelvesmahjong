@@ -565,6 +565,15 @@ borra la clase `GameRoom`). Ahora:
   código lo sortea el cliente (`newRoomCode`, 32^6) y chocar con una sala viva falla
   por reglas, no se pisa. Límite conocido: **la semilla viaja a todos los clientes**
   (igual que antes); la única superficie anti-trampas es `authorize`.
+- **Ausencia y vuelta** (2026-10-22): tras `ABANDON_AFTER` plazos seguidos sin
+  contestar, el árbitro lleva ese asiento (`absent[]` en `host.ts`) y publica la
+  lista en `PATH.absent` (`Seat[]`, o `null` si vacía: RTDB no guarda arrays
+  vacíos). El cliente avisa `autopilot` por `onNotice` (`mp.autopilot`) y
+  **cualquier toque o tecla** manda `resume()`: una intención
+  `{ seq: -1, a: { type: 'resume' } }` por la misma ruta `intents/{uid}` (sin
+  tocar las reglas de Firebase), que el árbitro no valida ni mete en el log;
+  solo devuelve el mando. De hecho **toda intención**, valga o no, prueba
+  presencia y lo devuelve. No hace falta salir y entrar de la sala.
 - **Trampa de timers**: las pestañas ocultas frenan `setTimeout` (hasta 1/min tras 5
   min); si el anfitrión se va a otra pestaña, los plazos de los demás se resuelven
   con retraso. Documentado en el setup; sin solución en v1.

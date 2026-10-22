@@ -344,6 +344,7 @@ export const MESSAGES = {
   "mp.error.login": { es: "No se pudo iniciar sesión. Revisa el código.", en: "Could not sign in. Check the code.", ja: "サインインできませんでした。コードを確認してください。" },
   "mp.error.name": { es: "Escribe un nombre válido.", en: "Enter a valid name.", ja: "名前を入力してください。" },
   "mp.host-away": { es: "El anfitrión se ha desconectado. Esperando…", en: "The host disconnected. Waiting…", ja: "親機が切断されました。待機中…" },
+  "mp.autopilot": { es: "La IA juega por ti. Toca para retomar el control.", en: "The AI is playing for you. Tap to take back control.", ja: "AIが代わりに打っています。タップで自分で打てます。" },
   "mp.login": { es: "INICIAR SESIÓN", en: "SIGN IN", ja: "サインイン" },
   "mp.login-sub": { es: "Cuenta de Kovalt", en: "Kovalt account", ja: "Kovaltアカウント" },
   "mp.login-hint": { es: "Para crear una sala necesitas una cuenta de Kovalt autorizada.", en: "Creating a room needs an authorized Kovalt account.", ja: "対局室を作るには、許可されたKovaltアカウントが必要です。" },

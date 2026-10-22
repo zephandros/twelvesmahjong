@@ -207,6 +207,8 @@ export function startGame(
   // Intención mandada y aún sin confirmar: mientras tanto, el input se bloquea.
   // No hay predicción ni rollback; el turno de mahjong da tiempo de sobra.
   let awaitingAck = false
+  /** En red: el árbitro juega por mí (me dio por ausente). Ver `onResumeTap`. */
+  let autopilot = false
   // Plazo vivo que mandó el árbitro. Se guarda porque NO basta con pintarlo al
   // llegar: puede llegar mientras la cola de entrada aún tiene acciones
   // anteriores, y hay que volver a evaluarlo cuando el estado local se ponga al
@@ -572,7 +574,14 @@ export function startGame(
     endBeat?.()
   }
 
+  /** Si la IA lleva mi asiento por ausencia, un toque pide recuperarlo. */
+  function onResumeTap(): void {
+    if (!autopilot || !net) return
+    net.resume()
+  }
+
   function onKeySkip(ev: KeyboardEvent): void {
+    onResumeTap()
     if (endBeat === null) return
     if (ev.key !== 'Enter' && ev.key !== ' ' && ev.key !== 'Escape') return
     ev.preventDefault()
@@ -591,6 +600,7 @@ export function startGame(
     endBeat = null
     hud.clearDeadline() // su interval sobreviviría al DOM si no se para aquí
     window.removeEventListener('keydown', onKeySkip)
+    window.removeEventListener('pointerdown', onResumeTap, true)
     cutIn.destroy()
     net?.close()
   }
@@ -800,7 +810,13 @@ export function startGame(
       awaitingAck = false
       render()
     })
-    net.onNotice((n) => hud.setNotice(n === null ? null : t('mp.host-away')))
+    // 'autopilot': se le dio por ausente y el árbitro juega por él. Cualquier
+    // toque o tecla pide el mando de vuelta (`resume`); el aviso se quita solo
+    // cuando el árbitro publica que ya no lo lleva.
+    net.onNotice((n) => {
+      autopilot = n === 'autopilot'
+      hud.setNotice(n === null ? null : t(n === 'host-away' ? 'mp.host-away' : 'mp.autopilot'))
+    })
     net.onClose((code) => {
       teardown()
       hud.showNetError(t(`mp.error.${code.replace(/_/g, '-')}` as Parameters<typeof t>[0]), onCharacters)
@@ -808,6 +824,7 @@ export function startGame(
   }
 
   window.addEventListener('keydown', onKeySkip)
+  window.addEventListener('pointerdown', onResumeTap, true)
   render()
   scheduleStep()
   return teardown

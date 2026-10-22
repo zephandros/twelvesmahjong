@@ -117,6 +117,10 @@ Con dos navegadores (o uno normal y otro en ventana privada):
 - [ ] Cerrar el segundo navegador a mitad de partida: pasados unos segundos la
       IA juega por él y la partida no se atasca. Volver a abrirlo y entrar con
       el mismo código: recupera su asiento y la partida en curso.
+- [ ] Dejar el segundo abierto pero sin tocar nada tres plazos seguidos: la IA
+      pasa a llevar su asiento y en su pantalla sale "La IA juega por ti. Toca
+      para retomar el control". Un toque (o tecla) y el árbitro le devuelve el
+      mando en su siguiente turno, sin salir de la sala.
 - [ ] Cerrar el **primero** (el anfitrión): el otro ve "El anfitrión se ha
       desconectado. Esperando…" y nada se mueve. Reabrirlo, **MULTIJUGADOR →
       UNIRSE** con el código de su propia sala: como su sesión sigue en el

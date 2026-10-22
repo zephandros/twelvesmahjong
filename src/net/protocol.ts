@@ -81,10 +81,20 @@ export interface LogEntry {
   a: Action
 }
 
+/**
+ * "Vuelvo a llevar mi asiento": lo manda quien, dado por ausente, quiere
+ * recuperar el mando sin salir y entrar de la sala. Viaja por `intents/{uid}`
+ * como una jugada más (misma ruta, mismas reglas: no hace falta tocar
+ * Firebase), pero no es una acción del motor y nunca entra en el log.
+ */
+export interface ResumeMark {
+  type: 'resume'
+}
+
 /** Intención de jugada de un asiento. `seq` = acciones vistas; si no cuadra, se descarta. */
 export interface Intent {
   seq: number
-  a: Action
+  a: Action | ResumeMark
 }
 
 /**
@@ -122,6 +132,12 @@ export const PATH = {
   presenceOf: (uid: string): string => `presence/${uid}`,
   clock: 'clock',
   handEnd: 'handEnd',
+  /**
+   * Asientos humanos que el árbitro lleva por ausencia (`Seat[]`, nunca los
+   * bots de relleno). Lo escribe el árbitro; cada cliente mira si está el
+   * suyo para avisar "la IA juega por ti" y ofrecer recuperar el mando.
+   */
+  absent: 'absent',
 } as const
 
 /**
@@ -216,6 +232,13 @@ export type ErrorCode =
 
 // --- lo que ve el controlador ---------------------------------------------------
 
+/**
+ * Avisos no fatales. `host-away`: el árbitro no está y nada se mueve.
+ * `autopilot`: el árbitro juega por ESTE asiento (se le dio por ausente); un
+ * toque lo recupera. El primero manda si coinciden.
+ */
+export type Notice = 'host-away' | 'autopilot'
+
 /** Partida reanudada desde un log (guardado local o sala con historia). */
 export interface Resume {
   game: GameState
@@ -249,10 +272,12 @@ export interface NetGame {
    * queda antes de repartir igualmente.
    */
   onHandEnd(cb: (waiting: Seat[], ms: number) => void): void
-  /** Aviso no fatal en pantalla (p. ej. el anfitrión se ha desconectado); null lo quita. */
-  onNotice(cb: (notice: 'host-away' | null) => void): void
+  /** Aviso no fatal en pantalla; null lo quita. */
+  onNotice(cb: (notice: Notice | null) => void): void
   /** "He cerrado la pantalla de resultados." */
   ready(): void
+  /** "Vuelvo a llevar mi asiento": pide al árbitro que deje de jugar por mí. */
+  resume(): void
   /** La partida se acabó por el lado de la red (sala cerrada, sesión caducada). */
   onClose(cb: (code: ErrorCode) => void): void
   /** Manda una intención. `seq` = acciones vistas, para que el árbitro descarte las rancias. */

@@ -45,6 +45,8 @@ export class RoomHost {
   private game: GameState | null = null
   private readonly misses: number[] = [0, 0, 0, 0]
   private readonly absent: boolean[] = [false, false, false, false]
+  /** Última lista de ausentes escrita en la sala (`PATH.absent`), para no reescribirla igual. */
+  private publishedAbsent: string | null = null
   private ready: boolean[] = [false, false, false, false]
   private online = new Set<string>()
   private deadlineAt = 0
@@ -183,24 +185,30 @@ export class RoomHost {
       this.pending[PATH.intent(uid)] = null
       const seat = this.seatOf(uid)
       if (seat === null || !intent || typeof intent !== 'object') continue
+      // Escribir una intención, valga o no, demuestra que hay alguien: si se
+      // le había dado por ausente, recupera el mando. El `resume` es solo eso:
+      // una intención sin jugada, para volver sin esperar a que toque algo.
+      this.misses[seat] = 0
+      if (this.absent[seat]) {
+        this.absent[seat] = false
+        moved = true // hay que recalcular a quién se espera y publicar el relevo
+      }
+      const a = intent.a as Intent['a'] | null
+      if (a !== null && typeof a === 'object' && a.type === 'resume') continue
       // Guarda de orden: el cliente dice cuántas acciones había visto. Si no
       // cuadra, actuó sobre un estado viejo (doble clic, carrera con una
       // jugada ajena) y su intención se tira. Se le avisa (`nack`) para que
       // desbloquee su input sin esperar a que llegue otra cosa.
-      const a = intent.a as Action | null
       const ok =
         intent.seq === countActions(this.log) &&
         !this.game.finished &&
         a !== null && typeof a === 'object' && typeof a.type === 'string' &&
-        authorize(this.game.hand, seat, a) && // LA comprobación anti-trampas
-        this.apply(a)
+        authorize(this.game.hand, seat, a as Action) && // LA comprobación anti-trampas
+        this.apply(a as Action)
       if (!ok) {
         this.pending[PATH.nack(uid)] = { seq: intent.seq, at: Date.now() }
         continue
       }
-      // Ha jugado: está claramente ahí, así que recupera el mando.
-      this.misses[seat] = 0
-      this.absent[seat] = false
       moved = true
     }
     if (moved) await this.pump()
@@ -335,6 +343,15 @@ export class RoomHost {
   }
 
   private async flush(): Promise<void> {
+    // La lista de ausentes va en el mismo `update` que la jugada que la cambió:
+    // quien vuelve ve su aviso quitarse a la vez que le llega su reloj.
+    const absent = SEATS.filter((seat) => this.absent[seat] && this.seats[seat] && !this.seats[seat]!.bot)
+    const key = absent.join(',')
+    if (key !== this.publishedAbsent) {
+      this.publishedAbsent = key
+      // null y no []: RTDB no guarda arrays vacíos (volvería como {} o nada)
+      this.pending[PATH.absent] = absent.length > 0 ? absent : null
+    }
     const batch = this.pending
     this.pending = {}
     if (Object.keys(batch).length === 0) return

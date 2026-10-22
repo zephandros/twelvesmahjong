@@ -14,8 +14,8 @@ import type { Action } from '../core/actions'
 import { RoomHost } from './host'
 import {
   PATH, MAX_NAME, logKey, logIndex, logFromEntries, seatsOf, fourOf,
-  type Clock, type ErrorCode, type GameSetup, type HandEndWait, type LobbyView, type LogEntry,
-  type NetGame, type Resume, type RoomMeta, type SeatSlot,
+  type Clock, type ErrorCode, type GameSetup, type HandEndWait, type Intent, type LobbyView,
+  type LogEntry, type NetGame, type Notice, type Resume, type RoomMeta, type SeatSlot,
 } from './protocol'
 import type { RoomStore, Unsub } from './store'
 
@@ -77,7 +77,9 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
   let onAction: ((a: Action) => void) | null = null
   let onDeadline: ((seats: Seat[], ms: number) => void) | null = null
   let onHandEnd: ((waiting: Seat[], ms: number) => void) | null = null
-  let onNotice: ((n: 'host-away' | null) => void) | null = null
+  let onNotice: ((n: Notice | null) => void) | null = null
+  /** Asientos que el árbitro lleva por ausencia (`PATH.absent`). */
+  let absent: Seat[] = []
   let onNack: (() => void) | null = null
   let onNetClose: ((code: ErrorCode) => void) | null = null
   const buffered: Action[] = []
@@ -194,6 +196,10 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
       store.watch<{ seq: number; at: number }>(PATH.nack(me.uid), (n) => {
         if (n && onNack) onNack()
       }),
+      store.watch<Seat[]>(PATH.absent, (a) => {
+        absent = Array.isArray(a) ? a : []
+        notice()
+      }),
     )
 
     const net: NetGame = {
@@ -224,13 +230,17 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
       },
       onNotice(cb) {
         onNotice = cb
-        noticeHost()
+        notice()
       },
       onNack(cb) {
         onNack = cb
       },
       ready() {
         void store.set(PATH.readyOf(me.uid), true).catch(() => die('session'))
+      },
+      resume() {
+        const mark: Intent = { seq: -1, a: { type: 'resume' } }
+        void store.set(PATH.intent(me.uid), mark).catch(() => die('session'))
       },
       onClose(cb) {
         onNetClose = cb
@@ -243,9 +253,14 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
     h.onStart(net, setup.roster, resume)
   }
 
-  const noticeHost = (): void => {
+  const notice = (): void => {
     if (!onNotice || !meta || meta.phase !== 'playing') return
-    onNotice(online.has(meta.host) ? null : 'host-away')
+    const you = mySeat()
+    onNotice(
+      !online.has(meta.host) ? 'host-away'
+        : you !== null && absent.includes(you) ? 'autopilot'
+          : null,
+    )
   }
 
   // --- suscripciones --------------------------------------------------------------
@@ -266,7 +281,7 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
     } else {
       void startPlay()
     }
-    noticeHost()
+    notice()
   }
 
   unsubs.push(
@@ -300,7 +315,7 @@ export function joinRoom(store: RoomStore, code: string, me: Me, h: ClientHandle
       if (closed) return
       online = new Set(Object.keys(p ?? {}))
       paintLobby()
-      noticeHost()
+      notice()
     }),
   )
 
