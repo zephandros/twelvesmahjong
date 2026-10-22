@@ -31,8 +31,18 @@
   "vars": {
     "PB_URL": "https://api.kovalt.mx",
     // Id del proyecto de Firebase (el mismo de VITE_FIREBASE_PROJECT_ID en .env).
-    "FIREBASE_PROJECT_ID": "twelves-mahjong-db"
+    "FIREBASE_PROJECT_ID": "twelves-mahjong-db",
+    // URL de la Realtime Database (la misma de VITE_FIREBASE_DATABASE_URL); la
+    // usa la limpieza de salas. Si se omite, worker/cleanup.ts asume la
+    // instancia por omisión `https://<proyecto>-default-rtdb.firebaseio.com`.
+    "FIREBASE_DATABASE_URL": "https://twelves-mahjong-db-default-rtdb.firebaseio.com"
   },
+
+  // Limpieza diaria de salas caducadas en la RTDB (worker/cleanup.ts): salas
+  // de más de 24 h, o terminadas hace más de 1 h. A mano en local:
+  // `npx wrangler dev --test-scheduled` + `curl "http://localhost:8787/__scheduled"`
+  // (ver docs/multiplayer-setup.md).
+  "triggers": { "crons": ["17 4 * * *"] },
 
   // Frena la fuerza bruta de códigos de sala: 20 sesiones de invitado por
   // minuto e IP. Gratis en el plan free.

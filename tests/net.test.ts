@@ -253,6 +253,9 @@ describe('multijugador sobre el almacén en memoria', () => {
     // Todos acabaron en el mismo sitio, y el log reproduce ese estado.
     const meta = await host!.store.get<RoomMeta>(PATH.meta)
     expect(meta?.phase).toBe('done')
+    // hora del servidor al acabar: la limpieza del Worker borra la sala 1 h después
+    expect(typeof meta?.endedAt).toBe('number')
+    expect(meta!.endedAt!).toBeGreaterThanOrEqual(meta!.createdAt)
     for (const p of players) {
       expect(p.game!.finished).toBe(true)
       expect(p.log).toEqual(host!.log)

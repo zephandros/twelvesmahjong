@@ -608,6 +608,23 @@ borra la clase `GameRoom`). Ahora:
 - **Trampa de timers**: las pestañas ocultas frenan `setTimeout` (hasta 1/min tras 5
   min); si el anfitrión se va a otra pestaña, los plazos de los demás se resuelven
   con retraso. Documentado en el setup; sin solución en v1.
+- **Limpieza de salas por Cron Trigger** (2026-10-22, `worker/cleanup.ts`): el
+  anfitrión solo borra su sala si sale con el botón; si cierra la pestaña,
+  `rooms/{code}` quedaba para siempre (las reglas dejan borrar salas de +24 h a
+  cualquier cuenta, pero nadie puede LISTAR `rooms`). El Worker corre a diario
+  (`triggers.crons` en `wrangler.jsonc`, `scheduled` en `worker/index.ts`) con la
+  **cuenta de servicio** (access token OAuth2 por JWT bearer, firmado con el
+  mismo `signJwt` de los custom tokens; scope `firebase.database`) contra la REST
+  API de la RTDB (`vars.FIREBASE_DATABASE_URL`): `rooms.json?shallow=true` →
+  `rooms/{code}/meta.json` por sala (tope `MAX_ROOMS_PER_RUN` = 40 por las 50
+  subpeticiones del plan free) → UN `PATCH rooms.json` con `null`s. Caduca lo de
+  +24 h (`createdAt`), lo `done` hace +1 h (**`meta/endedAt`**, que `host.ts`
+  escribe con `serverTimestamp()` al terminar; campo opcional de `RoomMeta`) y lo
+  que no tenga `meta` válido. La decisión (`isExpired`/`expiredRooms`) es pura;
+  `tests/cleanup.test.ts` la ata y además juega una pasada entera con la red
+  stubbeada. Sin `FIREBASE_SERVICE_ACCOUNT` el cron no hace nada (mismo
+  interruptor que `/api/*`). A mano: `wrangler dev --test-scheduled` + `curl
+  localhost:8787/__scheduled` (docs/multiplayer-setup.md §5).
 - **Discord Activity: descartada** (2026-10-21). Hubo un prototipo sobre el DO que
   nunca se commiteó; con Firebase el multijugador por código basta, y la lista blanca
   de Kovalt es lo que protege la cuota de Firebase (solo una cuenta autorizada

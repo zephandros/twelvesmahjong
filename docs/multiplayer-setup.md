@@ -59,7 +59,9 @@ solo). Alternativa con CLI: `npx firebase deploy --only database --project
 ## 2. El Worker (Cloudflare)
 
 - [ ] En `wrangler.jsonc`, rellenar `vars.FIREBASE_PROJECT_ID` con el id del
-      proyecto (el mismo de `VITE_FIREBASE_PROJECT_ID`).
+      proyecto (el mismo de `VITE_FIREBASE_PROJECT_ID`) y
+      `vars.FIREBASE_DATABASE_URL` con la URL de la Realtime Database (la misma
+      de `VITE_FIREBASE_DATABASE_URL`; la usa la limpieza de salas, ver §5).
 - [ ] Cargar la cuenta de servicio como secreto (pega el JSON completo, en una
       línea, cuando lo pida):
 
@@ -76,9 +78,13 @@ npm run deploy
 El primer despliegue tras la migración borra el Durable Object `GameRoom` de la
 versión anterior (migración `v2` de `wrangler.jsonc`): es lo esperado.
 
-> **Sin el secreto el multijugador está apagado**: el Worker responde 503 y la
-> UI dice "no disponible". Es también el **interruptor de urgencia**:
-> `npx wrangler secret delete FIREBASE_SERVICE_ACCOUNT`.
+> **Sin el secreto el multijugador está apagado**: el Worker responde 503, la
+> UI dice "no disponible" y el cron de limpieza no hace nada. Es también el
+> **interruptor de urgencia**: `npx wrangler secret delete FIREBASE_SERVICE_ACCOUNT`.
+
+El despliegue también da de alta el **Cron Trigger** de `triggers.crons`
+(limpieza diaria de salas, §5): se ve en *Workers & Pages → twelvesmahjong →
+Settings → Triggers → Cron Triggers*. No hay que crearlo a mano.
 
 ---
 
@@ -143,12 +149,54 @@ Con dos navegadores (o uno normal y otro en ventana privada):
 
 - **Firebase → Realtime Database → Datos**: `rooms/{código}`. Una sala
   terminada la borra el anfitrión al salir; si una pestaña murió sin más, queda
-  ahí. Cualquier cuenta puede borrar salas de **más de 24 h** (regla de
-  limpieza), y desde la consola se borra lo que sea.
+  ahí hasta que pase el **cron de limpieza** (abajo). Desde la consola se borra
+  lo que sea.
+- **Workers & Pages → `twelvesmahjong` → Logs** (observabilidad activada): cada
+  pasada del cron escribe una línea `cleanup(17 4 * * *): N salas, M miradas,
+  K borradas (…)`, o `cleanup(...) falló` con el error.
 - **Firebase → Realtime Database → Uso**: conexiones simultáneas y descargas.
   El plan gratuito (Spark) da 100 conexiones y 10 GB/mes; una partida mueve
   unos pocos cientos de KB.
 - **Workers & Pages → `twelvesmahjong` → Metrics**: peticiones a `/api/*`.
+
+### Limpieza de salas (Cron Trigger)
+
+El Worker corre **una vez al día** (`triggers.crons: ["17 4 * * *"]`, hora
+UTC, en `wrangler.jsonc`) y borra de la RTDB las salas caducadas
+(`worker/cleanup.ts`):
+
+- creadas hace **más de 24 h** (`meta/createdAt`, en la fase que estén);
+- **terminadas** hace más de **1 h** (`meta/phase = 'done'` y `meta/endedAt`,
+  que el árbitro escribe al acabar la partida);
+- sin `meta` o sin `createdAt` numérico (basura).
+
+Usa la cuenta de servicio (`FIREBASE_SERVICE_ACCOUNT`) para pedir a Google un
+access token OAuth2 con el scope `firebase.database` y hablar con la REST API
+de la base (`FIREBASE_DATABASE_URL`): un `GET rooms.json?shallow=true` para
+los códigos, un `GET rooms/{code}/meta.json` por sala (como mucho 40 por
+pasada, el tope de subpeticiones del plan gratuito; el resto cae en la
+siguiente) y **un solo `PATCH rooms.json`** con `null` en cada caducada. La
+cuenta de servicio no pasa por las Security Rules, así que no hace falta
+tocarlas. Si la red falla, la pasada lanza, queda en los logs y se reintenta
+al día siguiente.
+
+**Lanzarlo a mano en local** (con `.dev.vars` que tenga
+`FIREBASE_SERVICE_ACCOUNT`; actúa sobre la base REAL del `wrangler.jsonc`):
+
+```bash
+npx wrangler dev --test-scheduled
+```
+
+y, en otra terminal:
+
+```bash
+curl "http://localhost:8787/__scheduled?cron=17+4+*+*+*"
+```
+
+La respuesta es `Ran scheduled event`; el resultado real sale en la consola
+de `wrangler dev`. En producción no hay disparo manual: cambiar el horario
+es editar `triggers.crons` y volver a desplegar (y quitar la clave `triggers`
+elimina el cron en el siguiente despliegue).
 
 ### Límites conocidos
 
@@ -193,5 +241,6 @@ Roller (`firebase/tests` de ese repo es la referencia); este repo no los trae.
 | `VITE_FIREBASE_*` | Configuración web del proyecto de Firebase | `.env` del proyecto | Sí, va en el bundle |
 | `VITE_KOVALT_API_URL` | URL de Kovalt API (por defecto `https://api.kovalt.mx`) | `.env` (opcional) | Sí |
 | `FIREBASE_PROJECT_ID` | Id del proyecto | `wrangler.jsonc` (`vars`) | Sí |
+| `FIREBASE_DATABASE_URL` | URL de la Realtime Database (para la limpieza de salas) | `wrangler.jsonc` (`vars`) | Sí |
 | `PB_URL` | URL de Kovalt API para el Worker | `wrangler.jsonc` (`vars`) | Sí |
 | `FIREBASE_SERVICE_ACCOUNT` | JSON de la cuenta de servicio | `wrangler secret put` / `.dev.vars` | **No, nunca** |

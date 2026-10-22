@@ -53,6 +53,11 @@ export interface RoomMeta {
   phase: Phase
   /** Marca de tiempo del servidor; las reglas dejan borrar salas viejas. */
   createdAt: number
+  /**
+   * Marca de tiempo del servidor cuando `phase` pasó a `done` (la escribe el
+   * árbitro). La limpieza del Worker borra las salas terminadas hace más de 1 h.
+   */
+  endedAt?: number
 }
 
 export interface SeatSlot {
